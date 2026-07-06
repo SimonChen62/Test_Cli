@@ -1,0 +1,254 @@
+:root {
+  color-scheme: light;
+  --paper: #f7f3ec;
+  --ink: #201f1c;
+  --muted: #6d655c;
+  --line: #d9cfc2;
+  --accent: #b53d2e;
+  --green: #23795a;
+  --gold: #a87928;
+  --panel: #fffaf2;
+  --shadow: 0 18px 50px rgba(32, 31, 28, 0.14);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--paper);
+  color: var(--ink);
+  font-family:
+    "Microsoft YaHei",
+    "PingFang SC",
+    system-ui,
+    sans-serif;
+}
+
+button {
+  font: inherit;
+}
+
+.app {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 24px;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.stage,
+.panel {
+  min-width: 0;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.eyebrow {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+h1,
+h2 {
+  margin: 0;
+  letter-spacing: 0;
+}
+
+h1 {
+  font-size: clamp(26px, 4vw, 44px);
+  line-height: 1.08;
+}
+
+h2 {
+  font-size: 22px;
+}
+
+.iconButton {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.toolbar,
+.layerPicker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.modeButton,
+.layerButton {
+  min-height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 250, 242, 0.82);
+  color: var(--ink);
+  cursor: pointer;
+  padding: 8px 12px;
+}
+
+.modeButton.active,
+.layerButton.active {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: #fffaf2;
+}
+
+.layerPicker {
+  display: none;
+}
+
+.layerPicker.visible {
+  display: flex;
+}
+
+.canvasShell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 620px;
+  max-height: calc(100vh - 190px);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fffaf2;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+#workImage {
+  display: block;
+  max-width: 100%;
+  max-height: calc(100vh - 210px);
+  object-fit: contain;
+}
+
+#overlay {
+  position: absolute;
+  pointer-events: none;
+}
+
+.annotationShape {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.qiPath {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  stroke-dasharray: 180;
+  animation: drawPath 2.4s ease-in-out infinite;
+}
+
+.voidBox {
+  fill: rgba(35, 121, 90, 0.24);
+  stroke: var(--green);
+  stroke-width: 0.55;
+}
+
+.inkBox {
+  fill: rgba(168, 121, 40, 0.26);
+  stroke: var(--gold);
+  stroke-width: 0.55;
+}
+
+.shapeLabel {
+  fill: var(--ink);
+  font-size: 3px;
+  paint-order: stroke;
+  stroke: #fffaf2;
+  stroke-width: 0.7px;
+  pointer-events: none;
+}
+
+@keyframes drawPath {
+  0% {
+    stroke-dashoffset: 180;
+  }
+  50%,
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.fallback {
+  position: absolute;
+  inset: 24px;
+  display: grid;
+  place-items: center;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  text-align: center;
+  padding: 24px;
+}
+
+.panel {
+  align-self: start;
+  min-height: calc(100vh - 48px);
+  border-left: 1px solid var(--line);
+  padding: 8px 0 8px 24px;
+}
+
+dl {
+  margin: 22px 0;
+}
+
+dt {
+  margin-top: 18px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+dd {
+  margin: 6px 0 0;
+  line-height: 1.72;
+}
+
+.note {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--muted);
+  line-height: 1.6;
+  padding: 14px;
+}
+
+@media (max-width: 900px) {
+  .app {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+
+  .canvasShell {
+    min-height: 460px;
+    max-height: none;
+  }
+
+  #workImage {
+    max-height: 72vh;
+  }
+
+  .panel {
+    min-height: 0;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    padding: 20px 0 0;
+  }
+}

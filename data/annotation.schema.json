@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://callilens.local/schema/annotation.schema.json",
+  "title": "CalliLens Work Annotation",
+  "type": "object",
+  "required": ["workId", "title", "style", "source", "images", "guideText", "annotations"],
+  "additionalProperties": false,
+  "properties": {
+    "workId": { "type": "string", "minLength": 1 },
+    "title": { "type": "string", "minLength": 1 },
+    "style": { "type": "string", "minLength": 1 },
+    "source": { "type": "string", "minLength": 1 },
+    "guideText": { "type": "string", "minLength": 1 },
+    "images": {
+      "type": "object",
+      "required": ["original", "binary", "skeleton", "strokeWidth", "inkDensity", "voidCandidates"],
+      "additionalProperties": false,
+      "properties": {
+        "original": { "type": "string", "minLength": 1 },
+        "binary": { "type": "string", "minLength": 1 },
+        "skeleton": { "type": "string", "minLength": 1 },
+        "strokeWidth": { "type": "string", "minLength": 1 },
+        "inkDensity": { "type": "string", "minLength": 1 },
+        "voidCandidates": { "type": "string", "minLength": 1 }
+      }
+    },
+    "annotations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "oneOf": [
+          { "$ref": "#/$defs/qiFlowAnnotation" },
+          { "$ref": "#/$defs/boxAnnotation" }
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "evidenceLayer": {
+      "type": "string",
+      "enum": ["original", "binary", "skeleton", "strokeWidth", "inkDensity", "voidCandidates"]
+    },
+    "baseAnnotation": {
+      "type": "object",
+      "required": ["id", "type", "label", "evidenceLayers", "formal", "perception", "aesthetic"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "type": { "type": "string", "enum": ["qi_flow", "void_solid", "brush_ink"] },
+        "label": { "type": "string", "minLength": 1 },
+        "evidenceLayers": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/evidenceLayer" },
+          "uniqueItems": true
+        },
+        "formal": { "type": "string", "minLength": 1 },
+        "perception": { "type": "string", "minLength": 1 },
+        "aesthetic": { "type": "string", "minLength": 1 }
+      }
+    },
+    "qiFlowAnnotation": {
+      "allOf": [
+        { "$ref": "#/$defs/baseAnnotation" },
+        {
+          "type": "object",
+          "required": ["path"],
+          "additionalProperties": false,
+          "properties": {
+            "id": { "type": "string", "minLength": 1 },
+            "type": { "const": "qi_flow" },
+            "label": { "type": "string", "minLength": 1 },
+            "evidenceLayers": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "$ref": "#/$defs/evidenceLayer" },
+              "uniqueItems": true
+            },
+            "path": { "type": "string", "pattern": "^M\\s" },
+            "formal": { "type": "string", "minLength": 1 },
+            "perception": { "type": "string", "minLength": 1 },
+            "aesthetic": { "type": "string", "minLength": 1 }
+          }
+        }
+      ]
+    },
+    "boxAnnotation": {
+      "allOf": [
+        { "$ref": "#/$defs/baseAnnotation" },
+        {
+          "type": "object",
+          "required": ["box"],
+          "additionalProperties": false,
+          "properties": {
+            "id": { "type": "string", "minLength": 1 },
+            "type": { "enum": ["void_solid", "brush_ink"] },
+            "label": { "type": "string", "minLength": 1 },
+            "evidenceLayers": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "$ref": "#/$defs/evidenceLayer" },
+              "uniqueItems": true
+            },
+            "box": {
+              "type": "object",
+              "required": ["x", "y", "width", "height"],
+              "additionalProperties": false,
+              "properties": {
+                "x": { "type": "number", "minimum": 0, "maximum": 100 },
+                "y": { "type": "number", "minimum": 0, "maximum": 100 },
+                "width": { "type": "number", "exclusiveMinimum": 0, "maximum": 100 },
+                "height": { "type": "number", "exclusiveMinimum": 0, "maximum": 100 }
+              }
+            },
+            "formal": { "type": "string", "minLength": 1 },
+            "perception": { "type": "string", "minLength": 1 },
+            "aesthetic": { "type": "string", "minLength": 1 }
+          }
+        }
+      ]
+    }
+  }
+}
+
