@@ -1,9 +1,11 @@
-const DATA_URL = "../data/work_001/annotation.json";
-const IMAGE_BASE = "../data/work_001/";
+const params = new URLSearchParams(window.location.search);
+const workId = params.get("work") || "work_003";
+const DATA_URL = `../data/${workId}/annotation.json`;
+const IMAGE_BASE = `../data/${workId}/`;
 
 const state = {
-  mode: "original",
-  layer: "original",
+  mode: "qi_flow",
+  layer: "skeleton",
   data: null,
 };
 
@@ -32,7 +34,7 @@ async function boot() {
     const response = await fetch(DATA_URL);
     state.data = await response.json();
     els.title.textContent = state.data.title || "单作品书法导览";
-    render();
+    setMode(state.mode);
   } catch (error) {
     els.fallback.hidden = false;
     console.error(error);
@@ -91,7 +93,10 @@ function positionOverlay() {
 
 function renderOverlay() {
   els.overlay.replaceChildren();
-  if (!state.data || state.mode === "original" || state.mode === "layers") return;
+  if (!state.data || state.mode === "original" || state.mode === "layers") {
+    showEmptyPanel();
+    return;
+  }
 
   const visible = state.data.annotations.filter((item) => item.type === state.mode);
   visible.forEach((item) => {
@@ -99,6 +104,11 @@ function renderOverlay() {
     if (item.type === "void_solid") renderBox(item, "voidBox");
     if (item.type === "brush_ink") renderBox(item, "inkBox");
   });
+  if (visible[0]) {
+    selectAnnotation(visible[0]);
+  } else {
+    showEmptyPanel();
+  }
 }
 
 function renderPath(item) {
@@ -109,7 +119,8 @@ function renderPath(item) {
   });
   path.addEventListener("click", () => selectAnnotation(item));
   els.overlay.append(path);
-  addLabel(item.label, 6, 9);
+  const labelPosition = pathLabelPosition(item.path);
+  addLabel(item.label, labelPosition.x, labelPosition.y);
 }
 
 function renderBox(item, className) {
@@ -143,6 +154,22 @@ function selectAnnotation(item) {
   els.formal.textContent = item.formal;
   els.perception.textContent = item.perception;
   els.aesthetic.textContent = item.aesthetic;
+}
+
+function showEmptyPanel() {
+  els.annotationTitle.textContent = "选择一个标注";
+  els.formal.textContent = "切换到气脉、虚实或笔墨模式后，点击图中的路径或区域查看人工解释。";
+  els.perception.textContent = "这里会显示普通观众可能产生的观看感受。";
+  els.aesthetic.textContent = "这里会说明该观察如何帮助理解气脉、虚实或笔墨节奏。";
+}
+
+function pathLabelPosition(path) {
+  const numbers = path.match(/-?\d+(?:\.\d+)?/g)?.map(Number) || [];
+  if (numbers.length < 2) return { x: 6, y: 9 };
+  return {
+    x: Math.max(2, Math.min(94, numbers[0] + 1.5)),
+    y: Math.max(4, Math.min(96, numbers[1] - 2)),
+  };
 }
 
 function speakGuide() {
