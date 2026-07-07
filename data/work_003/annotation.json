@@ -18,7 +18,7 @@
       "type": "qi_flow",
       "label": "气脉连贯",
       "evidenceLayers": ["original", "skeleton"],
-      "path": "M 58 72 C 56 79, 59 84, 62 90",
+      "path": "M 56.6 56 C 56.8 64, 57.2 72, 58.2 79 C 59.0 84, 60.0 88, 61.0 92",
       "formal": "右往左数第十二列底部“宋”“至”附近，上一字的收笔方向向左带出，下一字又从相近位置向右起笔，形成方向上的承接。",
       "perception": "观看时会觉得上下两个字之间更连贯自然，像是上一处笔势把下一处带出来。",
       "aesthetic": "这可以帮助理解气脉中的连贯性：气脉不一定来自真实连笔，也可以由方向承接和藕断丝连的墨迹趋势体现。"
@@ -28,7 +28,7 @@
       "type": "qi_flow",
       "label": "形断势连",
       "evidenceLayers": ["original", "skeleton", "binary"],
-      "path": "M 68 24 C 70 36, 68 50, 66 64",
+      "path": "M 67.4 14 C 68.0 26, 67.6 38, 66.9 50 C 66.6 58, 66.2 64, 65.8 70",
       "formal": "右往左数第九列“震”“旦”“之”“来”附近，几处笔画之间有断开，但收笔方向和下一处起笔位置比较接近，形成可追踪的视觉路线。",
       "perception": "观看时会感觉笔势没有完全停住，而是从上一处继续带到下一处。",
       "aesthetic": "这帮助理解形断势连：墨迹没有真实连接，但视觉上的运动趋势仍然延续。"
@@ -38,7 +38,7 @@
       "type": "void_solid",
       "label": "疏密平衡",
       "evidenceLayers": ["original", "binary", "voidCandidates"],
-      "box": { "x": 78, "y": 8, "width": 10, "height": 78 },
+      "box": { "x": 81.2, "y": 10, "width": 1.8, "height": 72 },
       "formal": "右侧题名区和正文之间出现较明显的空白过渡，旁边又有红色印章和较疏的文字。",
       "perception": "这块空白让右侧边界不显得拥挤，也让正文和题名区形成分隔。",
       "aesthetic": "这说明空白参与了章法组织，帮助形成正文密集与题名疏朗之间的虚实对比。"
@@ -48,7 +48,7 @@
       "type": "void_solid",
       "label": "字间呼吸",
       "evidenceLayers": ["original", "binary", "voidCandidates"],
-      "box": { "x": 18, "y": 12, "width": 5, "height": 76 },
+      "box": { "x": 22.2, "y": 11, "width": 1.8, "height": 73 },
       "formal": "两列字之间有一条连续但不宽的空白，和左右墨迹形成对照。",
       "perception": "观看时会觉得密集文字之间仍有缝隙和呼吸，不是一整片黑色压在一起。",
       "aesthetic": "这可以帮助理解虚实关系：空白不是背景，而是参与行列节奏和阅读停顿。"
@@ -58,7 +58,7 @@
       "type": "brush_ink",
       "label": "笔墨浓",
       "evidenceLayers": ["original", "strokeWidth", "inkDensity"],
-      "box": { "x": 88, "y": 6, "width": 8, "height": 32 },
+      "box": { "x": 88.8, "y": 7, "width": 5.0, "height": 28 },
       "formal": "右侧题名字体较大，部分笔画在粗细和墨色上比正文更醒目。",
       "perception": "观看时题名区域会先吸引注意，形成和正文小字不同的视觉重量。",
       "aesthetic": "这可以作为笔墨轻重线索，说明粗细、浓淡和字形大小会共同影响画面的节奏，但不能写成真实力道检测。"

@@ -1,5 +1,6 @@
 const params = new URLSearchParams(window.location.search);
 const workId = params.get("work") || "work_003";
+const initialSelectId = params.get("select");
 const DATA_URL = `../data/${workId}/annotation.json`;
 const IMAGE_BASE = `../data/${workId}/`;
 
@@ -92,6 +93,11 @@ async function boot() {
     const response = await fetch(DATA_URL);
     if (!response.ok) throw new Error(`无法加载 ${DATA_URL}: ${response.status}`);
     state.data = await response.json();
+    if (initialSelectId && state.data.annotations?.some((item) => item.id === initialSelectId)) {
+      state.selectedId = initialSelectId;
+      const item = state.data.annotations.find((entry) => entry.id === initialSelectId);
+      state.filter = item.type;
+    }
     els.title.textContent = state.data.title || "单作品书法导览";
     renderAll();
     loadAnalysisCanvases();
@@ -146,6 +152,7 @@ function renderImage() {
   els.image.onload = () => {
     els.fallback.hidden = true;
     positionOverlay();
+    renderOverlay();
   };
   document.querySelectorAll(".modeButton").forEach((button) => {
     button.classList.toggle("active", button.dataset.mode === state.mode);
@@ -198,19 +205,29 @@ function renderOverlay() {
 }
 
 function renderPath(item) {
-  const halo = svg("path", { d: item.path, class: "qiHalo" });
-  const path = svg("path", { d: item.path, class: "annotationShape qiPath", tabindex: "0" });
+  const pixelPath = percentPathToPixels(item.path);
+  const halo = svg("path", { d: pixelPath, class: "qiHalo" });
+  const path = svg("path", { d: pixelPath, class: "annotationShape qiPath", tabindex: "0" });
   els.overlay.append(halo, path);
+  pathPoints(item.path).forEach((point, index, points) => {
+    if (index !== 0 && index !== points.length - 1) return;
+    els.overlay.append(svg("circle", {
+      cx: percentXToPixel(point.x),
+      cy: percentYToPixel(point.y),
+      r: index === 0 ? 8 : 10,
+      class: index === 0 ? "qiDot qiStart" : "qiDot qiEnd",
+    }));
+  });
 }
 
 function renderBox(item, className) {
   if (!item.box) return;
   const rect = svg("rect", {
-    x: item.box.x,
-    y: item.box.y,
-    width: item.box.width,
-    height: item.box.height,
-    rx: 0.8,
+    x: percentXToPixel(item.box.x),
+    y: percentYToPixel(item.box.y),
+    width: percentXToPixel(item.box.width),
+    height: percentYToPixel(item.box.height),
+    rx: 6,
     class: `annotationShape ${className}`,
     tabindex: "0",
   });
@@ -314,6 +331,9 @@ function setStepButtonsDisabled(disabled) {
 function positionOverlay() {
   const imageRect = els.image.getBoundingClientRect();
   const shellRect = els.image.parentElement.getBoundingClientRect();
+  if (els.image.naturalWidth && els.image.naturalHeight) {
+    els.overlay.setAttribute("viewBox", `0 0 ${els.image.naturalWidth} ${els.image.naturalHeight}`);
+  }
   els.overlay.style.left = `${imageRect.left - shellRect.left}px`;
   els.overlay.style.top = `${imageRect.top - shellRect.top}px`;
   els.overlay.style.width = `${imageRect.width}px`;
@@ -384,10 +404,10 @@ function analyzeProbe(pixelX, pixelY, percentX, percentY) {
     percentX,
     percentY,
     box: {
-      x: clamp(percentX - 4.5, 0, 91),
-      y: clamp(percentY - 4.5, 0, 91),
-      width: 9,
-      height: 9,
+      x: clamp(percentX - 3.2, 0, 93.6),
+      y: clamp(percentY - 7.5, 0, 85),
+      width: 6.4,
+      height: 15,
     },
     sample,
     inkRatio,
@@ -490,25 +510,25 @@ function renderProbeMark() {
   if (!state.probe) return;
   const { box, percentX, percentY } = state.probe;
   const rect = svg("rect", {
-    x: box.x,
-    y: box.y,
-    width: box.width,
-    height: box.height,
-    rx: 0.4,
+    x: percentXToPixel(box.x),
+    y: percentYToPixel(box.y),
+    width: percentXToPixel(box.width),
+    height: percentYToPixel(box.height),
+    rx: 6,
     class: "probeBox",
   });
   const hLine = svg("line", {
-    x1: Math.max(0, percentX - 6),
-    y1: percentY,
-    x2: Math.min(100, percentX + 6),
-    y2: percentY,
+    x1: percentXToPixel(Math.max(0, percentX - 4.2)),
+    y1: percentYToPixel(percentY),
+    x2: percentXToPixel(Math.min(100, percentX + 4.2)),
+    y2: percentYToPixel(percentY),
     class: "probeCross",
   });
   const vLine = svg("line", {
-    x1: percentX,
-    y1: Math.max(0, percentY - 6),
-    x2: percentX,
-    y2: Math.min(100, percentY + 6),
+    x1: percentXToPixel(percentX),
+    y1: percentYToPixel(Math.max(0, percentY - 9)),
+    x2: percentXToPixel(percentX),
+    y2: percentYToPixel(Math.min(100, percentY + 9)),
     class: "probeCross",
   });
   els.overlay.append(rect, hLine, vLine);
@@ -555,7 +575,7 @@ function setReflectionTask(task) {
 
 function whereText(item) {
   if (item.type === "qi_flow") return "看左侧被点亮的红色路径：它不是笔顺还原，而是人工确认的观看趋势。";
-  if (item.type === "void_solid") return "看左侧被轻微罩出的空白区域：重点是空白如何参与结构。";
+  if (item.type === "void_solid") return "看左侧被轻微罩出的绿色窄带：重点是空白如何参与结构和节奏。";
   if (item.type === "brush_ink") return "看左侧被点亮的笔墨区域：它提示粗细、浓淡或视觉重量。";
   return "看左侧当前高亮位置。";
 }
@@ -581,6 +601,41 @@ function luminance(r, g, b) {
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
+}
+
+function naturalWidth() {
+  return els.image.naturalWidth || state.layerCanvases.original?.canvas.width || 100;
+}
+
+function naturalHeight() {
+  return els.image.naturalHeight || state.layerCanvases.original?.canvas.height || 100;
+}
+
+function percentXToPixel(value) {
+  return (value / 100) * naturalWidth();
+}
+
+function percentYToPixel(value) {
+  return (value / 100) * naturalHeight();
+}
+
+function percentPathToPixels(path) {
+  let index = 0;
+  return path.replace(/-?\d+(?:\.\d+)?/g, (match) => {
+    const value = Number(match);
+    const converted = index % 2 === 0 ? percentXToPixel(value) : percentYToPixel(value);
+    index += 1;
+    return Number(converted.toFixed(2)).toString();
+  });
+}
+
+function pathPoints(path) {
+  const numbers = path.match(/-?\d+(?:\.\d+)?/g)?.map(Number) || [];
+  const points = [];
+  for (let i = 0; i < numbers.length - 1; i += 2) {
+    points.push({ x: numbers[i], y: numbers[i + 1] });
+  }
+  return points;
 }
 
 function speakGuide() {

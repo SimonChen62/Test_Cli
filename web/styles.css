@@ -228,42 +228,56 @@ h3 {
 .qiHalo {
   fill: none;
   stroke: rgba(179, 59, 46, 0.2);
-  stroke-width: 4.4;
+  stroke-width: 18;
   stroke-linecap: round;
 }
 
 .qiPath {
   fill: none;
   stroke: var(--qi);
-  stroke-width: 1.2;
+  stroke-width: 7;
   stroke-linecap: round;
-  stroke-dasharray: 180;
-  animation: drawPath 2.3s ease-in-out infinite;
+  stroke-linejoin: round;
+}
+
+.qiDot {
+  fill: var(--qi);
+  stroke: var(--surface);
+  stroke-width: 3;
+  pointer-events: none;
+}
+
+.qiStart {
+  opacity: 0.78;
+}
+
+.qiEnd {
+  opacity: 0.98;
 }
 
 .voidBox {
   fill: rgba(40, 116, 91, 0.18);
   stroke: var(--void);
-  stroke-width: 0.55;
+  stroke-width: 5;
 }
 
 .inkBox {
   fill: rgba(154, 106, 32, 0.18);
   stroke: var(--brush);
-  stroke-width: 0.55;
+  stroke-width: 5;
 }
 
 .probeBox {
   fill: rgba(45, 95, 127, 0.08);
   stroke: var(--probe);
-  stroke-width: 0.55;
-  stroke-dasharray: 1.4 1;
+  stroke-width: 5;
+  stroke-dasharray: 12 8;
   pointer-events: none;
 }
 
 .probeCross {
   stroke: var(--probe);
-  stroke-width: 0.32;
+  stroke-width: 3;
   stroke-linecap: round;
   pointer-events: none;
 }
