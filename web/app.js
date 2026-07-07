@@ -147,8 +147,6 @@ function renderPath(item) {
   const halo = svg("path", { d: item.path, class: "qiHalo" });
   const path = svg("path", { d: item.path, class: "annotationShape qiPath", tabindex: "0" });
   els.overlay.append(halo, path);
-  const labelPosition = pathLabelPosition(item.path);
-  addLabel(item.label, labelPosition.x, labelPosition.y);
 }
 
 function renderBox(item, className) {
@@ -163,7 +161,6 @@ function renderBox(item, className) {
     tabindex: "0",
   });
   els.overlay.append(rect);
-  addLabel(item.label, item.box.x, Math.max(4, item.box.y - 2));
 }
 
 function renderDetail() {
@@ -445,7 +442,7 @@ function renderProbePanel() {
   const probe = state.probe;
   if (!probe) {
     els.probeTitle.textContent = "点击图像任意位置";
-    els.probeSummary.textContent = "系统会读取附近局部的墨迹、留白、粗细和墨色线索，只生成候选提示。";
+    els.probeSummary.textContent = "只给候选线索，不给审美结论。";
     els.inkMetric.textContent = "--";
     els.voidMetric.textContent = "--";
     els.strokeMetric.textContent = "--";
@@ -454,7 +451,7 @@ function renderProbePanel() {
     return;
   }
   els.probeTitle.textContent = `局部 ${Math.round(probe.percentX)}%, ${Math.round(probe.percentY)}%`;
-  els.probeSummary.textContent = "以下是算法辅助观察，不是审美结论。请结合原作和人工导览继续判断。";
+  els.probeSummary.textContent = "算法辅助观察，请结合原作判断。";
   els.inkMetric.textContent = formatPercent(probe.inkRatio);
   els.voidMetric.textContent = formatPercent(probe.voidRatio);
   els.strokeMetric.textContent = scoreLabel(probe.strokeVariation);
@@ -496,21 +493,6 @@ function luminance(r, g, b) {
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
-}
-
-function addLabel(text, x, y) {
-  const label = svg("text", { x, y, class: "shapeLabel" });
-  label.textContent = text;
-  els.overlay.append(label);
-}
-
-function pathLabelPosition(path) {
-  const numbers = path.match(/-?\d+(?:\.\d+)?/g)?.map(Number) || [];
-  if (numbers.length < 2) return { x: 6, y: 9 };
-  return {
-    x: Math.max(2, Math.min(94, numbers[0] + 1.5)),
-    y: Math.max(4, Math.min(96, numbers[1] - 2)),
-  };
 }
 
 function speakGuide() {
