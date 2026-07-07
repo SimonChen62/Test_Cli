@@ -340,17 +340,18 @@ h3 {
 }
 
 .probeBox {
-  fill: rgba(45, 95, 127, 0.08);
+  fill: rgba(45, 95, 127, 0.06);
   stroke: var(--probe);
   stroke-width: 5;
-  stroke-dasharray: 12 8;
+  stroke-dasharray: 16 10;
   pointer-events: none;
 }
 
 .probeCross {
   stroke: var(--probe);
-  stroke-width: 3;
+  stroke-width: 2;
   stroke-linecap: round;
+  opacity: 0.72;
   pointer-events: none;
 }
 

@@ -1,6 +1,7 @@
 const params = new URLSearchParams(window.location.search);
 const workId = params.get("work") || "work_003";
 const initialSelectId = params.get("select");
+const initialProbe = params.get("probe");
 const DATA_URL = `../data/${workId}/annotation.json`;
 const IMAGE_BASE = `../data/${workId}/`;
 const FIRST_LOOK_STORAGE_KEY = `callilens-first-look:${workId}`;
@@ -115,11 +116,25 @@ async function boot() {
     els.title.textContent = state.data.title || "单作品书法导览";
     renderAll();
     loadAnalysisCanvases();
+    applyInitialProbe();
   } catch (error) {
     els.fallback.hidden = false;
     showEmptyDetail("数据加载失败", error.message);
     console.error(error);
   }
+}
+
+function applyInitialProbe() {
+  if (!initialProbe || !els.image.naturalWidth || !els.image.naturalHeight) return;
+  const [x, y] = initialProbe.split(",").map(Number);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+  const percentX = clamp(x, 0, 100);
+  const percentY = clamp(y, 0, 100);
+  const pixelX = Math.round((percentX / 100) * els.image.naturalWidth);
+  const pixelY = Math.round((percentY / 100) * els.image.naturalHeight);
+  state.probe = analyzeProbe(pixelX, pixelY, percentX, percentY);
+  renderOverlay();
+  renderProbePanel();
 }
 
 function annotations() {
@@ -188,6 +203,7 @@ function renderImage() {
     els.fallback.hidden = true;
     positionOverlay();
     renderOverlay();
+    applyInitialProbe();
   };
   document.querySelectorAll(".modeButton").forEach((button) => {
     button.classList.toggle("active", button.dataset.mode === state.mode);
@@ -426,10 +442,12 @@ function analyzeProbe(pixelX, pixelY, percentX, percentY) {
   const original = state.layerCanvases.original;
   const width = original?.canvas.width || els.image.naturalWidth;
   const height = original?.canvas.height || els.image.naturalHeight;
-  const windowSize = clamp(Math.round(Math.min(width, height) * 0.12), 72, 220);
-  const x = clamp(Math.round(pixelX - windowSize / 2), 0, Math.max(0, width - windowSize));
-  const y = clamp(Math.round(pixelY - windowSize / 2), 0, Math.max(0, height - windowSize));
-  const sample = { x, y, width: windowSize, height: windowSize };
+  const base = Math.min(width, height);
+  const sampleWidth = clamp(Math.round(base * 0.08), 42, 120);
+  const sampleHeight = clamp(Math.round(base * 0.34), 150, 360);
+  const x = clamp(Math.round(pixelX - sampleWidth / 2), 0, Math.max(0, width - sampleWidth));
+  const y = clamp(Math.round(pixelY - sampleHeight / 2), 0, Math.max(0, height - sampleHeight));
+  const sample = { x, y, width: sampleWidth, height: sampleHeight };
 
   const inkRatio = measureInkRatio(sample);
   const voidRatio = 1 - inkRatio;
@@ -443,10 +461,10 @@ function analyzeProbe(pixelX, pixelY, percentX, percentY) {
     percentX,
     percentY,
     box: {
-      x: clamp(percentX - 3.2, 0, 93.6),
-      y: clamp(percentY - 7.5, 0, 85),
-      width: 6.4,
-      height: 15,
+      x: (x / width) * 100,
+      y: (y / height) * 100,
+      width: (sampleWidth / width) * 100,
+      height: (sampleHeight / height) * 100,
     },
     sample,
     inkRatio,
@@ -577,7 +595,7 @@ function renderProbePanel() {
   const probe = state.probe;
   if (!probe) {
     els.probeTitle.textContent = "点击图像任意位置";
-    els.probeSummary.textContent = "只给候选线索，不给审美结论。";
+    els.probeSummary.textContent = "按书法竖列取样，只给候选线索。";
     els.inkMetric.textContent = "--";
     els.voidMetric.textContent = "--";
     els.strokeMetric.textContent = "--";
@@ -586,7 +604,7 @@ function renderProbePanel() {
     return;
   }
   els.probeTitle.textContent = `局部 ${Math.round(probe.percentX)}%, ${Math.round(probe.percentY)}%`;
-  els.probeSummary.textContent = "算法辅助观察，请结合原作判断。";
+  els.probeSummary.textContent = "竖向取样结果，请结合原作判断。";
   els.inkMetric.textContent = formatPercent(probe.inkRatio);
   els.voidMetric.textContent = formatPercent(probe.voidRatio);
   els.strokeMetric.textContent = scoreLabel(probe.strokeVariation);
