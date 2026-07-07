@@ -3,6 +3,7 @@ const workId = params.get("work") || "work_003";
 const initialSelectId = params.get("select");
 const DATA_URL = `../data/${workId}/annotation.json`;
 const IMAGE_BASE = `../data/${workId}/`;
+const FIRST_LOOK_STORAGE_KEY = `callilens-first-look:${workId}`;
 
 const typeMeta = {
   qi_flow: { name: "气脉", markClass: "qiPath", recommendedLayer: "original" },
@@ -58,7 +59,11 @@ const state = {
   probe: null,
   layerCanvases: {},
   layout: localStorage.getItem("callilens-layout") || "portrait",
+  firstLook: readFirstLook(),
+  introComplete: false,
 };
+
+state.introComplete = firstLookComplete(state.firstLook);
 
 const els = {
   app: document.querySelector(".app"),
@@ -86,6 +91,15 @@ const els = {
   densityMetric: document.querySelector("#densityMetric"),
   probeCandidate: document.querySelector("#probeCandidate"),
   reflectionInput: document.querySelector("#reflectionInput"),
+  firstLookForm: document.querySelector("#firstLookForm"),
+  firstOverall: document.querySelector("#firstOverall"),
+  firstMotion: document.querySelector("#firstMotion"),
+  firstDensity: document.querySelector("#firstDensity"),
+  firstLookError: document.querySelector("#firstLookError"),
+  editFirstLook: document.querySelector("#editFirstLookButton"),
+  summaryOverall: document.querySelector("#summaryOverall"),
+  summaryMotion: document.querySelector("#summaryMotion"),
+  summaryDensity: document.querySelector("#summaryDensity"),
 };
 
 async function boot() {
@@ -122,7 +136,9 @@ function selectedAnnotation() {
 }
 
 function renderAll() {
+  enforceIntroGate();
   renderLayout();
+  renderFirstLook();
   renderImage();
   renderGuideList();
   renderOverlay();
@@ -135,10 +151,29 @@ function renderLayout() {
   els.app.dataset.layout = layout;
   els.app.dataset.mode = state.mode;
   els.app.dataset.hasSelection = state.selectedId ? "true" : "false";
+  els.app.dataset.introComplete = state.introComplete ? "true" : "false";
   document.querySelectorAll(".layoutButton").forEach((button) => {
     button.classList.toggle("active", button.dataset.layout === layout);
   });
   requestAnimationFrame(positionOverlay);
+}
+
+function enforceIntroGate() {
+  if (state.introComplete) return;
+  state.layer = "original";
+  state.mode = "original";
+  state.filter = "all";
+  state.selectedId = null;
+  state.probe = null;
+}
+
+function renderFirstLook() {
+  els.firstOverall.value = state.firstLook.overall;
+  els.firstMotion.value = state.firstLook.motion;
+  els.firstDensity.value = state.firstLook.density;
+  els.summaryOverall.textContent = state.firstLook.overall || "尚未填写";
+  els.summaryMotion.textContent = state.firstLook.motion || "尚未填写";
+  els.summaryDensity.textContent = state.firstLook.density || "尚未填写";
 }
 
 function renderImage() {
@@ -262,6 +297,7 @@ function showEmptyDetail(title, message) {
 }
 
 function selectItem(id) {
+  if (!state.introComplete) return;
   state.selectedId = id;
   const item = selectedAnnotation();
   if (item) {
@@ -271,6 +307,7 @@ function selectItem(id) {
 }
 
 function setMode(mode) {
+  if (!state.introComplete) return;
   const nextMode = modeMeta[mode] ? mode : "original";
   const config = modeMeta[nextMode];
   state.mode = nextMode;
@@ -301,6 +338,7 @@ function stepSelection(delta) {
 }
 
 function setFilter(filter) {
+  if (!state.introComplete) return;
   state.filter = filter;
   state.mode = "original";
   const selected = selectedAnnotation();
@@ -363,6 +401,7 @@ function loadAnalysisCanvases() {
 }
 
 function handleImageClick(event) {
+  if (!state.introComplete) return;
   if (!state.data || !els.image.naturalWidth || !els.image.naturalHeight) return;
   const imageRect = els.image.getBoundingClientRect();
   if (
@@ -573,6 +612,60 @@ function setReflectionTask(task) {
   els.reflectionInput.focus();
 }
 
+function readFirstLook() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(FIRST_LOOK_STORAGE_KEY) || "{}");
+    return {
+      overall: stored.overall || "",
+      motion: stored.motion || "",
+      density: stored.density || "",
+    };
+  } catch {
+    return { overall: "", motion: "", density: "" };
+  }
+}
+
+function collectFirstLook() {
+  return {
+    overall: els.firstOverall.value.trim(),
+    motion: els.firstMotion.value.trim(),
+    density: els.firstDensity.value.trim(),
+  };
+}
+
+function firstLookComplete(firstLook) {
+  return ["overall", "motion", "density"].every((key) => firstLook[key]?.trim());
+}
+
+function handleFirstLookSubmit(event) {
+  event.preventDefault();
+  const firstLook = collectFirstLook();
+  if (!firstLookComplete(firstLook)) {
+    els.firstLookError.hidden = false;
+    return;
+  }
+  state.firstLook = firstLook;
+  state.introComplete = true;
+  localStorage.setItem(FIRST_LOOK_STORAGE_KEY, JSON.stringify(firstLook));
+  els.firstLookError.hidden = true;
+  renderAll();
+  renderFilterButtons();
+}
+
+function editFirstLook() {
+  state.firstLook = { overall: "", motion: "", density: "" };
+  state.introComplete = false;
+  state.selectedId = null;
+  state.probe = null;
+  state.layer = "original";
+  state.mode = "original";
+  state.filter = "all";
+  localStorage.removeItem(FIRST_LOOK_STORAGE_KEY);
+  renderAll();
+  renderFilterButtons();
+  requestAnimationFrame(() => els.firstOverall.focus());
+}
+
 function whereText(item) {
   if (item.type === "qi_flow") return "看左侧被点亮的红色路径：它不是笔顺还原，而是人工确认的观看趋势。";
   if (item.type === "void_solid") return "看左侧被轻微罩出的绿色窄带：重点是空白如何参与结构和节奏。";
@@ -664,6 +757,13 @@ document.querySelectorAll(".layoutButton").forEach((button) => {
   button.addEventListener("click", () => setLayout(button.dataset.layout));
 });
 
+els.firstLookForm.addEventListener("submit", handleFirstLookSubmit);
+els.editFirstLook.addEventListener("click", editFirstLook);
+[els.firstOverall, els.firstMotion, els.firstDensity].forEach((input) => {
+  input.addEventListener("input", () => {
+    els.firstLookError.hidden = true;
+  });
+});
 els.clear.addEventListener("click", clearSelection);
 els.speak.addEventListener("click", speakGuide);
 els.prev.addEventListener("click", () => stepSelection(-1));
