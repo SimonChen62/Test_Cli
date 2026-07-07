@@ -108,7 +108,7 @@ h3 {
   font-size: 13px;
 }
 
-.layerButton,
+.modeButton,
 .filterButton,
 .stepButtons button {
   min-height: 34px;
@@ -120,7 +120,7 @@ h3 {
   padding: 7px 11px;
 }
 
-.layerButton.active,
+.modeButton.active,
 .filterButton.active {
   border-color: var(--ink);
   background: var(--ink);
@@ -374,6 +374,28 @@ h3 {
   font: inherit;
   line-height: 1.55;
   padding: 10px;
+}
+
+.taskList {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 9px;
+}
+
+.taskButton {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 250, 240, 0.84);
+  color: var(--ink);
+  cursor: pointer;
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.taskButton.active {
+  border-color: var(--probe);
+  background: rgba(45, 95, 127, 0.08);
 }
 
 .reflectionPanel textarea:focus,

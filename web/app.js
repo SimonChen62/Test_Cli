@@ -9,8 +9,48 @@ const typeMeta = {
   brush_ink: { name: "笔墨", markClass: "inkBox", recommendedLayer: "original" },
 };
 
+const modeMeta = {
+  original: {
+    layer: "original",
+    filter: "all",
+    detail: ["先看原作整体", "不急着看答案。先判断哪里有运动感，哪里疏朗或紧密。"],
+  },
+  qi: {
+    layer: "skeleton",
+    filter: "qi_flow",
+    detail: ["气脉模式", "骨架图帮助观察笔画方向和上下承接；红色路径是人工确认的观看趋势。"],
+  },
+  solid: {
+    layer: "binary",
+    filter: "all",
+    detail: ["实：墨迹", "黑白图把墨迹从背景中分离出来，适合看密集程度、字距和结构重心。"],
+  },
+  void: {
+    layer: "voidCandidates",
+    filter: "void_solid",
+    detail: ["虚：留白", "留白候选图帮助定位字间、列间和题名旁的空白。"],
+  },
+  relation: {
+    layer: "original",
+    filter: "void_solid",
+    detail: ["虚实关系", "回到原作上看空白和墨迹如何互相组织，而不是只看空白本身。"],
+  },
+  ink: {
+    layer: "inkDensity",
+    filter: "brush_ink",
+    detail: ["笔墨模式", "墨色和粗细图层只能提示视觉轻重，不能等同于真实书写力道。"],
+  },
+};
+
+const reflectionTasks = {
+  motion: "任务：指出一处你觉得最有运动感的位置，并说明是方向、距离还是转折让你这样判断。",
+  space: "任务：指出一块参与结构的空白，并说明它如何影响疏密、停顿或呼吸感。",
+  evidence: "任务：用“形式证据 -> 观看感受 -> 审美概念”的顺序解释一个观察点。",
+};
+
 const state = {
   layer: "original",
+  mode: "original",
   filter: "all",
   selectedId: null,
   data: null,
@@ -93,8 +133,8 @@ function renderImage() {
     els.fallback.hidden = true;
     positionOverlay();
   };
-  document.querySelectorAll(".layerButton").forEach((button) => {
-    button.classList.toggle("active", button.dataset.layer === state.layer);
+  document.querySelectorAll(".modeButton").forEach((button) => {
+    button.classList.toggle("active", button.dataset.mode === state.mode);
   });
 }
 
@@ -166,7 +206,8 @@ function renderBox(item, className) {
 function renderDetail() {
   const item = selectedAnnotation();
   if (!item) {
-    showEmptyDetail("先看原作整体", "右侧列表不是检测结果，而是少量代表性观察点。点击其中一项后，左侧才会点亮对应位置。");
+    const detail = modeMeta[state.mode]?.detail || modeMeta.original.detail;
+    showEmptyDetail(detail[0], detail[1]);
     setStepButtonsDisabled(true);
     return;
   }
@@ -198,11 +239,26 @@ function selectItem(id) {
   renderAll();
 }
 
+function setMode(mode) {
+  const nextMode = modeMeta[mode] ? mode : "original";
+  const config = modeMeta[nextMode];
+  state.mode = nextMode;
+  state.layer = config.layer;
+  state.filter = config.filter;
+  const matching = config.filter === "all" ? null : annotations().find((item) => item.type === config.filter);
+  state.selectedId = matching?.id || null;
+  renderAll();
+  renderFilterButtons();
+}
+
 function clearSelection() {
   state.selectedId = null;
   state.layer = "original";
+  state.mode = "original";
+  state.filter = "all";
   state.probe = null;
   renderAll();
+  renderFilterButtons();
 }
 
 function stepSelection(delta) {
@@ -215,19 +271,19 @@ function stepSelection(delta) {
 
 function setFilter(filter) {
   state.filter = filter;
+  state.mode = "original";
   const selected = selectedAnnotation();
   if (selected && filter !== "all" && selected.type !== filter) {
     state.selectedId = null;
   }
-  document.querySelectorAll(".filterButton").forEach((button) => {
-    button.classList.toggle("active", button.dataset.filter === filter);
-  });
   renderAll();
+  renderFilterButtons();
 }
 
-function setLayer(layer) {
-  state.layer = layer;
-  renderImage();
+function renderFilterButtons() {
+  document.querySelectorAll(".filterButton").forEach((button) => {
+    button.classList.toggle("active", button.dataset.filter === state.filter);
+  });
 }
 
 function setStepButtonsDisabled(disabled) {
@@ -465,6 +521,18 @@ function insertReflection(text) {
   els.reflectionInput.focus();
 }
 
+function setReflectionTask(task) {
+  const prompt = reflectionTasks[task] || reflectionTasks.motion;
+  els.reflectionInput.placeholder = prompt;
+  if (!els.reflectionInput.value.trim()) {
+    els.reflectionInput.value = `${prompt}\n`;
+  }
+  document.querySelectorAll(".taskButton").forEach((button) => {
+    button.classList.toggle("active", button.dataset.task === task);
+  });
+  els.reflectionInput.focus();
+}
+
 function whereText(item) {
   if (item.type === "qi_flow") return "看左侧被点亮的红色路径：它不是笔顺还原，而是人工确认的观看趋势。";
   if (item.type === "void_solid") return "看左侧被轻微罩出的空白区域：重点是空白如何参与结构。";
@@ -513,8 +581,8 @@ document.querySelectorAll(".filterButton").forEach((button) => {
   button.addEventListener("click", () => setFilter(button.dataset.filter));
 });
 
-document.querySelectorAll(".layerButton").forEach((button) => {
-  button.addEventListener("click", () => setLayer(button.dataset.layer));
+document.querySelectorAll(".modeButton").forEach((button) => {
+  button.addEventListener("click", () => setMode(button.dataset.mode));
 });
 
 els.clear.addEventListener("click", clearSelection);
@@ -524,6 +592,9 @@ els.next.addEventListener("click", () => stepSelection(1));
 els.canvasShell.addEventListener("click", handleImageClick);
 document.querySelectorAll(".reflectionChip").forEach((button) => {
   button.addEventListener("click", () => insertReflection(button.dataset.text));
+});
+document.querySelectorAll(".taskButton").forEach((button) => {
+  button.addEventListener("click", () => setReflectionTask(button.dataset.task));
 });
 window.addEventListener("resize", positionOverlay);
 

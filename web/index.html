@@ -20,14 +20,14 @@
           </div>
         </header>
 
-        <div class="evidenceBar" aria-label="证据图层">
-          <span>证据图层</span>
-          <button class="layerButton active" data-layer="original" type="button">原作</button>
-          <button class="layerButton" data-layer="skeleton" type="button">骨架</button>
-          <button class="layerButton" data-layer="binary" type="button">黑白</button>
-          <button class="layerButton" data-layer="voidCandidates" type="button">留白</button>
-          <button class="layerButton" data-layer="strokeWidth" type="button">粗细</button>
-          <button class="layerButton" data-layer="inkDensity" type="button">墨色</button>
+        <div class="evidenceBar" aria-label="观看模式">
+          <span>观看模式</span>
+          <button class="modeButton active" data-mode="original" type="button">原作</button>
+          <button class="modeButton" data-mode="qi" type="button">气脉</button>
+          <button class="modeButton" data-mode="solid" type="button">实：墨迹</button>
+          <button class="modeButton" data-mode="void" type="button">虚：留白</button>
+          <button class="modeButton" data-mode="relation" type="button">虚实关系</button>
+          <button class="modeButton" data-mode="ink" type="button">笔墨</button>
         </div>
 
         <div class="canvasShell" aria-label="作品查看器，点击图像可生成局部证据报告">
@@ -100,8 +100,13 @@
         </article>
 
         <article class="reflectionPanel">
-          <p class="eyebrow">我的观察</p>
-          <textarea id="reflectionInput" rows="4" placeholder="试着写：我看到的证据是什么？它让我想到气脉、虚实还是笔墨？"></textarea>
+          <p class="eyebrow">反思任务</p>
+          <div class="taskList" aria-label="反思任务列表">
+            <button class="taskButton active" type="button" data-task="motion">哪里最有运动感？</button>
+            <button class="taskButton" type="button" data-task="space">哪块空白参与结构？</button>
+            <button class="taskButton" type="button" data-task="evidence">你如何用证据解释？</button>
+          </div>
+          <textarea id="reflectionInput" rows="4" placeholder="先选一个任务，再用自己的话回答。"></textarea>
           <div class="reflectionChips" aria-label="快速插入观察句">
             <button class="reflectionChip" type="button" data-text="我看到上下笔画之间有方向承接，像是运动没有完全停住。">方向承接</button>
             <button class="reflectionChip" type="button" data-text="我看到密集墨迹旁边留出空白，让画面有呼吸感。">留白呼吸</button>
