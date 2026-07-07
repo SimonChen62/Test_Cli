@@ -74,12 +74,22 @@
           </div>
           <dl>
             <dt>整体感觉</dt>
-            <dd id="summaryOverall">尚未填写</dd>
+            <dd>
+              <span id="summaryOverall" class="summaryRead">尚未填写</span>
+              <textarea id="summaryOverallInput" class="summaryEditField" rows="3"></textarea>
+            </dd>
             <dt>最有运动感</dt>
-            <dd id="summaryMotion">尚未填写</dd>
+            <dd>
+              <span id="summaryMotion" class="summaryRead">尚未填写</span>
+              <textarea id="summaryMotionInput" class="summaryEditField" rows="3"></textarea>
+            </dd>
             <dt>疏朗或紧密</dt>
-            <dd id="summaryDensity">尚未填写</dd>
+            <dd>
+              <span id="summaryDensity" class="summaryRead">尚未填写</span>
+              <textarea id="summaryDensityInput" class="summaryEditField" rows="3"></textarea>
+            </dd>
           </dl>
+          <p id="summaryEditError" class="formError" hidden>请先写完三个问题，再保存。</p>
         </section>
 
         <div class="panelIntro">

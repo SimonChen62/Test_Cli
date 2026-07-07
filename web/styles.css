@@ -267,6 +267,28 @@ h3 {
   gap: 12px;
 }
 
+.summaryEditField {
+  display: none;
+  width: 100%;
+  resize: vertical;
+  min-height: 74px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  line-height: 1.55;
+  padding: 9px 10px;
+}
+
+.firstResponseSummary.editing .summaryRead {
+  display: none;
+}
+
+.firstResponseSummary.editing .summaryEditField {
+  display: block;
+}
+
 .canvasShell {
   position: relative;
   display: grid;

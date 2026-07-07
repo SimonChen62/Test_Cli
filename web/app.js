@@ -62,6 +62,7 @@ const state = {
   layout: localStorage.getItem("callilens-layout") || "portrait",
   firstLook: readFirstLook(),
   introComplete: false,
+  editingFirstLook: false,
 };
 
 state.introComplete = firstLookComplete(state.firstLook);
@@ -93,6 +94,7 @@ const els = {
   probeCandidate: document.querySelector("#probeCandidate"),
   reflectionInput: document.querySelector("#reflectionInput"),
   firstLookForm: document.querySelector("#firstLookForm"),
+  firstResponseSummary: document.querySelector("#firstResponseSummary"),
   firstOverall: document.querySelector("#firstOverall"),
   firstMotion: document.querySelector("#firstMotion"),
   firstDensity: document.querySelector("#firstDensity"),
@@ -101,6 +103,10 @@ const els = {
   summaryOverall: document.querySelector("#summaryOverall"),
   summaryMotion: document.querySelector("#summaryMotion"),
   summaryDensity: document.querySelector("#summaryDensity"),
+  summaryOverallInput: document.querySelector("#summaryOverallInput"),
+  summaryMotionInput: document.querySelector("#summaryMotionInput"),
+  summaryDensityInput: document.querySelector("#summaryDensityInput"),
+  summaryEditError: document.querySelector("#summaryEditError"),
 };
 
 async function boot() {
@@ -189,6 +195,11 @@ function renderFirstLook() {
   els.summaryOverall.textContent = state.firstLook.overall || "尚未填写";
   els.summaryMotion.textContent = state.firstLook.motion || "尚未填写";
   els.summaryDensity.textContent = state.firstLook.density || "尚未填写";
+  els.summaryOverallInput.value = state.firstLook.overall;
+  els.summaryMotionInput.value = state.firstLook.motion;
+  els.summaryDensityInput.value = state.firstLook.density;
+  els.firstResponseSummary.classList.toggle("editing", state.editingFirstLook);
+  els.editFirstLook.textContent = state.editingFirstLook ? "保存" : "修改";
 }
 
 function renderImage() {
@@ -651,6 +662,14 @@ function collectFirstLook() {
   };
 }
 
+function collectFirstLookSummary() {
+  return {
+    overall: els.summaryOverallInput.value.trim(),
+    motion: els.summaryMotionInput.value.trim(),
+    density: els.summaryDensityInput.value.trim(),
+  };
+}
+
 function firstLookComplete(firstLook) {
   return ["overall", "motion", "density"].every((key) => firstLook[key]?.trim());
 }
@@ -671,15 +690,25 @@ function handleFirstLookSubmit(event) {
 }
 
 function editFirstLook() {
-  state.introComplete = false;
-  state.selectedId = null;
-  state.probe = null;
-  state.layer = "original";
-  state.mode = "original";
-  state.filter = "all";
-  renderAll();
-  renderFilterButtons();
-  requestAnimationFrame(() => els.firstOverall.focus());
+  if (!state.editingFirstLook) {
+    state.editingFirstLook = true;
+    els.summaryEditError.hidden = true;
+    renderFirstLook();
+    requestAnimationFrame(() => els.summaryOverallInput.focus());
+    return;
+  }
+
+  const firstLook = collectFirstLookSummary();
+  if (!firstLookComplete(firstLook)) {
+    els.summaryEditError.hidden = false;
+    return;
+  }
+
+  state.firstLook = firstLook;
+  state.editingFirstLook = false;
+  localStorage.setItem(FIRST_LOOK_STORAGE_KEY, JSON.stringify(firstLook));
+  els.summaryEditError.hidden = true;
+  renderFirstLook();
 }
 
 function whereText(item) {
@@ -778,6 +807,11 @@ els.editFirstLook.addEventListener("click", editFirstLook);
 [els.firstOverall, els.firstMotion, els.firstDensity].forEach((input) => {
   input.addEventListener("input", () => {
     els.firstLookError.hidden = true;
+  });
+});
+[els.summaryOverallInput, els.summaryMotionInput, els.summaryDensityInput].forEach((input) => {
+  input.addEventListener("input", () => {
+    els.summaryEditError.hidden = true;
   });
 });
 els.clear.addEventListener("click", clearSelection);
