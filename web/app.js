@@ -275,6 +275,11 @@ function renderOverlay() {
 }
 
 function renderQiRegion(item) {
+  if (item.box) {
+    renderEllipseBox(item, "qiRegion");
+    return;
+  }
+
   const points = pathPoints(item.path);
   if (!points.length) return;
 
@@ -290,6 +295,20 @@ function renderQiRegion(item) {
     rx: percentXToPixel(region.width / 2),
     ry: percentYToPixel(region.height / 2),
     class: "annotationShape qiRegion",
+    tabindex: "0",
+  });
+  els.overlay.append(ellipse);
+}
+
+function renderEllipseBox(item, className) {
+  const cx = item.box.x + item.box.width / 2;
+  const cy = item.box.y + item.box.height / 2;
+  const ellipse = svg("ellipse", {
+    cx: percentXToPixel(cx),
+    cy: percentYToPixel(cy),
+    rx: percentXToPixel(item.box.width / 2),
+    ry: percentYToPixel(item.box.height / 2),
+    class: `annotationShape ${className}`,
     tabindex: "0",
   });
   els.overlay.append(ellipse);
