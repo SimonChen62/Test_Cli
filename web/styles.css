@@ -166,6 +166,7 @@ h3 {
 }
 
 .app[data-intro-complete="true"] .originalPrompt,
+.app[data-intro-complete="false"] .returnFirstLookButton,
 .app[data-intro-complete="false"] .evidenceBar,
 .app[data-intro-complete="false"] .firstResponseSummary,
 .app[data-intro-complete="false"] .panelIntro,

@@ -95,6 +95,7 @@ const els = {
   reflectionInput: document.querySelector("#reflectionInput"),
   firstLookForm: document.querySelector("#firstLookForm"),
   firstResponseSummary: document.querySelector("#firstResponseSummary"),
+  returnFirstLook: document.querySelector("#returnFirstLookButton"),
   firstOverall: document.querySelector("#firstOverall"),
   firstMotion: document.querySelector("#firstMotion"),
   firstDensity: document.querySelector("#firstDensity"),
@@ -716,6 +717,26 @@ function editFirstLook() {
   renderFirstLook();
 }
 
+function returnToFirstLook() {
+  if (state.editingFirstLook) {
+    state.firstLook = collectFirstLookSummary();
+    localStorage.setItem(FIRST_LOOK_STORAGE_KEY, JSON.stringify(state.firstLook));
+  }
+  state.editingFirstLook = false;
+  state.introComplete = false;
+  state.selectedId = null;
+  state.probe = null;
+  state.layer = "original";
+  state.mode = "original";
+  state.filter = "all";
+  els.firstLookError.hidden = true;
+  els.summaryEditError.hidden = true;
+  renderAll();
+  renderFilterButtons();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  requestAnimationFrame(() => els.firstOverall.focus());
+}
+
 function whereText(item) {
   const hintByType = {
     qi_flow: "看左侧虚线圈出的观察区域：它不是笔顺还原，也不是自动判定气脉，只提示这里适合观察上下承接。",
@@ -823,6 +844,7 @@ document.querySelectorAll(".layoutButton").forEach((button) => {
 
 els.firstLookForm.addEventListener("submit", handleFirstLookSubmit);
 els.editFirstLook.addEventListener("click", editFirstLook);
+els.returnFirstLook.addEventListener("click", returnToFirstLook);
 [els.firstOverall, els.firstMotion, els.firstDensity].forEach((input) => {
   input.addEventListener("input", () => {
     els.firstLookError.hidden = true;
