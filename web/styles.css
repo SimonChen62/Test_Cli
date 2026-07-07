@@ -52,7 +52,35 @@ button {
 
 .topActions {
   display: flex;
+  align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
+}
+
+.layoutSwitch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(54px, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 250, 240, 0.74);
+}
+
+.layoutButton {
+  min-height: 32px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  padding: 5px 10px;
+}
+
+.layoutButton.active {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--surface);
 }
 
 .eyebrow {
@@ -233,6 +261,77 @@ h3 {
   max-height: calc(100vh - 40px);
   border-left: 1px solid var(--line);
   padding-left: 20px;
+}
+
+.app[data-layout="landscape"] {
+  grid-template-columns: 1fr;
+}
+
+.app[data-layout="landscape"] .viewer {
+  min-height: 0;
+}
+
+.app[data-layout="landscape"] .canvasShell {
+  min-height: 560px;
+  max-height: none;
+}
+
+.app[data-layout="landscape"] #workImage {
+  max-height: 78vh;
+}
+
+.app[data-layout="landscape"] .guidePanel {
+  grid-template-columns: 250px minmax(0, 1fr);
+  grid-template-rows: auto auto auto;
+  align-items: start;
+  max-height: none;
+  border-left: 0;
+  border-top: 1px solid var(--line);
+  padding: 18px 0 0;
+}
+
+.app[data-layout="landscape"] .panelIntro {
+  grid-column: 1;
+}
+
+.app[data-layout="landscape"] .filterTabs {
+  grid-column: 1;
+}
+
+.app[data-layout="landscape"] .guideList {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(230px, 300px);
+  grid-template-columns: none;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px 4px 12px;
+  scroll-snap-type: x proximity;
+}
+
+.app[data-layout="landscape"] .guideCard {
+  min-height: 132px;
+  align-content: start;
+  scroll-snap-align: start;
+}
+
+.app[data-layout="landscape"] .detailPanel,
+.app[data-layout="landscape"] .probePanel,
+.app[data-layout="landscape"] .reflectionPanel {
+  grid-column: span 1;
+}
+
+.app[data-layout="landscape"] .detailPanel {
+  grid-column: 1 / -1;
+}
+
+.app[data-layout="landscape"] .probePanel {
+  grid-column: 1;
+}
+
+.app[data-layout="landscape"] .reflectionPanel {
+  grid-column: 2;
 }
 
 .panelIntro {
@@ -471,6 +570,19 @@ dd {
     border-left: 0;
     border-top: 1px solid var(--line);
     padding: 18px 0 0;
+  }
+
+  .app[data-layout="landscape"] .guidePanel {
+    grid-template-columns: 1fr;
+  }
+
+  .app[data-layout="landscape"] .panelIntro,
+  .app[data-layout="landscape"] .filterTabs,
+  .app[data-layout="landscape"] .guideList,
+  .app[data-layout="landscape"] .detailPanel,
+  .app[data-layout="landscape"] .probePanel,
+  .app[data-layout="landscape"] .reflectionPanel {
+    grid-column: 1;
   }
 }
 

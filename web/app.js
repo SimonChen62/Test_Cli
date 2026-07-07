@@ -56,9 +56,11 @@ const state = {
   data: null,
   probe: null,
   layerCanvases: {},
+  layout: localStorage.getItem("callilens-layout") || "portrait",
 };
 
 const els = {
+  app: document.querySelector(".app"),
   title: document.querySelector("#workTitle"),
   image: document.querySelector("#workImage"),
   fallback: document.querySelector("#imageFallback"),
@@ -114,11 +116,21 @@ function selectedAnnotation() {
 }
 
 function renderAll() {
+  renderLayout();
   renderImage();
   renderGuideList();
   renderOverlay();
   renderDetail();
   renderProbePanel();
+}
+
+function renderLayout() {
+  const layout = state.layout === "landscape" ? "landscape" : "portrait";
+  els.app.dataset.layout = layout;
+  document.querySelectorAll(".layoutButton").forEach((button) => {
+    button.classList.toggle("active", button.dataset.layout === layout);
+  });
+  requestAnimationFrame(positionOverlay);
 }
 
 function renderImage() {
@@ -284,6 +296,12 @@ function renderFilterButtons() {
   document.querySelectorAll(".filterButton").forEach((button) => {
     button.classList.toggle("active", button.dataset.filter === state.filter);
   });
+}
+
+function setLayout(layout) {
+  state.layout = layout === "landscape" ? "landscape" : "portrait";
+  localStorage.setItem("callilens-layout", state.layout);
+  renderLayout();
 }
 
 function setStepButtonsDisabled(disabled) {
@@ -583,6 +601,10 @@ document.querySelectorAll(".filterButton").forEach((button) => {
 
 document.querySelectorAll(".modeButton").forEach((button) => {
   button.addEventListener("click", () => setMode(button.dataset.mode));
+});
+
+document.querySelectorAll(".layoutButton").forEach((button) => {
+  button.addEventListener("click", () => setLayout(button.dataset.layout));
 });
 
 els.clear.addEventListener("click", clearSelection);
