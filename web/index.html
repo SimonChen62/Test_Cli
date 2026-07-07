@@ -34,6 +34,24 @@
           <button class="modeButton" data-mode="ink" type="button">笔墨</button>
         </div>
 
+        <article id="originalPrompt" class="originalPrompt" aria-label="原作观看模式引导">
+          <p class="eyebrow">Module 1</p>
+          <h2>Original Viewing Mode</h2>
+          <p>用户先看原作，不显示任何标注。</p>
+          <div class="promptQuestions">
+            <strong>系统先问：</strong>
+            <ul>
+              <li>“你觉得这幅作品给你的整体感觉是什么？”</li>
+              <li>“你认为哪里最有运动感？”</li>
+              <li>“你觉得哪些地方最疏朗或最紧密？”</li>
+            </ul>
+          </div>
+          <p class="promptMeaning">
+            <strong>这样做的意义是：</strong>
+            先保留用户自己的直觉，再进入系统解释。
+          </p>
+        </article>
+
         <div class="canvasShell" aria-label="作品查看器，点击图像可生成局部证据报告">
           <img id="workImage" alt="书法作品或辅助分析图" />
           <svg id="overlay" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="当前观察点高亮"></svg>

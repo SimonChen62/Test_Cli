@@ -155,6 +155,46 @@ h3 {
   color: var(--surface);
 }
 
+.originalPrompt {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 250, 240, 0.86);
+  padding: 16px;
+}
+
+.app:not([data-mode="original"]) .originalPrompt,
+.app[data-has-selection="true"] .originalPrompt {
+  display: none;
+}
+
+.originalPrompt h2 {
+  font-size: 24px;
+}
+
+.originalPrompt p {
+  margin: 0;
+  line-height: 1.55;
+}
+
+.promptQuestions {
+  display: grid;
+  gap: 8px;
+}
+
+.promptQuestions ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 20px;
+}
+
+.promptMeaning {
+  color: var(--muted);
+}
+
 .canvasShell {
   position: relative;
   display: grid;

@@ -127,6 +127,8 @@ function renderAll() {
 function renderLayout() {
   const layout = state.layout === "landscape" ? "landscape" : "portrait";
   els.app.dataset.layout = layout;
+  els.app.dataset.mode = state.mode;
+  els.app.dataset.hasSelection = state.selectedId ? "true" : "false";
   document.querySelectorAll(".layoutButton").forEach((button) => {
     button.classList.toggle("active", button.dataset.layout === layout);
   });
