@@ -55,6 +55,20 @@ python -m http.server 5173
 
 6. 浏览器打开 `http://localhost:5173/web/`。
 
+## 小组同步
+
+每次改完后运行：
+
+```powershell
+.\sync-git.ps1 -Message "说明你改了什么"
+```
+
+详细流程见：
+
+```text
+docs/GIT_SYNC_WORKFLOW.md
+```
+
 ## 前后端接口
 
 V1 先使用静态 JSON 作为接口：
