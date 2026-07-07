@@ -7,7 +7,7 @@ const IMAGE_BASE = `../data/${workId}/`;
 const FIRST_LOOK_STORAGE_KEY = `callilens-first-look:${workId}`;
 
 const typeMeta = {
-  qi_flow: { name: "气脉", markClass: "qiPath", recommendedLayer: "original" },
+  qi_flow: { name: "气脉", markClass: "qiRegion", recommendedLayer: "original" },
   void_solid: { name: "虚实", markClass: "voidBox", recommendedLayer: "original" },
   brush_ink: { name: "笔墨", markClass: "inkBox", recommendedLayer: "original" },
 };
@@ -21,7 +21,7 @@ const modeMeta = {
   qi: {
     layer: "skeleton",
     filter: "qi_flow",
-    detail: ["气脉模式", "骨架图帮助观察笔画方向和上下承接；红色路径是人工确认的观看趋势。"],
+    detail: ["气脉模式", "骨架图帮助观察笔画方向和上下承接；虚线圈只提示人工选择的观察区域。"],
   },
   solid: {
     layer: "binary",
@@ -259,27 +259,32 @@ function renderOverlay() {
   els.overlay.replaceChildren();
   const item = selectedAnnotation();
   if (item) {
-    if (item.type === "qi_flow") renderPath(item);
+    if (item.type === "qi_flow") renderQiRegion(item);
     if (item.type === "void_solid") renderBox(item, "voidBox");
     if (item.type === "brush_ink") renderBox(item, "inkBox");
   }
   renderProbeMark();
 }
 
-function renderPath(item) {
-  const pixelPath = percentPathToPixels(item.path);
-  const halo = svg("path", { d: pixelPath, class: "qiHalo" });
-  const path = svg("path", { d: pixelPath, class: "annotationShape qiPath", tabindex: "0" });
-  els.overlay.append(halo, path);
-  pathPoints(item.path).forEach((point, index, points) => {
-    if (index !== 0 && index !== points.length - 1) return;
-    els.overlay.append(svg("circle", {
-      cx: percentXToPixel(point.x),
-      cy: percentYToPixel(point.y),
-      r: index === 0 ? 8 : 10,
-      class: index === 0 ? "qiDot qiStart" : "qiDot qiEnd",
-    }));
+function renderQiRegion(item) {
+  const points = pathPoints(item.path);
+  if (!points.length) return;
+
+  const region = regionFromPoints(points, {
+    minWidth: 5.2,
+    minHeight: 18,
+    padX: 1.7,
+    padY: 3.6,
   });
+  const ellipse = svg("ellipse", {
+    cx: percentXToPixel(region.cx),
+    cy: percentYToPixel(region.cy),
+    rx: percentXToPixel(region.width / 2),
+    ry: percentYToPixel(region.height / 2),
+    class: "annotationShape qiRegion",
+    tabindex: "0",
+  });
+  els.overlay.append(ellipse);
 }
 
 function renderBox(item, className) {
@@ -712,7 +717,13 @@ function editFirstLook() {
 }
 
 function whereText(item) {
-  if (item.type === "qi_flow") return "看左侧被点亮的红色路径：它不是笔顺还原，而是人工确认的观看趋势。";
+  const hintByType = {
+    qi_flow: "看左侧虚线圈出的观察区域：它不是笔顺还原，也不是自动判定气脉，只提示这里适合观察上下承接。",
+    void_solid: "看左侧虚线框出的留白区域：重点是空白如何参与结构和节奏。",
+    brush_ink: "看左侧虚线框出的笔墨区域：它提示粗细、浓淡或视觉重量。",
+  };
+  if (hintByType[item.type]) return hintByType[item.type];
+  if (item.type === "qi_flow") return "看左侧虚线圈出的观察区域：它不是笔顺还原，而是人工确认的观看趋势。";
   if (item.type === "void_solid") return "看左侧被轻微罩出的绿色窄带：重点是空白如何参与结构和节奏。";
   if (item.type === "brush_ink") return "看左侧被点亮的笔墨区域：它提示粗细、浓淡或视觉重量。";
   return "看左侧当前高亮位置。";
@@ -757,16 +768,6 @@ function percentYToPixel(value) {
   return (value / 100) * naturalHeight();
 }
 
-function percentPathToPixels(path) {
-  let index = 0;
-  return path.replace(/-?\d+(?:\.\d+)?/g, (match) => {
-    const value = Number(match);
-    const converted = index % 2 === 0 ? percentXToPixel(value) : percentYToPixel(value);
-    index += 1;
-    return Number(converted.toFixed(2)).toString();
-  });
-}
-
 function pathPoints(path) {
   const numbers = path.match(/-?\d+(?:\.\d+)?/g)?.map(Number) || [];
   const points = [];
@@ -774,6 +775,24 @@ function pathPoints(path) {
     points.push({ x: numbers[i], y: numbers[i + 1] });
   }
   return points;
+}
+
+function regionFromPoints(points, options = {}) {
+  const xs = points.map((point) => point.x);
+  const ys = points.map((point) => point.y);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  const width = Math.max(options.minWidth || 0, maxX - minX + (options.padX || 0) * 2);
+  const height = Math.max(options.minHeight || 0, maxY - minY + (options.padY || 0) * 2);
+
+  return {
+    cx: clamp((minX + maxX) / 2, width / 2, 100 - width / 2),
+    cy: clamp((minY + maxY) / 2, height / 2, 100 - height / 2),
+    width,
+    height,
+  };
 }
 
 function speakGuide() {
