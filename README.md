@@ -1,61 +1,127 @@
 # CalliLens
 
-CalliLens 是一个面向普通人的中国书法鉴赏交互式导览 Demo。当前 V1 只做单作品展示：OpenCV 生成视觉证据图，人工确认气脉、虚实留白和笔墨轻重标注，前端负责交互展示和语音导览。
+CalliLens 是一个面向普通观众的中国书法鉴赏交互式导览 Demo。当前主线是 `work_003` 单作品局部：通过 OpenCV 辅助图层、人工确认的代表性观察点、局部证据探针和用户反思输入，帮助新手理解“气脉”“虚实”“笔墨节奏”。
 
-## 项目边界
+核心边界：
 
-- 不训练模型
-- 不自动判断气韵或审美价值
-- 不还原真实笔顺
-- 不检测真实力道
-- OpenCV 只生成辅助图层
-- 气脉、虚实、笔墨解释必须来自人工标注
+- OpenCV 只提供可见证据，不判断美学。
+- 人工标注负责确认气脉、虚实、笔墨解释。
+- 前端负责分层观看、局部高亮、证据提示和反思表达。
+- 系统不做自动书法评分，不训练气韵模型，不还原真实笔顺，不检测真实力道。
 
-## 目录结构
+## 当前 Demo
+
+主样例：
 
 ```text
-CalliLens/
-  data/work_001/
-    original.png              # 组员 A 放入作品原图
-    binary.png                # 脚本生成：黑白墨迹图
-    skeleton.png              # 脚本生成：骨架图
-    stroke_width.png          # 脚本生成：粗细热力图
-    ink_density.png           # 脚本生成：墨色浓淡图
-    void_candidates.png       # 脚本生成：留白候选图
-    annotation.json           # 人工标注结果
-    annotation-draft.md       # 人工标注草稿
-    guide-text.md             # 语音导览文案
-    work-info.md              # 作品信息和来源
-  scripts/process_work.py     # OpenCV 辅助图生成脚本
-  web/                        # 静态交互 Demo
-  docs/                       # 标注指南、协作流程、参考资料
+data/work_003/
 ```
 
-## 快速开始
+主要文件：
 
-1. 将第一幅书法作品裁剪图放到 `data/work_001/original.png`。
-2. 安装依赖：
+```text
+data/work_003/original.png
+data/work_003/binary.png
+data/work_003/skeleton.png
+data/work_003/stroke_width.png
+data/work_003/ink_density.png
+data/work_003/void_candidates.png
+data/work_003/annotation.json
+data/work_003/annotation-draft.md
+data/work_003/work-info.md
+```
+
+前端入口：
+
+```text
+web/index.html
+web/app.js
+web/styles.css
+```
+
+## 运行方式
+
+在项目根目录运行：
 
 ```powershell
-python -m pip install -r requirements.txt
+.\start-demo.ps1
 ```
 
-3. 生成 OpenCV 辅助图：
-
-```powershell
-python scripts/process_work.py --work data/work_001
-```
-
-4. 根据辅助图填写 `data/work_001/annotation.json`。
-5. 启动本地网页：
+如果脚本不可用，也可以运行：
 
 ```powershell
 python -m http.server 5173
 ```
 
-6. 浏览器打开 `http://localhost:5173/web/`。
+然后打开：
 
-## 小组同步
+```text
+http://localhost:5173/web/
+```
+
+不要直接双击打开 `web/index.html`。浏览器安全限制可能导致 JSON 和图像分析读取失败。
+
+## V1 功能
+
+- 默认展示干净原作。
+- 支持切换 OpenCV 图层：原作、骨架、黑白、留白、粗细、墨色。
+- 右侧展示人工导览观察卡。
+- 点击观察卡后，左侧只高亮一个对应位置。
+- 每个观察点都有三段解释：
+  - 形式描述：画面上客观能看到什么。
+  - 感知经验：普通观众可能产生什么观看感受。
+  - 美学解释：它如何帮助理解气脉、虚实或笔墨节奏。
+- 支持浏览器语音导览。
+- 支持用户写下自己的观察。
+
+## V1.5 局部证据探针
+
+用户可以点击图像任意位置，系统会分析附近局部窗口并输出候选提示。
+
+探针会尝试计算：
+
+- 墨迹比例
+- 留白比例
+- 留白候选强度
+- 粗细变化
+- 墨色变化
+
+探针输出的是“可能的观察候选”，不是审美结论。推荐答辩表述：
+
+```text
+算法辅助观察，人工确认解释，保留审美开放性。
+```
+
+## OpenCV 图层生成
+
+安装依赖：
+
+```powershell
+python -m pip install -r requirements.txt
+```
+
+重新生成 `work_003` 图层：
+
+```powershell
+python scripts/process_work.py --work data/work_003
+```
+
+## 文档
+
+- V1 任务书：`docs/CALLILENS_V1_TASKBOOK.md`
+- 标注指南：`docs/ANNOTATION_GUIDE.md`
+- 接口契约：`docs/INTERFACE_CONTRACT.md`
+- Git 协作流程：`docs/GIT_SYNC_WORKFLOW.md`
+- 老师要求整理：`docs/reference/project-brief-source.txt`
+- 论文摘要整理：`docs/reference/paper-summary.md`
+
+## 小组协作
+
+每次开始前先拉取最新代码：
+
+```powershell
+git pull --rebase origin main
+```
 
 每次改完后运行：
 
@@ -63,36 +129,10 @@ python -m http.server 5173
 .\sync-git.ps1 -Message "说明你改了什么"
 ```
 
-详细流程见：
+不要多人同时修改同一个 JSON 文件。建议流程是：标注先写在 `annotation-draft.md`，再由一个人统一同步到 `annotation.json`。
+
+当前远端仓库：
 
 ```text
-docs/GIT_SYNC_WORKFLOW.md
+https://github.com/SimonChen62/Test_Cli.git
 ```
-
-## 前后端接口
-
-V1 先使用静态 JSON 作为接口：
-
-- 数据文件：[data/work_001/annotation.json](data/work_001/annotation.json)
-- 接口契约：[docs/INTERFACE_CONTRACT.md](docs/INTERFACE_CONTRACT.md)
-- JSON Schema：[data/annotation.schema.json](data/annotation.schema.json)
-
-如果后端同学要写接口，先实现：
-
-```text
-GET /api/works/work_001
-```
-
-响应结构必须和 `data/work_001/annotation.json` 保持一致。
-
-## 第一周验收
-
-- `original.png` 已放入
-- 5 张 OpenCV 辅助图已生成
-- 至少 2 条气脉路径
-- 至少 2 个虚实/留白区域
-- 至少 1 个笔墨轻重区域
-- 每个标注都有 `formal`、`perception`、`aesthetic`
-- 网页可切换图层和模式
-- 可点击标注查看解释
-- 可播放浏览器语音导览

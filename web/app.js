@@ -14,6 +14,8 @@ const state = {
   filter: "all",
   selectedId: null,
   data: null,
+  probe: null,
+  layerCanvases: {},
 };
 
 const els = {
@@ -32,6 +34,15 @@ const els = {
   clear: document.querySelector("#clearButton"),
   prev: document.querySelector("#prevButton"),
   next: document.querySelector("#nextButton"),
+  canvasShell: document.querySelector(".canvasShell"),
+  probeTitle: document.querySelector("#probeTitle"),
+  probeSummary: document.querySelector("#probeSummary"),
+  inkMetric: document.querySelector("#inkMetric"),
+  voidMetric: document.querySelector("#voidMetric"),
+  strokeMetric: document.querySelector("#strokeMetric"),
+  densityMetric: document.querySelector("#densityMetric"),
+  probeCandidate: document.querySelector("#probeCandidate"),
+  reflectionInput: document.querySelector("#reflectionInput"),
 };
 
 async function boot() {
@@ -41,6 +52,7 @@ async function boot() {
     state.data = await response.json();
     els.title.textContent = state.data.title || "单作品书法导览";
     renderAll();
+    loadAnalysisCanvases();
   } catch (error) {
     els.fallback.hidden = false;
     showEmptyDetail("数据加载失败", error.message);
@@ -66,6 +78,7 @@ function renderAll() {
   renderGuideList();
   renderOverlay();
   renderDetail();
+  renderProbePanel();
 }
 
 function renderImage() {
@@ -122,10 +135,12 @@ function renderGuideList() {
 function renderOverlay() {
   els.overlay.replaceChildren();
   const item = selectedAnnotation();
-  if (!item) return;
-  if (item.type === "qi_flow") renderPath(item);
-  if (item.type === "void_solid") renderBox(item, "voidBox");
-  if (item.type === "brush_ink") renderBox(item, "inkBox");
+  if (item) {
+    if (item.type === "qi_flow") renderPath(item);
+    if (item.type === "void_solid") renderBox(item, "voidBox");
+    if (item.type === "brush_ink") renderBox(item, "inkBox");
+  }
+  renderProbeMark();
 }
 
 function renderPath(item) {
@@ -189,6 +204,7 @@ function selectItem(id) {
 function clearSelection() {
   state.selectedId = null;
   state.layer = "original";
+  state.probe = null;
   renderAll();
 }
 
@@ -231,6 +247,227 @@ function positionOverlay() {
   els.overlay.style.height = `${imageRect.height}px`;
 }
 
+function loadAnalysisCanvases() {
+  const images = state.data?.images || {};
+  ["original", "binary", "skeleton", "strokeWidth", "inkDensity", "voidCandidates"].forEach((layer) => {
+    const filename = images[layer];
+    if (!filename) return;
+    const image = new Image();
+    image.crossOrigin = "anonymous";
+    image.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      const context = canvas.getContext("2d", { willReadFrequently: true });
+      context.drawImage(image, 0, 0);
+      state.layerCanvases[layer] = { canvas, context };
+    };
+    image.onerror = () => {
+      console.warn(`无法加载探针图层: ${layer}`);
+    };
+    image.src = IMAGE_BASE + filename;
+  });
+}
+
+function handleImageClick(event) {
+  if (!state.data || !els.image.naturalWidth || !els.image.naturalHeight) return;
+  const imageRect = els.image.getBoundingClientRect();
+  if (
+    event.clientX < imageRect.left ||
+    event.clientX > imageRect.right ||
+    event.clientY < imageRect.top ||
+    event.clientY > imageRect.bottom
+  ) {
+    return;
+  }
+
+  const percentX = ((event.clientX - imageRect.left) / imageRect.width) * 100;
+  const percentY = ((event.clientY - imageRect.top) / imageRect.height) * 100;
+  const pixelX = Math.round((percentX / 100) * els.image.naturalWidth);
+  const pixelY = Math.round((percentY / 100) * els.image.naturalHeight);
+  state.probe = analyzeProbe(pixelX, pixelY, percentX, percentY);
+  renderOverlay();
+  renderProbePanel();
+}
+
+function analyzeProbe(pixelX, pixelY, percentX, percentY) {
+  const original = state.layerCanvases.original;
+  const width = original?.canvas.width || els.image.naturalWidth;
+  const height = original?.canvas.height || els.image.naturalHeight;
+  const windowSize = clamp(Math.round(Math.min(width, height) * 0.12), 72, 220);
+  const x = clamp(Math.round(pixelX - windowSize / 2), 0, Math.max(0, width - windowSize));
+  const y = clamp(Math.round(pixelY - windowSize / 2), 0, Math.max(0, height - windowSize));
+  const sample = { x, y, width: windowSize, height: windowSize };
+
+  const inkRatio = measureInkRatio(sample);
+  const voidRatio = 1 - inkRatio;
+  const strokeVariation = measureColorVariation("strokeWidth", sample);
+  const inkContrast = measureContrast(sample);
+  const voidCue = measureVoidCue(sample);
+  const skeletonCue = measureSkeletonCue(sample);
+  const candidate = makeCandidateText({ inkRatio, voidRatio, strokeVariation, inkContrast, voidCue, skeletonCue });
+
+  return {
+    percentX,
+    percentY,
+    box: {
+      x: clamp(percentX - 4.5, 0, 91),
+      y: clamp(percentY - 4.5, 0, 91),
+      width: 9,
+      height: 9,
+    },
+    sample,
+    inkRatio,
+    voidRatio,
+    strokeVariation,
+    inkContrast,
+    voidCue,
+    skeletonCue,
+    candidate,
+  };
+}
+
+function measureInkRatio(sample) {
+  const binary = state.layerCanvases.binary;
+  if (binary) {
+    return samplePixels(binary.context, sample, (r, g, b) => luminance(r, g, b) < 150);
+  }
+  const original = state.layerCanvases.original;
+  if (!original) return 0;
+  return samplePixels(original.context, sample, (r, g, b) => luminance(r, g, b) < 185);
+}
+
+function measureVoidCue(sample) {
+  const layer = state.layerCanvases.voidCandidates;
+  if (!layer) return 0;
+  return samplePixels(layer.context, sample, (r, g, b) => g > r * 1.12 && g > b * 1.12 && g > 90);
+}
+
+function measureSkeletonCue(sample) {
+  const layer = state.layerCanvases.skeleton;
+  if (!layer) return 0;
+  return samplePixels(layer.context, sample, (r, g, b) => luminance(r, g, b) < 120);
+}
+
+function measureColorVariation(layerName, sample) {
+  const layer = state.layerCanvases[layerName] || state.layerCanvases.original;
+  if (!layer) return 0;
+  const data = layer.context.getImageData(sample.x, sample.y, sample.width, sample.height).data;
+  const values = [];
+  for (let i = 0; i < data.length; i += 16) {
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+    if (r > 238 && g > 238 && b > 238) continue;
+    values.push(Math.max(r, g, b) - Math.min(r, g, b));
+  }
+  return normalizedStdDev(values);
+}
+
+function measureContrast(sample) {
+  const layer = state.layerCanvases.inkDensity || state.layerCanvases.original;
+  if (!layer) return 0;
+  const data = layer.context.getImageData(sample.x, sample.y, sample.width, sample.height).data;
+  const values = [];
+  for (let i = 0; i < data.length; i += 16) {
+    values.push(luminance(data[i], data[i + 1], data[i + 2]));
+  }
+  return normalizedStdDev(values);
+}
+
+function samplePixels(context, sample, predicate) {
+  const data = context.getImageData(sample.x, sample.y, sample.width, sample.height).data;
+  let hits = 0;
+  let total = 0;
+  for (let i = 0; i < data.length; i += 16) {
+    total += 1;
+    if (predicate(data[i], data[i + 1], data[i + 2])) hits += 1;
+  }
+  return total ? hits / total : 0;
+}
+
+function normalizedStdDev(values) {
+  if (!values.length) return 0;
+  const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+  const variance = values.reduce((sum, value) => sum + (value - mean) ** 2, 0) / values.length;
+  return clamp(Math.sqrt(variance) / 95, 0, 1);
+}
+
+function makeCandidateText(metrics) {
+  const parts = [];
+  if (metrics.inkRatio > 0.24 && metrics.voidCue > 0.08) {
+    parts.push("可能适合作为“虚实 / 疏密平衡”观察候选：附近墨迹较密，同时辅助图提示有明显空白参与结构。");
+  }
+  if (metrics.inkRatio > 0.08 && metrics.inkRatio < 0.34 && metrics.strokeVariation > 0.18) {
+    parts.push("可能适合作为“笔墨轻重”观察候选：局部粗细热力变化较明显，可继续对照原作判断。");
+  }
+  if (metrics.skeletonCue > 0.025 && metrics.inkRatio > 0.06) {
+    parts.push("可能适合作为“气脉”观察候选：骨架或墨迹线索较集中，可以观察上下左右是否存在方向承接。");
+  }
+  if (metrics.inkContrast > 0.2) {
+    parts.push("这里存在一定墨色或明暗变化，可以辅助观察枯润、轻重和节奏。");
+  }
+  if (!parts.length) {
+    parts.push("这里暂时只显示基础证据。它不一定是典型标注点，可以换到墨迹边缘、列间空白或粗细变化明显的位置再试。");
+  }
+  return parts.join(" ");
+}
+
+function renderProbeMark() {
+  if (!state.probe) return;
+  const { box, percentX, percentY } = state.probe;
+  const rect = svg("rect", {
+    x: box.x,
+    y: box.y,
+    width: box.width,
+    height: box.height,
+    rx: 0.4,
+    class: "probeBox",
+  });
+  const hLine = svg("line", {
+    x1: Math.max(0, percentX - 6),
+    y1: percentY,
+    x2: Math.min(100, percentX + 6),
+    y2: percentY,
+    class: "probeCross",
+  });
+  const vLine = svg("line", {
+    x1: percentX,
+    y1: Math.max(0, percentY - 6),
+    x2: percentX,
+    y2: Math.min(100, percentY + 6),
+    class: "probeCross",
+  });
+  els.overlay.append(rect, hLine, vLine);
+}
+
+function renderProbePanel() {
+  const probe = state.probe;
+  if (!probe) {
+    els.probeTitle.textContent = "点击图像任意位置";
+    els.probeSummary.textContent = "系统会读取附近局部的墨迹、留白、粗细和墨色线索，只生成候选提示。";
+    els.inkMetric.textContent = "--";
+    els.voidMetric.textContent = "--";
+    els.strokeMetric.textContent = "--";
+    els.densityMetric.textContent = "--";
+    els.probeCandidate.textContent = "尚未选择局部。";
+    return;
+  }
+  els.probeTitle.textContent = `局部 ${Math.round(probe.percentX)}%, ${Math.round(probe.percentY)}%`;
+  els.probeSummary.textContent = "以下是算法辅助观察，不是审美结论。请结合原作和人工导览继续判断。";
+  els.inkMetric.textContent = formatPercent(probe.inkRatio);
+  els.voidMetric.textContent = formatPercent(probe.voidRatio);
+  els.strokeMetric.textContent = scoreLabel(probe.strokeVariation);
+  els.densityMetric.textContent = scoreLabel(probe.inkContrast);
+  els.probeCandidate.textContent = probe.candidate;
+}
+
+function insertReflection(text) {
+  const current = els.reflectionInput.value.trim();
+  els.reflectionInput.value = current ? `${current}\n${text}` : text;
+  els.reflectionInput.focus();
+}
+
 function whereText(item) {
   if (item.type === "qi_flow") return "看左侧被点亮的红色路径：它不是笔顺还原，而是人工确认的观看趋势。";
   if (item.type === "void_solid") return "看左侧被轻微罩出的空白区域：重点是空白如何参与结构。";
@@ -240,6 +477,25 @@ function whereText(item) {
 
 function summarize(text) {
   return text.length > 42 ? `${text.slice(0, 42)}...` : text;
+}
+
+function formatPercent(value) {
+  return `${Math.round(value * 100)}%`;
+}
+
+function scoreLabel(value) {
+  if (value > 0.32) return "明显";
+  if (value > 0.16) return "中等";
+  if (value > 0.06) return "轻微";
+  return "较弱";
+}
+
+function luminance(r, g, b) {
+  return 0.299 * r + 0.587 * g + 0.114 * b;
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
 }
 
 function addLabel(text, x, y) {
@@ -283,6 +539,10 @@ els.clear.addEventListener("click", clearSelection);
 els.speak.addEventListener("click", speakGuide);
 els.prev.addEventListener("click", () => stepSelection(-1));
 els.next.addEventListener("click", () => stepSelection(1));
+els.canvasShell.addEventListener("click", handleImageClick);
+document.querySelectorAll(".reflectionChip").forEach((button) => {
+  button.addEventListener("click", () => insertReflection(button.dataset.text));
+});
 window.addEventListener("resize", positionOverlay);
 
 boot();

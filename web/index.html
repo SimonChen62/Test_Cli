@@ -30,7 +30,7 @@
           <button class="layerButton" data-layer="inkDensity" type="button">墨色</button>
         </div>
 
-        <div class="canvasShell">
+        <div class="canvasShell" aria-label="作品查看器，点击图像可生成局部证据报告">
           <img id="workImage" alt="书法作品或辅助分析图" />
           <svg id="overlay" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="当前观察点高亮"></svg>
           <div id="imageFallback" class="fallback" hidden>
@@ -71,6 +71,41 @@
           <div class="stepButtons">
             <button id="prevButton" type="button">上一个</button>
             <button id="nextButton" type="button">下一个</button>
+          </div>
+        </article>
+
+        <article class="probePanel" aria-live="polite">
+          <p class="eyebrow">局部证据探针</p>
+          <h3 id="probeTitle">点击图像任意位置</h3>
+          <p id="probeSummary" class="probeSummary">系统会读取附近局部的墨迹、留白、粗细和墨色线索，只生成候选提示。</p>
+          <div class="metricGrid" aria-label="局部证据指标">
+            <div>
+              <span>墨迹</span>
+              <strong id="inkMetric">--</strong>
+            </div>
+            <div>
+              <span>留白</span>
+              <strong id="voidMetric">--</strong>
+            </div>
+            <div>
+              <span>粗细变化</span>
+              <strong id="strokeMetric">--</strong>
+            </div>
+            <div>
+              <span>墨色变化</span>
+              <strong id="densityMetric">--</strong>
+            </div>
+          </div>
+          <p id="probeCandidate" class="candidateText">尚未选择局部。</p>
+        </article>
+
+        <article class="reflectionPanel">
+          <p class="eyebrow">我的观察</p>
+          <textarea id="reflectionInput" rows="4" placeholder="试着写：我看到的证据是什么？它让我想到气脉、虚实还是笔墨？"></textarea>
+          <div class="reflectionChips" aria-label="快速插入观察句">
+            <button class="reflectionChip" type="button" data-text="我看到上下笔画之间有方向承接，像是运动没有完全停住。">方向承接</button>
+            <button class="reflectionChip" type="button" data-text="我看到密集墨迹旁边留出空白，让画面有呼吸感。">留白呼吸</button>
+            <button class="reflectionChip" type="button" data-text="我看到这一处粗细或墨色变化明显，可以作为笔墨轻重线索。">粗细变化</button>
           </div>
         </article>
       </aside>
