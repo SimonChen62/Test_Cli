@@ -8,61 +8,74 @@
   </head>
   <body>
     <main class="app">
-      <section class="stage">
+      <section class="viewer">
         <header class="topbar">
           <div>
-            <p class="eyebrow">CalliLens</p>
+            <p class="eyebrow">CalliLens · 观察式导览</p>
             <h1 id="workTitle">单作品书法导览</h1>
           </div>
-          <button id="speakButton" class="iconButton" type="button" title="播放语音导览" aria-label="播放语音导览">
-            ▶
-          </button>
+          <div class="topActions">
+            <button id="clearButton" class="iconButton" type="button" title="清除高亮" aria-label="清除高亮">×</button>
+            <button id="speakButton" class="iconButton" type="button" title="播放语音导览" aria-label="播放语音导览">▶</button>
+          </div>
         </header>
 
-        <div class="toolbar" aria-label="模式切换">
-          <button class="modeButton active" data-mode="original" type="button">原作</button>
-          <button class="modeButton" data-mode="layers" type="button">图层</button>
-          <button class="modeButton" data-mode="qi_flow" type="button">气脉</button>
-          <button class="modeButton" data-mode="void_solid" type="button">虚实</button>
-          <button class="modeButton" data-mode="brush_ink" type="button">笔墨</button>
-        </div>
-
-        <div id="layerPicker" class="layerPicker" aria-label="OpenCV 图层">
-          <button class="layerButton active" data-layer="original" type="button">原图</button>
-          <button class="layerButton" data-layer="binary" type="button">黑白</button>
+        <div class="evidenceBar" aria-label="证据图层">
+          <span>证据图层</span>
+          <button class="layerButton active" data-layer="original" type="button">原作</button>
           <button class="layerButton" data-layer="skeleton" type="button">骨架</button>
+          <button class="layerButton" data-layer="binary" type="button">黑白</button>
+          <button class="layerButton" data-layer="voidCandidates" type="button">留白</button>
           <button class="layerButton" data-layer="strokeWidth" type="button">粗细</button>
           <button class="layerButton" data-layer="inkDensity" type="button">墨色</button>
-          <button class="layerButton" data-layer="voidCandidates" type="button">留白</button>
         </div>
 
         <div class="canvasShell">
           <img id="workImage" alt="书法作品或辅助分析图" />
-          <svg id="overlay" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="人工标注覆盖层"></svg>
+          <svg id="overlay" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="当前观察点高亮"></svg>
           <div id="imageFallback" class="fallback" hidden>
-            请先放入 <code>data/work_001/original.png</code>，再运行 OpenCV 脚本生成辅助图。
+            请确认当前作品文件夹中存在 <code>annotation.json</code> 和对应图像文件。
           </div>
         </div>
       </section>
 
-      <aside class="panel">
-        <p class="eyebrow">解释面板</p>
-        <h2 id="annotationTitle">选择一个标注</h2>
-        <dl>
-          <dt>形式描述</dt>
-          <dd id="formalText">点击图中的路径或区域，查看人工解释。</dd>
-          <dt>感知经验</dt>
-          <dd id="perceptionText">这里会显示普通观众可能产生的观看感受。</dd>
-          <dt>美学解释</dt>
-          <dd id="aestheticText">这里会说明该观察如何帮助理解气脉、虚实或笔墨节奏。</dd>
-        </dl>
-        <div class="note">
-          OpenCV 只提供视觉证据；气脉、虚实和笔墨解释来自人工标注。
+      <aside class="guidePanel">
+        <div class="panelIntro">
+          <p class="eyebrow">观察清单</p>
+          <h2>不是全图检测，而是逐点学会看</h2>
+          <p>选择一个观察点，左侧只点亮这一处。原作保持干净，解释留在右边。</p>
         </div>
+
+        <div class="filterTabs" aria-label="观察类型筛选">
+          <button class="filterButton active" data-filter="all" type="button">全部</button>
+          <button class="filterButton" data-filter="qi_flow" type="button">气脉</button>
+          <button class="filterButton" data-filter="void_solid" type="button">虚实</button>
+          <button class="filterButton" data-filter="brush_ink" type="button">笔墨</button>
+        </div>
+
+        <div id="guideList" class="guideList" aria-label="观察点列表"></div>
+
+        <article class="detailPanel" aria-live="polite">
+          <p id="detailType" class="eyebrow">请选择观察点</p>
+          <h3 id="annotationTitle">先看原作整体</h3>
+          <dl>
+            <dt>看哪里</dt>
+            <dd id="whereText">从右侧观察清单选择一项，左侧会临时点亮对应位置。</dd>
+            <dt>形式描述</dt>
+            <dd id="formalText">这里会说明画面上客观能看到什么。</dd>
+            <dt>感知经验</dt>
+            <dd id="perceptionText">这里会说明普通观众可能产生什么观看感受。</dd>
+            <dt>美学解释</dt>
+            <dd id="aestheticText">这里会说明它如何帮助理解气脉、虚实或笔墨节奏。</dd>
+          </dl>
+          <div class="stepButtons">
+            <button id="prevButton" type="button">上一个</button>
+            <button id="nextButton" type="button">下一个</button>
+          </div>
+        </article>
       </aside>
     </main>
 
     <script src="./app.js"></script>
   </body>
 </html>
-

@@ -1,14 +1,15 @@
 :root {
   color-scheme: light;
-  --paper: #f7f3ec;
-  --ink: #201f1c;
-  --muted: #6d655c;
-  --line: #d9cfc2;
-  --accent: #b53d2e;
-  --green: #23795a;
-  --gold: #a87928;
-  --panel: #fffaf2;
-  --shadow: 0 18px 50px rgba(32, 31, 28, 0.14);
+  --paper: #f5f1e8;
+  --surface: #fffaf0;
+  --ink: #24211d;
+  --muted: #746a60;
+  --line: #d8cab8;
+  --accent: #b33b2e;
+  --qi: #b33b2e;
+  --void: #28745b;
+  --brush: #9a6a20;
+  --shadow: 0 18px 50px rgba(36, 33, 29, 0.14);
 }
 
 * {
@@ -20,11 +21,7 @@ body {
   min-height: 100vh;
   background: var(--paper);
   color: var(--ink);
-  font-family:
-    "Microsoft YaHei",
-    "PingFang SC",
-    system-ui,
-    sans-serif;
+  font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
 }
 
 button {
@@ -33,14 +30,14 @@ button {
 
 .app {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 360px;
-  gap: 24px;
+  grid-template-columns: minmax(0, 1fr) 420px;
+  gap: 20px;
   min-height: 100vh;
-  padding: 24px;
+  padding: 20px;
 }
 
-.stage,
-.panel {
+.viewer,
+.guidePanel {
   min-width: 0;
 }
 
@@ -49,72 +46,84 @@ button {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
+}
+
+.topActions {
+  display: flex;
+  gap: 8px;
 }
 
 .eyebrow {
-  margin: 0 0 4px;
+  margin: 0 0 5px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 12px;
 }
 
 h1,
-h2 {
+h2,
+h3 {
   margin: 0;
   letter-spacing: 0;
 }
 
 h1 {
-  font-size: clamp(26px, 4vw, 44px);
-  line-height: 1.08;
+  font-size: clamp(25px, 3.5vw, 40px);
+  line-height: 1.1;
 }
 
 h2 {
+  font-size: 21px;
+  line-height: 1.25;
+}
+
+h3 {
   font-size: 22px;
+  line-height: 1.25;
 }
 
 .iconButton {
-  width: 44px;
-  height: 44px;
+  width: 42px;
+  height: 42px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: var(--panel);
+  background: var(--surface);
   color: var(--ink);
   cursor: pointer;
 }
 
-.toolbar,
-.layerPicker {
+.evidenceBar,
+.filterTabs,
+.stepButtons {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 12px;
+  align-items: center;
 }
 
-.modeButton,
-.layerButton {
-  min-height: 38px;
+.evidenceBar {
+  margin-bottom: 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.layerButton,
+.filterButton,
+.stepButtons button {
+  min-height: 34px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: rgba(255, 250, 242, 0.82);
+  background: rgba(255, 250, 240, 0.84);
   color: var(--ink);
   cursor: pointer;
-  padding: 8px 12px;
+  padding: 7px 11px;
 }
 
-.modeButton.active,
-.layerButton.active {
+.layerButton.active,
+.filterButton.active {
   border-color: var(--ink);
   background: var(--ink);
-  color: #fffaf2;
-}
-
-.layerPicker {
-  display: none;
-}
-
-.layerPicker.visible {
-  display: flex;
+  color: var(--surface);
 }
 
 .canvasShell {
@@ -122,10 +131,10 @@ h2 {
   display: grid;
   place-items: center;
   min-height: 620px;
-  max-height: calc(100vh - 190px);
+  max-height: calc(100vh - 138px);
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fffaf2;
+  background: var(--surface);
   box-shadow: var(--shadow);
   overflow: hidden;
 }
@@ -133,7 +142,7 @@ h2 {
 #workImage {
   display: block;
   max-width: 100%;
-  max-height: calc(100vh - 210px);
+  max-height: calc(100vh - 158px);
   object-fit: contain;
 }
 
@@ -144,27 +153,33 @@ h2 {
 
 .annotationShape {
   pointer-events: auto;
-  cursor: pointer;
+}
+
+.qiHalo {
+  fill: none;
+  stroke: rgba(179, 59, 46, 0.2);
+  stroke-width: 4.4;
+  stroke-linecap: round;
 }
 
 .qiPath {
   fill: none;
-  stroke: var(--accent);
+  stroke: var(--qi);
   stroke-width: 1.2;
   stroke-linecap: round;
   stroke-dasharray: 180;
-  animation: drawPath 2.4s ease-in-out infinite;
+  animation: drawPath 2.3s ease-in-out infinite;
 }
 
 .voidBox {
-  fill: rgba(35, 121, 90, 0.24);
-  stroke: var(--green);
+  fill: rgba(40, 116, 91, 0.18);
+  stroke: var(--void);
   stroke-width: 0.55;
 }
 
 .inkBox {
-  fill: rgba(168, 121, 40, 0.26);
-  stroke: var(--gold);
+  fill: rgba(154, 106, 32, 0.18);
+  stroke: var(--brush);
   stroke-width: 0.55;
 }
 
@@ -172,7 +187,7 @@ h2 {
   fill: var(--ink);
   font-size: 3px;
   paint-order: stroke;
-  stroke: #fffaf2;
+  stroke: var(--surface);
   stroke-width: 0.7px;
   pointer-events: none;
 }
@@ -181,7 +196,7 @@ h2 {
   0% {
     stroke-dashoffset: 180;
   }
-  50%,
+  55%,
   100% {
     stroke-dashoffset: 0;
   }
@@ -199,45 +214,125 @@ h2 {
   padding: 24px;
 }
 
-.panel {
-  align-self: start;
-  min-height: calc(100vh - 48px);
+.guidePanel {
+  display: grid;
+  grid-template-rows: auto auto minmax(180px, 1fr) auto;
+  gap: 14px;
+  max-height: calc(100vh - 40px);
   border-left: 1px solid var(--line);
-  padding: 8px 0 8px 24px;
+  padding-left: 20px;
+}
+
+.panelIntro {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.panelIntro p:last-child {
+  margin: 8px 0 0;
+}
+
+.guideList {
+  display: grid;
+  gap: 9px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.guideCard {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-left-width: 4px;
+  border-radius: 8px;
+  background: rgba(255, 250, 240, 0.72);
+  color: var(--ink);
+  cursor: pointer;
+  padding: 12px;
+  text-align: left;
+}
+
+.guideCard.active {
+  border-color: var(--accent);
+  background: var(--surface);
+  box-shadow: 0 10px 28px rgba(36, 33, 29, 0.12);
+}
+
+.guideCard strong {
+  font-size: 15px;
+}
+
+.guideCard span:last-child {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.typeBadge {
+  justify-self: start;
+  border-radius: 999px;
+  color: white;
+  font-size: 12px;
+  padding: 3px 8px;
+}
+
+.typeBadge.qi_flow {
+  background: var(--qi);
+}
+
+.typeBadge.void_solid {
+  background: var(--void);
+}
+
+.typeBadge.brush_ink {
+  background: var(--brush);
+}
+
+.detailPanel {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 15px;
 }
 
 dl {
-  margin: 22px 0;
+  margin: 14px 0;
 }
 
 dt {
-  margin-top: 18px;
+  margin-top: 12px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 12px;
 }
 
 dd {
-  margin: 6px 0 0;
-  line-height: 1.72;
+  margin: 5px 0 0;
+  line-height: 1.65;
 }
 
-.note {
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--panel);
+.stepButtons {
+  justify-content: space-between;
+}
+
+.stepButtons button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.emptyList {
   color: var(--muted);
-  line-height: 1.6;
-  padding: 14px;
+  margin: 0;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 980px) {
   .app {
     grid-template-columns: 1fr;
-    padding: 16px;
+    padding: 14px;
   }
 
   .canvasShell {
-    min-height: 460px;
+    min-height: 420px;
     max-height: none;
   }
 
@@ -245,10 +340,10 @@ dd {
     max-height: 72vh;
   }
 
-  .panel {
-    min-height: 0;
+  .guidePanel {
+    max-height: none;
     border-left: 0;
     border-top: 1px solid var(--line);
-    padding: 20px 0 0;
+    padding: 18px 0 0;
   }
 }
