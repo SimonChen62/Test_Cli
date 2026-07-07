@@ -671,14 +671,12 @@ function handleFirstLookSubmit(event) {
 }
 
 function editFirstLook() {
-  state.firstLook = { overall: "", motion: "", density: "" };
   state.introComplete = false;
   state.selectedId = null;
   state.probe = null;
   state.layer = "original";
   state.mode = "original";
   state.filter = "all";
-  localStorage.removeItem(FIRST_LOOK_STORAGE_KEY);
   renderAll();
   renderFilterButtons();
   requestAnimationFrame(() => els.firstOverall.focus());
