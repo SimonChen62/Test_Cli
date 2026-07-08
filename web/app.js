@@ -73,10 +73,13 @@ const els = {
   entryScreen: document.querySelector("#entryScreen"),
   uploadEntry: document.querySelector("#uploadEntryButton"),
   storedWorks: document.querySelector("#storedWorksButton"),
+  backHomeFromLibrary: document.querySelector("#backHomeFromLibraryButton"),
   storedWorksPanel: document.querySelector("#storedWorksPanel"),
   storedWorksList: document.querySelector("#storedWorksList"),
   uploadPanel: document.querySelector("#uploadPanel"),
+  backHomeFromUpload: document.querySelector("#backHomeFromUploadButton"),
   browseFromUpload: document.querySelector("#browseFromUploadButton"),
+  backToLibrary: document.querySelector("#backToLibraryButton"),
   app: document.querySelector(".app"),
   title: document.querySelector("#workTitle"),
   image: document.querySelector("#workImage"),
@@ -89,7 +92,6 @@ const els = {
   formal: document.querySelector("#formalText"),
   perception: document.querySelector("#perceptionText"),
   aesthetic: document.querySelector("#aestheticText"),
-  speak: document.querySelector("#speakButton"),
   clear: document.querySelector("#clearButton"),
   prev: document.querySelector("#prevButton"),
   next: document.querySelector("#nextButton"),
@@ -167,9 +169,17 @@ async function loadWorksIndex() {
   if (!activeWorkId) activeWorkId = state.worksIndex.defaultWorkId || "work_003";
 }
 
-function setScreen(screen) {
+function setScreen(screen, options = {}) {
   state.screen = screen;
   renderEntry();
+  if (options.updateUrl !== false && screen !== "demo") {
+    const nextUrl = new URL(window.location.href);
+    nextUrl.searchParams.delete("work");
+    nextUrl.searchParams.delete("view");
+    nextUrl.searchParams.delete("select");
+    nextUrl.searchParams.delete("probe");
+    window.history.pushState({}, "", nextUrl);
+  }
 }
 
 function renderEntry() {
@@ -946,6 +956,16 @@ function returnToFirstLook() {
   requestAnimationFrame(() => els.firstOverall.focus());
 }
 
+function returnHome() {
+  setScreen("home");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function returnToLibrary() {
+  setScreen("library");
+  requestAnimationFrame(() => els.storedWorksPanel.scrollIntoView({ behavior: "smooth", block: "start" }));
+}
+
 function whereText(item) {
   const hintByType = {
     qi_flow: "看作品上虚线圈出的纵向区域：它不是笔顺还原，也不是自动判定气脉，只提示这里适合观察上下承接。",
@@ -1018,14 +1038,6 @@ function regionFromPoints(points, options = {}) {
   };
 }
 
-function speakGuide() {
-  if (!state.data?.guideText || !("speechSynthesis" in window)) return;
-  window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(state.data.guideText);
-  utterance.lang = "zh-CN";
-  window.speechSynthesis.speak(utterance);
-}
-
 function svg(tag, attrs) {
   const node = document.createElementNS("http://www.w3.org/2000/svg", tag);
   Object.entries(attrs).forEach(([key, value]) => node.setAttribute(key, value));
@@ -1050,10 +1062,14 @@ els.storedWorks.addEventListener("click", () => {
   requestAnimationFrame(() => els.storedWorksPanel.scrollIntoView({ behavior: "smooth", block: "start" }));
 });
 
+els.backHomeFromLibrary.addEventListener("click", returnHome);
+
 els.uploadEntry.addEventListener("click", () => {
   setScreen("upload");
   requestAnimationFrame(() => els.uploadPanel.scrollIntoView({ behavior: "smooth", block: "start" }));
 });
+
+els.backHomeFromUpload.addEventListener("click", returnHome);
 
 els.browseFromUpload.addEventListener("click", () => {
   setScreen("library");
@@ -1062,6 +1078,7 @@ els.browseFromUpload.addEventListener("click", () => {
 
 els.firstLookForm.addEventListener("submit", handleFirstLookSubmit);
 els.editFirstLook.addEventListener("click", editFirstLook);
+els.backToLibrary.addEventListener("click", returnToLibrary);
 els.returnFirstLook.addEventListener("click", returnToFirstLook);
 [els.firstOverall, els.firstMotion, els.firstDensity].forEach((input) => {
   input.addEventListener("input", () => {
@@ -1074,7 +1091,6 @@ els.returnFirstLook.addEventListener("click", returnToFirstLook);
   });
 });
 els.clear.addEventListener("click", clearSelection);
-els.speak.addEventListener("click", speakGuide);
 els.prev.addEventListener("click", () => stepSelection(-1));
 els.next.addEventListener("click", () => stepSelection(1));
 els.canvasShell.addEventListener("click", handleImageClick);

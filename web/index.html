@@ -30,16 +30,22 @@
 
       <section id="storedWorksPanel" class="entryPanel libraryPanel" hidden>
         <div class="entryPanelHeader">
-          <p class="eyebrow">网页已存库</p>
-          <h2>选择作品</h2>
+          <div>
+            <p class="eyebrow">网页已存库</p>
+            <h2>选择作品</h2>
+          </div>
+          <button id="backHomeFromLibraryButton" class="secondaryButton" type="button">返回首页</button>
         </div>
         <div id="storedWorksList" class="storedWorksList" aria-label="已存作品列表"></div>
       </section>
 
       <section id="uploadPanel" class="entryPanel uploadPanel" hidden>
         <div class="entryPanelHeader">
-          <p class="eyebrow">V2 预留</p>
-          <h2>个性化上传暂不开放</h2>
+          <div>
+            <p class="eyebrow">V2 预留</p>
+            <h2>个性化上传暂不开放</h2>
+          </div>
+          <button id="backHomeFromUploadButton" class="secondaryButton" type="button">返回首页</button>
         </div>
         <p>本轮答辩版先做单作品导览。后续再加入上传、图层生成和人工校正流程，避免把还不稳定的自动分析误说成审美判断。</p>
         <div class="uploadSteps">
@@ -60,9 +66,9 @@
             <h1 id="workTitle">单作品书法导览</h1>
           </div>
           <div class="topActions">
+            <button id="backToLibraryButton" class="secondaryButton" type="button">返回作品库</button>
             <button id="returnFirstLookButton" class="secondaryButton returnFirstLookButton" type="button">回到第一印象</button>
             <button id="clearButton" class="iconButton" type="button" title="清除高亮" aria-label="清除高亮">×</button>
-            <button id="speakButton" class="iconButton" type="button" title="播放语音导览" aria-label="播放语音导览">▶</button>
           </div>
         </header>
 
