@@ -60,7 +60,7 @@ const state = {
   data: null,
   probe: null,
   layerCanvases: {},
-  layout: localStorage.getItem("callilens-layout") || "portrait",
+  layout: "landscape",
   firstLook: readFirstLook(),
   introComplete: false,
   editingFirstLook: false,
@@ -176,6 +176,7 @@ function renderEntry() {
   renderWorkCards();
   document.body.dataset.screen = state.screen;
   els.entryScreen.dataset.screen = state.screen;
+  els.entryScreen.classList.toggle("scrolled", state.screen === "home" && window.scrollY > 12);
   els.entryScreen.hidden = state.screen === "demo";
   els.app.hidden = state.screen !== "demo";
   els.storedWorksPanel.hidden = state.screen !== "library";
@@ -283,14 +284,10 @@ function renderAll() {
 }
 
 function renderLayout() {
-  const layout = state.layout === "landscape" ? "landscape" : "portrait";
-  els.app.dataset.layout = layout;
+  els.app.dataset.layout = "landscape";
   els.app.dataset.mode = state.mode;
   els.app.dataset.hasSelection = state.selectedId ? "true" : "false";
   els.app.dataset.introComplete = state.introComplete ? "true" : "false";
-  document.querySelectorAll(".layoutButton").forEach((button) => {
-    button.classList.toggle("active", button.dataset.layout === layout);
-  });
   requestAnimationFrame(positionOverlay);
 }
 
@@ -387,19 +384,28 @@ function renderQiRegion(item) {
     renderEllipseBox(item, "qiRegion");
     return;
   }
-  const points = pathPoints(item.path || "");
+
+  const points = pathPoints(item.path);
   if (!points.length) return;
+
   const region = regionFromPoints(points, {
-    minWidth: 5.4,
-    minHeight: 18,
-    padX: 1.4,
-    padY: 2.6,
+    minWidth: 4.4,
+    minHeight: 15,
+    padX: 1.1,
+    padY: 2.4,
   });
+  let offsetX = -4.4;
+  let offsetY = 7.8;
+  const scale = 0.6;
+  if (item.id === "qi_2" || item.label === "形断势连") {
+    offsetX += region.width * scale * 5;
+    offsetY -= region.height * scale * 0.25;
+  }
   const ellipse = svg("ellipse", {
-    cx: percentXToPixel(region.cx),
-    cy: percentYToPixel(region.cy),
-    rx: percentXToPixel(region.width / 2),
-    ry: percentYToPixel(region.height / 2),
+    cx: percentXToPixel(clamp(region.cx + offsetX, 0, 100)),
+    cy: percentYToPixel(clamp(region.cy + offsetY, 0, 100)),
+    rx: percentXToPixel((region.width / 2) * scale),
+    ry: percentYToPixel((region.height / 2) * scale),
     class: "annotationShape qiRegion",
     tabindex: "0",
   });
@@ -512,13 +518,6 @@ function renderFilterButtons() {
   document.querySelectorAll(".filterButton").forEach((button) => {
     button.classList.toggle("active", button.dataset.filter === state.filter);
   });
-}
-
-function setLayout(layout) {
-  state.layout = layout === "landscape" ? "landscape" : "portrait";
-  localStorage.setItem("callilens-layout", state.layout);
-  renderLayout();
-  setTimeout(positionOverlay, 50);
 }
 
 function setStepButtonsDisabled(disabled) {
@@ -1035,7 +1034,7 @@ function svg(tag, attrs) {
 
 function handleEntryScroll() {
   if (state.screen !== "home") return;
-  els.entryScreen.classList.toggle("scrolled", window.scrollY > 80);
+  els.entryScreen.classList.toggle("scrolled", window.scrollY > 12);
 }
 
 document.querySelectorAll(".filterButton").forEach((button) => {
@@ -1044,10 +1043,6 @@ document.querySelectorAll(".filterButton").forEach((button) => {
 
 document.querySelectorAll(".modeButton").forEach((button) => {
   button.addEventListener("click", () => setMode(button.dataset.mode));
-});
-
-document.querySelectorAll(".layoutButton").forEach((button) => {
-  button.addEventListener("click", () => setLayout(button.dataset.layout));
 });
 
 els.storedWorks.addEventListener("click", () => {
