@@ -5,6 +5,7 @@ const initialProbe = params.get("probe");
 const DATA_URL = `../data/${workId}/annotation.json`;
 const IMAGE_BASE = `../data/${workId}/`;
 const FIRST_LOOK_STORAGE_KEY = `callilens-first-look:${workId}`;
+const REFLECTIONS_STORAGE_KEY = `callilens-reflections:${workId}`;
 
 const typeMeta = {
   qi_flow: { name: "气脉", markClass: "qiRegion", recommendedLayer: "original" },
@@ -63,6 +64,7 @@ const state = {
   firstLook: readFirstLook(),
   introComplete: false,
   editingFirstLook: false,
+  reflections: readReflections(), // { [id]: { text, submitted } }
 };
 
 state.introComplete = firstLookComplete(state.firstLook);
@@ -93,6 +95,14 @@ const els = {
   densityMetric: document.querySelector("#densityMetric"),
   probeCandidate: document.querySelector("#probeCandidate"),
   reflectionInput: document.querySelector("#reflectionInput"),
+  reflectionSubmit: document.querySelector("#reflectionSubmitButton"),
+  reflectionEdit: document.querySelector("#reflectionEditButton"),
+  reflectionPrompt: document.querySelector("#reflectionPrompt"),
+  reflectionConcept: document.querySelector("#reflectionConcept"),
+  reflectionPromptText: document.querySelector("#reflectionPromptText"),
+  expertFeedbackPanel: document.querySelector("#expertFeedbackPanel"),
+  feedbackUserText: document.querySelector("#feedbackUserText"),
+  feedbackExpertText: document.querySelector("#feedbackExpertText"),
   firstLookForm: document.querySelector("#firstLookForm"),
   firstResponseSummary: document.querySelector("#firstResponseSummary"),
   returnFirstLook: document.querySelector("#returnFirstLookButton"),
@@ -166,6 +176,7 @@ function renderAll() {
   renderOverlay();
   renderDetail();
   renderProbePanel();
+  renderReflectionPanel();
 }
 
 function renderLayout() {
@@ -337,6 +348,8 @@ function selectItem(id) {
     state.layer = typeMeta[item.type]?.recommendedLayer || "original";
   }
   renderAll();
+  // 切换观察点后，滚动反思区到顶部
+  els.reflectionInput.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
 function setMode(mode) {
@@ -630,12 +643,16 @@ function renderProbePanel() {
 }
 
 function insertReflection(text) {
+  const saved = state.reflections[state.selectedId];
+  if (saved?.submitted) return; // 已提交则不允许插入
   const current = els.reflectionInput.value.trim();
   els.reflectionInput.value = current ? `${current}\n${text}` : text;
   els.reflectionInput.focus();
 }
 
 function setReflectionTask(task) {
+  const saved = state.reflections[state.selectedId];
+  if (saved?.submitted) return; // 已提交则不允许切换任务
   const prompt = reflectionTasks[task] || reflectionTasks.motion;
   els.reflectionInput.placeholder = prompt;
   if (!els.reflectionInput.value.trim()) {
@@ -645,6 +662,109 @@ function setReflectionTask(task) {
     button.classList.toggle("active", button.dataset.task === task);
   });
   els.reflectionInput.focus();
+}
+
+function renderReflectionPanel() {
+  const item = selectedAnnotation();
+  const saved = item ? (state.reflections[item.id] || {}) : {};
+  const hasReflection = item?.reflection;
+
+  // 根据当前观察点的类型自动选择并锁定对应任务（气脉对应运动感，虚实对应空白，笔墨对应证据）
+  const typeToTask = {
+    qi_flow: "motion",
+    void_solid: "space",
+    brush_ink: "evidence",
+  };
+
+  if (item && typeToTask[item.type]) {
+    const activeTask = typeToTask[item.type];
+    document.querySelectorAll(".taskButton").forEach((button) => {
+      button.classList.toggle("active", button.dataset.task === activeTask);
+      button.style.pointerEvents = "none"; // 锁定以指向特定任务
+      button.style.opacity = "0.75";
+    });
+    const prompt = reflectionTasks[activeTask];
+    els.reflectionInput.placeholder = prompt;
+  } else {
+    // 恢复全局或自由选择模式
+    document.querySelectorAll(".taskButton").forEach((button) => {
+      button.style.pointerEvents = "auto";
+      button.style.opacity = "1";
+    });
+  }
+
+  // 显示/隐藏观察点专属提示
+  if (hasReflection && item) {
+    els.reflectionPrompt.hidden = false;
+    els.reflectionConcept.textContent = item.reflection.concept;
+    els.reflectionConcept.className = `reflectionConceptTag ${item.type}`;
+    els.reflectionPromptText.textContent = item.reflection.prompt;
+  } else {
+    els.reflectionPrompt.hidden = true;
+  }
+
+  // 恢复该观察点已保存的笔记
+  els.reflectionInput.value = saved.text || "";
+  els.reflectionInput.disabled = !!saved.submitted;
+
+  // 提交/编辑按钮状态
+  els.reflectionSubmit.hidden = !!saved.submitted;
+  els.reflectionEdit.hidden = !saved.submitted;
+
+  // 专家反馈区
+  if (saved.submitted && hasReflection) {
+    els.expertFeedbackPanel.hidden = false;
+    els.feedbackUserText.textContent = saved.text || "（未填写）";
+    els.feedbackExpertText.textContent = item.reflection.expertFeedback;
+  } else {
+    els.expertFeedbackPanel.hidden = true;
+  }
+}
+
+function submitReflection() {
+  const item = selectedAnnotation();
+  if (!item) return;
+  const text = els.reflectionInput.value.trim();
+  if (!text) {
+    els.reflectionInput.focus();
+    els.reflectionInput.placeholder = "请先写下你的理解，再提交。";
+    return;
+  }
+  // 保存到 state
+  state.reflections[item.id] = { text, submitted: true };
+  saveReflections();
+  
+  // 重新渲染反思面板，揭示专家结论
+  renderReflectionPanel();
+  
+  // 滚动到反馈区
+  requestAnimationFrame(() => els.expertFeedbackPanel.scrollIntoView({ behavior: "smooth", block: "nearest" }));
+}
+
+function editReflection() {
+  const item = selectedAnnotation();
+  if (!item) return;
+  if (state.reflections[item.id]) {
+    state.reflections[item.id].submitted = false;
+  }
+  saveReflections();
+  
+  // 编辑时重新隐藏对照区
+  renderReflectionPanel();
+  
+  requestAnimationFrame(() => els.reflectionInput.focus());
+}
+
+function readReflections() {
+  try {
+    return JSON.parse(localStorage.getItem(REFLECTIONS_STORAGE_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function saveReflections() {
+  localStorage.setItem(REFLECTIONS_STORAGE_KEY, JSON.stringify(state.reflections));
 }
 
 function readFirstLook() {
@@ -865,6 +985,14 @@ document.querySelectorAll(".reflectionChip").forEach((button) => {
 });
 document.querySelectorAll(".taskButton").forEach((button) => {
   button.addEventListener("click", () => setReflectionTask(button.dataset.task));
+});
+els.reflectionSubmit.addEventListener("click", submitReflection);
+els.reflectionEdit.addEventListener("click", editReflection);
+els.reflectionInput.addEventListener("input", () => {
+  const item = selectedAnnotation();
+  if (item && state.reflections[item.id] && !state.reflections[item.id].submitted) {
+    state.reflections[item.id].text = els.reflectionInput.value;
+  }
 });
 window.addEventListener("resize", positionOverlay);
 

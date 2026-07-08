@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>CalliLens</title>
-    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./styles.css?v=6" />
   </head>
   <body>
     <main class="app">
@@ -154,21 +154,51 @@
 
         <article class="reflectionPanel">
           <p class="eyebrow">反思任务</p>
+
+          <!-- 当前观察点的专属反思提示（选中观察点后动态更新） -->
+          <div id="reflectionPrompt" class="reflectionPrompt" hidden>
+            <span class="reflectionConceptTag" id="reflectionConcept"></span>
+            <p id="reflectionPromptText"></p>
+          </div>
+
           <div class="taskList" aria-label="反思任务列表">
             <button class="taskButton active" type="button" data-task="motion">哪里最有运动感？</button>
             <button class="taskButton" type="button" data-task="space">哪块空白参与结构？</button>
             <button class="taskButton" type="button" data-task="evidence">你如何用证据解释？</button>
           </div>
+
           <textarea id="reflectionInput" rows="4" placeholder="先选一个任务，再用自己的话回答。"></textarea>
+
           <div class="reflectionChips" aria-label="快速插入观察句">
             <button class="reflectionChip" type="button" data-text="我看到上下笔画之间有方向承接，像是运动没有完全停住。">方向承接</button>
             <button class="reflectionChip" type="button" data-text="我看到密集墨迹旁边留出空白，让画面有呼吸感。">留白呼吸</button>
             <button class="reflectionChip" type="button" data-text="我看到这一处粗细或墨色变化明显，可以作为笔墨轻重线索。">粗细变化</button>
           </div>
+
+          <div class="reflectionActions">
+            <button id="reflectionSubmitButton" class="primaryButton reflectionSubmitButton" type="button">提交反思 ▶</button>
+            <button id="reflectionEditButton" class="secondaryButton reflectionEditButton" type="button" hidden>重新编辑</button>
+          </div>
+
+          <!-- 专家反馈区（提交后展开） -->
+          <div id="expertFeedbackPanel" class="expertFeedbackPanel" hidden>
+            <div class="feedbackDivider">
+              <span>专家视角对照</span>
+            </div>
+            <div class="feedbackUserAnswer">
+              <p class="feedbackLabel">你的理解</p>
+              <blockquote id="feedbackUserText"></blockquote>
+            </div>
+            <div class="feedbackExpert">
+              <p class="feedbackLabel">专家解释</p>
+              <p id="feedbackExpertText"></p>
+            </div>
+            <p class="feedbackNote">系统只提供观察候选，不代表唯一正确答案。你的感受同样有价值。</p>
+          </div>
         </article>
       </aside>
     </main>
 
-    <script src="./app.js"></script>
+    <script src="./app.js?v=2"></script>
   </body>
 </html>
