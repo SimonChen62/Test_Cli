@@ -764,33 +764,40 @@ function renderProbePanel() {
   els.probeCandidate.textContent = probe.candidate;
 }
 
+function reflectionKey() {
+  return selectedAnnotation()?.id || "free_reflection";
+}
+
 function insertReflection(text) {
-  const item = selectedAnnotation();
-  if (!item) return;
-  const saved = state.reflections[item.id];
+  const key = reflectionKey();
+  const saved = state.reflections[key];
   if (saved?.submitted) return;
   const current = els.reflectionInput.value.trim();
   els.reflectionInput.value = current ? `${current}\n${text}` : text;
-  state.reflections[item.id] = { text: els.reflectionInput.value, submitted: false };
+  state.reflections[key] = { text: els.reflectionInput.value, submitted: false };
   saveReflections();
   els.reflectionInput.focus();
 }
 
 function setReflectionTask(task) {
   const item = selectedAnnotation();
-  if (item && state.reflections[item.id]?.submitted) return;
+  const key = reflectionKey();
+  if (state.reflections[key]?.submitted) return;
   const prompt = reflectionTasks[task] || reflectionTasks.motion;
   els.reflectionInput.placeholder = prompt;
   if (!els.reflectionInput.value.trim()) els.reflectionInput.value = `${prompt}\n`;
   document.querySelectorAll(".taskButton").forEach((button) => {
     button.classList.toggle("active", button.dataset.task === task);
   });
+  state.reflections[key] = { text: els.reflectionInput.value, submitted: false };
+  saveReflections();
   els.reflectionInput.focus();
 }
 
 function renderReflectionPanel() {
   const item = selectedAnnotation();
-  const saved = item ? state.reflections[item.id] || {} : {};
+  const key = reflectionKey();
+  const saved = state.reflections[key] || {};
   const hasReflection = item?.reflection;
 
   const typeToTask = {
@@ -801,7 +808,7 @@ function renderReflectionPanel() {
   document.querySelectorAll(".taskButton").forEach((button) => {
     const lockedTask = item ? typeToTask[item.type] : null;
     button.classList.toggle("active", lockedTask ? button.dataset.task === lockedTask : button.dataset.task === "motion");
-    button.disabled = !item || Boolean(saved.submitted);
+    button.disabled = Boolean(saved.submitted);
   });
 
   if (hasReflection && item) {
@@ -814,10 +821,10 @@ function renderReflectionPanel() {
   }
 
   els.reflectionInput.value = saved.text || "";
-  els.reflectionInput.disabled = !item || Boolean(saved.submitted);
-  els.reflectionInput.placeholder = item ? reflectionTasks[typeToTask[item.type] || "motion"] : "先选择一个观察点，再用自己的话回答。";
+  els.reflectionInput.disabled = Boolean(saved.submitted);
+  els.reflectionInput.placeholder = item ? reflectionTasks[typeToTask[item.type] || "motion"] : "可以先写自由观察，也可以选择一个观察点后再修改。";
   els.reflectionSubmit.hidden = Boolean(saved.submitted);
-  els.reflectionSubmit.disabled = !item;
+  els.reflectionSubmit.disabled = false;
   els.reflectionEdit.hidden = !saved.submitted;
 
   if (saved.submitted && hasReflection) {
@@ -828,30 +835,32 @@ function renderReflectionPanel() {
     els.expertFeedbackPanel.hidden = false;
     els.feedbackUserText.textContent = saved.text || "（未填写）";
     els.feedbackExpertText.textContent = item.aesthetic || "请继续对照形式证据和自己的观看感受。";
+  } else if (saved.submitted) {
+    els.expertFeedbackPanel.hidden = false;
+    els.feedbackUserText.textContent = saved.text || "（未填写）";
+    els.feedbackExpertText.textContent = "已收到你的自由反思。下一步可以选择一个观察点，再把这段感受和具体形式证据对照起来。";
   } else {
     els.expertFeedbackPanel.hidden = true;
   }
 }
 
 function submitReflection() {
-  const item = selectedAnnotation();
-  if (!item) return;
+  const key = reflectionKey();
   const text = els.reflectionInput.value.trim();
   if (!text) {
     els.reflectionInput.focus();
     els.reflectionInput.placeholder = "请先写下你的理解，再提交。";
     return;
   }
-  state.reflections[item.id] = { text, submitted: true };
+  state.reflections[key] = { text, submitted: true };
   saveReflections();
   renderReflectionPanel();
   requestAnimationFrame(() => els.expertFeedbackPanel.scrollIntoView({ behavior: "smooth", block: "nearest" }));
 }
 
 function editReflection() {
-  const item = selectedAnnotation();
-  if (!item) return;
-  if (state.reflections[item.id]) state.reflections[item.id].submitted = false;
+  const key = reflectionKey();
+  if (state.reflections[key]) state.reflections[key].submitted = false;
   saveReflections();
   renderReflectionPanel();
   requestAnimationFrame(() => els.reflectionInput.focus());
@@ -1103,9 +1112,10 @@ document.querySelectorAll(".taskButton").forEach((button) => {
 els.reflectionSubmit.addEventListener("click", submitReflection);
 els.reflectionEdit.addEventListener("click", editReflection);
 els.reflectionInput.addEventListener("input", () => {
-  const item = selectedAnnotation();
-  if (item && state.reflections[item.id] && !state.reflections[item.id].submitted) {
-    state.reflections[item.id].text = els.reflectionInput.value;
+  const key = reflectionKey();
+  if (!state.reflections[key]) state.reflections[key] = { text: "", submitted: false };
+  if (!state.reflections[key].submitted) {
+    state.reflections[key].text = els.reflectionInput.value;
     saveReflections();
   }
 });
