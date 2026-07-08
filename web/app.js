@@ -252,17 +252,13 @@ function renderGuideList() {
     button.classList.toggle("active", item.id === state.selectedId);
     button.addEventListener("click", () => selectItem(item.id));
 
-    const badge = document.createElement("span");
-    badge.className = `typeBadge ${item.type}`;
-    badge.textContent = typeMeta[item.type]?.name || item.type;
-
     const title = document.createElement("strong");
     title.textContent = `${String(index + 1).padStart(2, "0")} · ${item.label}`;
 
     const summary = document.createElement("span");
     summary.textContent = summarize(item.formal);
 
-    button.append(badge, title, summary);
+    button.append(title, summary);
     els.guideList.append(button);
   });
 }

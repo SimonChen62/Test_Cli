@@ -517,26 +517,6 @@ h3 {
   line-height: 1.5;
 }
 
-.typeBadge {
-  justify-self: start;
-  border-radius: 999px;
-  color: white;
-  font-size: 12px;
-  padding: 3px 8px;
-}
-
-.typeBadge.qi_flow {
-  background: var(--qi);
-}
-
-.typeBadge.void_solid {
-  background: var(--void);
-}
-
-.typeBadge.brush_ink {
-  background: var(--brush);
-}
-
 .detailPanel {
   border: 1px solid var(--line);
   border-radius: 8px;
