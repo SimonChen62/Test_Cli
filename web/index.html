@@ -4,10 +4,52 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>CalliLens</title>
-    <link rel="stylesheet" href="./styles.css?v=6" />
+    <link rel="stylesheet" href="./styles.css?v=7" />
   </head>
   <body>
-    <main class="app">
+    <section id="entryScreen" class="entryScreen" aria-label="CalliLens 入口">
+      <div class="entryHero">
+        <p class="eyebrow">CalliLens · 书法观察式导览</p>
+        <h1>CalliLens</h1>
+        <p class="entryLead">先看原作，再进入证据层、人工导览点和反思任务。系统只辅助观察，不替你判断书法好坏。</p>
+      </div>
+
+      <div class="entryActions" aria-label="选择使用方式">
+        <button id="uploadEntryButton" class="entryActionButton" type="button">
+          <span>上传个性化书法作品</span>
+          <small>V1.6 预留入口，说明后续上传和 OpenCV 图层生成流程</small>
+        </button>
+        <button id="storedWorksButton" class="entryActionButton primaryEntryAction" type="button">
+          <span>浏览已存作品</span>
+          <small>选择当前项目已有样例，进入观察式导览</small>
+        </button>
+      </div>
+
+      <section id="storedWorksPanel" class="entryPanel" hidden>
+        <div class="entryPanelHeader">
+          <p class="eyebrow">已存作品</p>
+          <h2>选择一个导览样例</h2>
+        </div>
+        <div id="storedWorksList" class="storedWorksList" aria-label="已存作品列表"></div>
+      </section>
+
+      <section id="uploadPanel" class="entryPanel uploadPanel" hidden>
+        <div class="entryPanelHeader">
+          <p class="eyebrow">上传入口</p>
+          <h2>个性化作品上传将在 V2 完成</h2>
+        </div>
+        <p>这一版先保留上传入口，用于说明未来流程：上传图片、生成 OpenCV 证据图层、人工确认观察点，再进入导览。当前版本不会把图片上传到服务器，也不会自动判断气韵。</p>
+        <div class="uploadSteps">
+          <span>1 上传图片</span>
+          <span>2 生成图层</span>
+          <span>3 人工标注</span>
+          <span>4 进入导览</span>
+        </div>
+        <button id="browseFromUploadButton" class="secondaryButton" type="button">先体验已存作品</button>
+      </section>
+    </section>
+
+    <main class="app" hidden>
       <section class="viewer">
         <header class="topbar">
           <div>
@@ -199,6 +241,6 @@
       </aside>
     </main>
 
-    <script src="./app.js?v=2"></script>
+    <script src="./app.js?v=3"></script>
   </body>
 </html>

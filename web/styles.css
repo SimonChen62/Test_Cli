@@ -29,6 +29,148 @@ button {
   font: inherit;
 }
 
+.entryScreen {
+  min-height: 100vh;
+  padding: 28px;
+}
+
+.entryHero {
+  display: grid;
+  align-content: center;
+  min-height: 74vh;
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.entryHero h1 {
+  font-size: clamp(48px, 11vw, 132px);
+  line-height: 0.92;
+}
+
+.entryLead {
+  max-width: 680px;
+  margin: 22px 0 0;
+  color: var(--muted);
+  font-size: 20px;
+  line-height: 1.65;
+}
+
+.entryActions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  max-width: 980px;
+  margin: 0 auto 20px;
+}
+
+.entryActionButton {
+  display: grid;
+  gap: 8px;
+  min-height: 118px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 250, 240, 0.78);
+  color: var(--ink);
+  cursor: pointer;
+  padding: 20px;
+  text-align: left;
+}
+
+.entryActionButton span {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.entryActionButton small {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.primaryEntryAction {
+  border-color: rgba(36, 33, 29, 0.62);
+  background: var(--ink);
+  color: var(--surface);
+}
+
+.primaryEntryAction small {
+  color: rgba(255, 250, 240, 0.72);
+}
+
+.entryPanel {
+  max-width: 980px;
+  margin: 18px auto 36px;
+  border-top: 1px solid var(--line);
+  padding-top: 22px;
+}
+
+.entryPanelHeader {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.storedWorksList {
+  display: grid;
+  gap: 14px;
+}
+
+.workCard {
+  display: grid;
+  grid-template-columns: minmax(180px, 260px) minmax(0, 1fr);
+  gap: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 250, 240, 0.84);
+  padding: 12px;
+}
+
+.workCard img {
+  width: 100%;
+  height: 170px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.workCard h3 {
+  font-size: 21px;
+}
+
+.workCard p {
+  margin: 10px 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.workMeta {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.uploadPanel p {
+  max-width: 760px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.uploadSteps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 18px 0;
+}
+
+.uploadSteps span {
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+}
+
 .app {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 420px;
@@ -677,6 +819,24 @@ dd {
 }
 
 @media (max-width: 980px) {
+  .entryScreen {
+    padding: 18px;
+  }
+
+  .entryActions,
+  .workCard,
+  .uploadSteps {
+    grid-template-columns: 1fr;
+  }
+
+  .entryHero {
+    min-height: 58vh;
+  }
+
+  .entryLead {
+    font-size: 17px;
+  }
+
   .app {
     grid-template-columns: 1fr;
     padding: 14px;

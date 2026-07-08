@@ -1,11 +1,9 @@
 const params = new URLSearchParams(window.location.search);
-const workId = params.get("work") || "work_003";
+let activeWorkId = params.get("work") || "";
 const initialSelectId = params.get("select");
 const initialProbe = params.get("probe");
-const DATA_URL = `../data/${workId}/annotation.json`;
-const IMAGE_BASE = `../data/${workId}/`;
-const FIRST_LOOK_STORAGE_KEY = `callilens-first-look:${workId}`;
-const REFLECTIONS_STORAGE_KEY = `callilens-reflections:${workId}`;
+const initialView = params.get("view");
+const WORKS_URL = "../data/works.json";
 
 const typeMeta = {
   qi_flow: { name: "气脉", markClass: "qiRegion", recommendedLayer: "original" },
@@ -53,6 +51,8 @@ const reflectionTasks = {
 };
 
 const state = {
+  screen: "entry",
+  worksIndex: null,
   layer: "original",
   mode: "original",
   filter: "all",
@@ -70,6 +70,13 @@ const state = {
 state.introComplete = firstLookComplete(state.firstLook);
 
 const els = {
+  entryScreen: document.querySelector("#entryScreen"),
+  uploadEntry: document.querySelector("#uploadEntryButton"),
+  storedWorks: document.querySelector("#storedWorksButton"),
+  storedWorksPanel: document.querySelector("#storedWorksPanel"),
+  storedWorksList: document.querySelector("#storedWorksList"),
+  uploadPanel: document.querySelector("#uploadPanel"),
+  browseFromUpload: document.querySelector("#browseFromUploadButton"),
   app: document.querySelector(".app"),
   title: document.querySelector("#workTitle"),
   image: document.querySelector("#workImage"),
@@ -120,25 +127,124 @@ const els = {
   summaryEditError: document.querySelector("#summaryEditError"),
 };
 
+function dataUrl() {
+  return `../data/${activeWorkId}/annotation.json`;
+}
+
+function imageBase() {
+  return `../data/${activeWorkId}/`;
+}
+
+function firstLookStorageKey() {
+  return `callilens-first-look:${activeWorkId || "work_003"}`;
+}
+
+function reflectionsStorageKey() {
+  return `callilens-reflections:${activeWorkId || "work_003"}`;
+}
+
 async function boot() {
   try {
-    const response = await fetch(DATA_URL);
-    if (!response.ok) throw new Error(`无法加载 ${DATA_URL}: ${response.status}`);
-    state.data = await response.json();
-    if (initialSelectId && state.data.annotations?.some((item) => item.id === initialSelectId)) {
-      state.selectedId = initialSelectId;
-      const item = state.data.annotations.find((entry) => entry.id === initialSelectId);
-      state.filter = item.type;
+    await loadWorksIndex();
+    renderEntry();
+    const shouldOpenDemo = initialView === "demo" || Boolean(params.get("work")) || Boolean(initialSelectId) || Boolean(initialProbe);
+    if (shouldOpenDemo) {
+      await openWork(activeWorkId || state.worksIndex?.defaultWorkId || "work_003", { updateUrl: false });
     }
-    els.title.textContent = state.data.title || "单作品书法导览";
-    renderAll();
-    loadAnalysisCanvases();
-    applyInitialProbe();
   } catch (error) {
     els.fallback.hidden = false;
     showEmptyDetail("数据加载失败", error.message);
     console.error(error);
   }
+}
+
+async function loadWorksIndex() {
+  const response = await fetch(WORKS_URL);
+  if (!response.ok) throw new Error(`无法加载 ${WORKS_URL}: ${response.status}`);
+  state.worksIndex = await response.json();
+  if (!activeWorkId) activeWorkId = state.worksIndex.defaultWorkId || state.worksIndex.works?.[0]?.id || "work_003";
+}
+
+function renderEntry() {
+  renderWorkCards();
+  els.entryScreen.hidden = state.screen === "demo";
+  els.app.hidden = state.screen !== "demo";
+  els.storedWorksPanel.hidden = state.screen !== "stored";
+  els.uploadPanel.hidden = state.screen !== "upload";
+}
+
+function renderWorkCards() {
+  const works = state.worksIndex?.works || [];
+  els.storedWorksList.replaceChildren();
+  works.forEach((work) => {
+    const card = document.createElement("article");
+    card.className = `workCard ${work.status === "ready" ? "ready" : "draft"}`;
+
+    const image = document.createElement("img");
+    image.alt = work.title;
+    image.src = `../data/${work.id}/${work.thumbnail || "original.png"}`;
+
+    const body = document.createElement("div");
+    const eyebrow = document.createElement("p");
+    eyebrow.className = "eyebrow";
+    eyebrow.textContent = work.status === "ready" ? "可导览" : "草稿样例";
+    const title = document.createElement("h3");
+    title.textContent = work.title;
+    const meta = document.createElement("p");
+    meta.className = "workMeta";
+    meta.textContent = work.style || "书法作品";
+    const description = document.createElement("p");
+    description.textContent = work.description || "进入观察式导览。";
+    const button = document.createElement("button");
+    button.className = "primaryButton";
+    button.type = "button";
+    button.textContent = work.status === "ready" ? "进入导览" : "查看草稿";
+    button.addEventListener("click", () => openWork(work.id));
+
+    body.append(eyebrow, title, meta, description, button);
+    card.append(image, body);
+    els.storedWorksList.append(card);
+  });
+}
+
+async function openWork(workId, options = {}) {
+  activeWorkId = workId;
+  state.screen = "demo";
+  state.layer = "original";
+  state.mode = "original";
+  state.filter = "all";
+  state.selectedId = null;
+  state.probe = null;
+  state.data = null;
+  state.layerCanvases = {};
+  state.firstLook = readFirstLook();
+  state.introComplete = firstLookComplete(state.firstLook);
+  state.editingFirstLook = false;
+  state.reflections = readReflections();
+  els.fallback.hidden = true;
+  renderEntry();
+
+  if (options.updateUrl !== false) {
+    const nextUrl = new URL(window.location.href);
+    nextUrl.searchParams.set("work", activeWorkId);
+    nextUrl.searchParams.set("view", "demo");
+    nextUrl.searchParams.delete("select");
+    nextUrl.searchParams.delete("probe");
+    window.history.pushState({}, "", nextUrl);
+  }
+
+  const response = await fetch(dataUrl());
+  if (!response.ok) throw new Error(`无法加载 ${dataUrl()}: ${response.status}`);
+  state.data = await response.json();
+  if (initialSelectId && state.data.annotations?.some((item) => item.id === initialSelectId)) {
+    state.selectedId = initialSelectId;
+    const item = state.data.annotations.find((entry) => entry.id === initialSelectId);
+    state.filter = item.type;
+  }
+  els.title.textContent = state.data.title || "单作品书法导览";
+  renderAll();
+  loadAnalysisCanvases();
+  applyInitialProbe();
 }
 
 function applyInitialProbe() {
@@ -217,7 +323,7 @@ function renderFirstLook() {
 function renderImage() {
   if (!state.data) return;
   const images = state.data.images || {};
-  els.image.src = IMAGE_BASE + (images[state.layer] || images.original || "original.png");
+  els.image.src = imageBase() + (images[state.layer] || images.original || "original.png");
   els.image.onerror = () => {
     els.fallback.hidden = false;
     positionOverlay();
@@ -464,7 +570,7 @@ function loadAnalysisCanvases() {
     image.onerror = () => {
       console.warn(`无法加载探针图层: ${layer}`);
     };
-    image.src = IMAGE_BASE + filename;
+    image.src = imageBase() + filename;
   });
 }
 
@@ -779,19 +885,19 @@ function editReflection() {
 
 function readReflections() {
   try {
-    return JSON.parse(localStorage.getItem(REFLECTIONS_STORAGE_KEY) || "{}");
+    return JSON.parse(localStorage.getItem(reflectionsStorageKey()) || "{}");
   } catch {
     return {};
   }
 }
 
 function saveReflections() {
-  localStorage.setItem(REFLECTIONS_STORAGE_KEY, JSON.stringify(state.reflections));
+  localStorage.setItem(reflectionsStorageKey(), JSON.stringify(state.reflections));
 }
 
 function readFirstLook() {
   try {
-    const stored = JSON.parse(localStorage.getItem(FIRST_LOOK_STORAGE_KEY) || "{}");
+    const stored = JSON.parse(localStorage.getItem(firstLookStorageKey()) || "{}");
     return {
       overall: stored.overall || "",
       motion: stored.motion || "",
@@ -831,7 +937,7 @@ function handleFirstLookSubmit(event) {
   }
   state.firstLook = firstLook;
   state.introComplete = true;
-  localStorage.setItem(FIRST_LOOK_STORAGE_KEY, JSON.stringify(firstLook));
+  localStorage.setItem(firstLookStorageKey(), JSON.stringify(firstLook));
   els.firstLookError.hidden = true;
   renderAll();
   renderFilterButtons();
@@ -854,7 +960,7 @@ function editFirstLook() {
 
   state.firstLook = firstLook;
   state.editingFirstLook = false;
-  localStorage.setItem(FIRST_LOOK_STORAGE_KEY, JSON.stringify(firstLook));
+  localStorage.setItem(firstLookStorageKey(), JSON.stringify(firstLook));
   els.summaryEditError.hidden = true;
   renderFirstLook();
 }
@@ -862,7 +968,7 @@ function editFirstLook() {
 function returnToFirstLook() {
   if (state.editingFirstLook) {
     state.firstLook = collectFirstLookSummary();
-    localStorage.setItem(FIRST_LOOK_STORAGE_KEY, JSON.stringify(state.firstLook));
+    localStorage.setItem(firstLookStorageKey(), JSON.stringify(state.firstLook));
   }
   state.editingFirstLook = false;
   state.introComplete = false;
@@ -982,6 +1088,24 @@ document.querySelectorAll(".modeButton").forEach((button) => {
 
 document.querySelectorAll(".layoutButton").forEach((button) => {
   button.addEventListener("click", () => setLayout(button.dataset.layout));
+});
+
+els.storedWorks.addEventListener("click", () => {
+  state.screen = "stored";
+  renderEntry();
+  requestAnimationFrame(() => els.storedWorksPanel.scrollIntoView({ behavior: "smooth", block: "start" }));
+});
+
+els.uploadEntry.addEventListener("click", () => {
+  state.screen = "upload";
+  renderEntry();
+  requestAnimationFrame(() => els.uploadPanel.scrollIntoView({ behavior: "smooth", block: "start" }));
+});
+
+els.browseFromUpload.addEventListener("click", () => {
+  state.screen = "stored";
+  renderEntry();
+  requestAnimationFrame(() => els.storedWorksPanel.scrollIntoView({ behavior: "smooth", block: "start" }));
 });
 
 els.firstLookForm.addEventListener("submit", handleFirstLookSubmit);
