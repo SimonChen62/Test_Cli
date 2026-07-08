@@ -9,3 +9,5 @@ data/source/
 data/work_001/candidates/
 data/work_001/*_full.png
 data/work_001/preview_layers.png
+logs/
+.sync-git/
