@@ -26,7 +26,7 @@ const modeMeta = {
   },
   solid: {
     layer: "binary",
-    filter: "all",
+    filter: "void_solid",
     detail: ["实：墨迹", "黑白图把墨迹从背景中分离出来，适合看密集程度、字距和结构重心。"],
   },
   void: {
