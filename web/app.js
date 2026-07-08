@@ -279,16 +279,23 @@ function renderQiRegion(item) {
   if (!points.length) return;
 
   const region = regionFromPoints(points, {
-    minWidth: 5.2,
-    minHeight: 18,
-    padX: 1.7,
-    padY: 3.6,
+    minWidth: 4.4,
+    minHeight: 15,
+    padX: 1.1,
+    padY: 2.4,
   });
+  let offsetX = -4.4;
+  let offsetY = 7.8;
+  const scale = 0.6;
+  if (item.id === "qi_2" || item.label === "形断势连") {
+    offsetX += region.width * scale * 5;
+    offsetY -= region.height * scale * 0.25;
+  }
   const ellipse = svg("ellipse", {
-    cx: percentXToPixel(region.cx),
-    cy: percentYToPixel(region.cy),
-    rx: percentXToPixel(region.width / 2),
-    ry: percentYToPixel(region.height / 2),
+    cx: percentXToPixel(clamp(region.cx + offsetX, 0, 100)),
+    cy: percentYToPixel(clamp(region.cy + offsetY, 0, 100)),
+    rx: percentXToPixel((region.width / 2) * scale),
+    ry: percentYToPixel((region.height / 2) * scale),
     class: "annotationShape qiRegion",
     tabindex: "0",
   });
@@ -401,6 +408,8 @@ function setLayout(layout) {
   state.layout = layout === "landscape" ? "landscape" : "portrait";
   localStorage.setItem("callilens-layout", state.layout);
   renderLayout();
+  // 延迟 50ms 重新计算覆盖图层的大小和坐标，防止网格重排延迟导致偏移
+  setTimeout(positionOverlay, 50);
 }
 
 function setStepButtonsDisabled(disabled) {

@@ -1,8 +1,8 @@
 {
   "workId": "work_003",
-  "title": "右段题名与正文局部",
-  "style": "楷书 / 魏碑风格，待确认",
-  "source": "本地素材 D:\\技术学习\\Zmf.jpg，最终提交前需要补充图片来源或授权情况",
+  "title": "赵孟頫《行书光福重建塔记卷》右段题名与正文局部",
+  "style": "行书（亦常称行楷）",
+  "source": "作品信息依据上海博物馆；当前展示图片的直接来源与授权仍需项目组核实",
   "images": {
     "original": "original.png",
     "binary": "binary.png",
