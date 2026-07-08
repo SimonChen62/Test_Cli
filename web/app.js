@@ -533,6 +533,8 @@ function setLayout(layout) {
   state.layout = layout === "landscape" ? "landscape" : "portrait";
   localStorage.setItem("callilens-layout", state.layout);
   renderLayout();
+  // 延迟 50ms 重新计算覆盖图层的大小和坐标，防止网格重排延迟导致偏移
+  setTimeout(positionOverlay, 50);
 }
 
 function setStepButtonsDisabled(disabled) {
