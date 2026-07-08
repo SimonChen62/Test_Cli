@@ -15,22 +15,22 @@ const modeMeta = {
   original: {
     layer: "original",
     filter: "all",
-    detail: ["先看原作整体", "不急着看答案。先判断哪里有运动感，哪里疏朗或紧密。"],
+    detail: ["先看原作整体", "先判断哪里有运动感，哪里疏朗或紧密，再进入证据图层。"],
   },
   qi: {
     layer: "skeleton",
     filter: "qi_flow",
-    detail: ["气脉模式", "骨架图帮助观察笔画方向和上下承接；虚线圈只提示人工选择的观察区域。"],
+    detail: ["气脉模式", "骨架图层只帮助观察方向和承接，虚线圈仍以人工标注为准。"],
   },
   solid: {
     layer: "binary",
     filter: "void_solid",
-    detail: ["实：墨迹", "黑白图把墨迹从背景中分离出来，适合看密集程度、字距和结构重心。"],
+    detail: ["墨迹模式", "黑白图层把墨迹从背景中分离出来，适合观察密集程度和结构重心。"],
   },
   void: {
     layer: "voidCandidates",
     filter: "void_solid",
-    detail: ["虚：留白", "留白候选图帮助定位字间、列间和题名旁的空白。"],
+    detail: ["留白模式", "留白候选图层帮助定位字间、列间和题名旁的空间。"],
   },
   relation: {
     layer: "original",
@@ -51,7 +51,7 @@ const reflectionTasks = {
 };
 
 const state = {
-  screen: "entry",
+  screen: "home",
   worksIndex: null,
   layer: "original",
   mode: "original",
@@ -64,7 +64,7 @@ const state = {
   firstLook: readFirstLook(),
   introComplete: false,
   editingFirstLook: false,
-  reflections: readReflections(), // { [id]: { text, submitted } }
+  reflections: readReflections(),
 };
 
 state.introComplete = firstLookComplete(state.firstLook);
@@ -146,15 +146,17 @@ function reflectionsStorageKey() {
 async function boot() {
   try {
     await loadWorksIndex();
-    renderEntry();
     const shouldOpenDemo = initialView === "demo" || Boolean(params.get("work")) || Boolean(initialSelectId) || Boolean(initialProbe);
     if (shouldOpenDemo) {
       await openWork(activeWorkId || state.worksIndex?.defaultWorkId || "work_003", { updateUrl: false });
+      return;
     }
+    renderEntry();
+    handleEntryScroll();
   } catch (error) {
-    els.fallback.hidden = false;
-    showEmptyDetail("数据加载失败", error.message);
     console.error(error);
+    if (els.fallback) els.fallback.hidden = false;
+    showEmptyDetail("数据加载失败", error.message);
   }
 }
 
@@ -162,23 +164,31 @@ async function loadWorksIndex() {
   const response = await fetch(WORKS_URL);
   if (!response.ok) throw new Error(`无法加载 ${WORKS_URL}: ${response.status}`);
   state.worksIndex = await response.json();
-  if (!activeWorkId) activeWorkId = state.worksIndex.defaultWorkId || state.worksIndex.works?.[0]?.id || "work_003";
+  if (!activeWorkId) activeWorkId = state.worksIndex.defaultWorkId || "work_003";
+}
+
+function setScreen(screen) {
+  state.screen = screen;
+  renderEntry();
 }
 
 function renderEntry() {
   renderWorkCards();
+  document.body.dataset.screen = state.screen;
+  els.entryScreen.dataset.screen = state.screen;
   els.entryScreen.hidden = state.screen === "demo";
   els.app.hidden = state.screen !== "demo";
-  els.storedWorksPanel.hidden = state.screen !== "stored";
+  els.storedWorksPanel.hidden = state.screen !== "library";
   els.uploadPanel.hidden = state.screen !== "upload";
 }
 
 function renderWorkCards() {
-  const works = state.worksIndex?.works || [];
+  if (!els.storedWorksList) return;
+  const works = (state.worksIndex?.works || []).filter((work) => work.id === "work_003" && work.status === "ready");
   els.storedWorksList.replaceChildren();
   works.forEach((work) => {
     const card = document.createElement("article");
-    card.className = `workCard ${work.status === "ready" ? "ready" : "draft"}`;
+    card.className = "workCard ready";
 
     const image = document.createElement("img");
     image.alt = work.title;
@@ -187,7 +197,7 @@ function renderWorkCards() {
     const body = document.createElement("div");
     const eyebrow = document.createElement("p");
     eyebrow.className = "eyebrow";
-    eyebrow.textContent = work.status === "ready" ? "可导览" : "草稿样例";
+    eyebrow.textContent = "可导览";
     const title = document.createElement("h3");
     title.textContent = work.title;
     const meta = document.createElement("p");
@@ -198,7 +208,7 @@ function renderWorkCards() {
     const button = document.createElement("button");
     button.className = "primaryButton";
     button.type = "button";
-    button.textContent = work.status === "ready" ? "进入导览" : "查看草稿";
+    button.textContent = "进入观察";
     button.addEventListener("click", () => openWork(work.id));
 
     body.append(eyebrow, title, meta, description, button);
@@ -221,7 +231,6 @@ async function openWork(workId, options = {}) {
   state.introComplete = firstLookComplete(state.firstLook);
   state.editingFirstLook = false;
   state.reflections = readReflections();
-  els.fallback.hidden = true;
   renderEntry();
 
   if (options.updateUrl !== false) {
@@ -247,19 +256,6 @@ async function openWork(workId, options = {}) {
   applyInitialProbe();
 }
 
-function applyInitialProbe() {
-  if (!initialProbe || !els.image.naturalWidth || !els.image.naturalHeight) return;
-  const [x, y] = initialProbe.split(",").map(Number);
-  if (!Number.isFinite(x) || !Number.isFinite(y)) return;
-  const percentX = clamp(x, 0, 100);
-  const percentY = clamp(y, 0, 100);
-  const pixelX = Math.round((percentX / 100) * els.image.naturalWidth);
-  const pixelY = Math.round((percentY / 100) * els.image.naturalHeight);
-  state.probe = analyzeProbe(pixelX, pixelY, percentX, percentY);
-  renderOverlay();
-  renderProbePanel();
-}
-
 function annotations() {
   return state.data?.annotations || [];
 }
@@ -283,6 +279,7 @@ function renderAll() {
   renderDetail();
   renderProbePanel();
   renderReflectionPanel();
+  renderFilterButtons();
 }
 
 function renderLayout() {
@@ -332,7 +329,6 @@ function renderImage() {
     els.fallback.hidden = true;
     positionOverlay();
     renderOverlay();
-    applyInitialProbe();
   };
   document.querySelectorAll(".modeButton").forEach((button) => {
     button.classList.toggle("active", button.dataset.mode === state.mode);
@@ -358,13 +354,19 @@ function renderGuideList() {
     button.classList.toggle("active", item.id === state.selectedId);
     button.addEventListener("click", () => selectItem(item.id));
 
-    const title = document.createElement("strong");
-    title.textContent = `${String(index + 1).padStart(2, "0")} · ${item.label}`;
+    const number = document.createElement("span");
+    number.className = "guideNumber";
+    number.textContent = String(index + 1).padStart(2, "0");
 
+    const content = document.createElement("span");
+    content.className = "guideCardText";
+    const title = document.createElement("strong");
+    title.textContent = item.label;
     const summary = document.createElement("span");
     summary.textContent = summarize(item.formal);
+    content.append(title, summary);
 
-    button.append(title, summary);
+    button.append(number, content);
     els.guideList.append(button);
   });
 }
@@ -385,28 +387,19 @@ function renderQiRegion(item) {
     renderEllipseBox(item, "qiRegion");
     return;
   }
-
-  const points = pathPoints(item.path);
+  const points = pathPoints(item.path || "");
   if (!points.length) return;
-
   const region = regionFromPoints(points, {
-    minWidth: 4.4,
-    minHeight: 15,
-    padX: 1.1,
-    padY: 2.4,
+    minWidth: 5.4,
+    minHeight: 18,
+    padX: 1.4,
+    padY: 2.6,
   });
-  let offsetX = -4.4;
-  let offsetY = 7.8;
-  const scale = 0.6;
-  if (item.id === "qi_2" || item.label === "形断势连") {
-    offsetX += region.width * scale * 5;
-    offsetY -= region.height * scale * 0.25;
-  }
   const ellipse = svg("ellipse", {
-    cx: percentXToPixel(clamp(region.cx + offsetX, 0, 100)),
-    cy: percentYToPixel(clamp(region.cy + offsetY, 0, 100)),
-    rx: percentXToPixel((region.width / 2) * scale),
-    ry: percentYToPixel((region.height / 2) * scale),
+    cx: percentXToPixel(region.cx),
+    cy: percentYToPixel(region.cy),
+    rx: percentXToPixel(region.width / 2),
+    ry: percentYToPixel(region.height / 2),
     class: "annotationShape qiRegion",
     tabindex: "0",
   });
@@ -434,7 +427,7 @@ function renderBox(item, className) {
     y: percentYToPixel(item.box.y),
     width: percentXToPixel(item.box.width),
     height: percentYToPixel(item.box.height),
-    rx: 6,
+    rx: 8,
     class: `annotationShape ${className}`,
     tabindex: "0",
   });
@@ -460,11 +453,12 @@ function renderDetail() {
 }
 
 function showEmptyDetail(title, message) {
+  if (!els.detailType) return;
   els.detailType.textContent = "导览说明";
   els.annotationTitle.textContent = title;
   els.where.textContent = message;
   els.formal.textContent = "先观察作品整体，再逐个打开观察点。";
-  els.perception.textContent = "这样可以避免一开始就被标注压住，只保留自己的第一印象。";
+  els.perception.textContent = "这样可以避免一开始就被标注压住，保留自己的第一印象。";
   els.aesthetic.textContent = "CalliLens 的目标是辅助鉴赏，不是自动判断书法好坏。";
 }
 
@@ -472,12 +466,8 @@ function selectItem(id) {
   if (!state.introComplete) return;
   state.selectedId = id;
   const item = selectedAnnotation();
-  if (item) {
-    state.layer = typeMeta[item.type]?.recommendedLayer || "original";
-  }
+  if (item) state.layer = typeMeta[item.type]?.recommendedLayer || "original";
   renderAll();
-  // 切换观察点后，滚动反思区到顶部
-  els.reflectionInput.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
 function setMode(mode) {
@@ -490,7 +480,6 @@ function setMode(mode) {
   const matching = config.filter === "all" ? null : annotations().find((item) => item.type === config.filter);
   state.selectedId = matching?.id || null;
   renderAll();
-  renderFilterButtons();
 }
 
 function clearSelection() {
@@ -500,7 +489,6 @@ function clearSelection() {
   state.filter = "all";
   state.probe = null;
   renderAll();
-  renderFilterButtons();
 }
 
 function stepSelection(delta) {
@@ -516,11 +504,8 @@ function setFilter(filter) {
   state.filter = filter;
   state.mode = "original";
   const selected = selectedAnnotation();
-  if (selected && filter !== "all" && selected.type !== filter) {
-    state.selectedId = null;
-  }
+  if (selected && filter !== "all" && selected.type !== filter) state.selectedId = null;
   renderAll();
-  renderFilterButtons();
 }
 
 function renderFilterButtons() {
@@ -533,7 +518,6 @@ function setLayout(layout) {
   state.layout = layout === "landscape" ? "landscape" : "portrait";
   localStorage.setItem("callilens-layout", state.layout);
   renderLayout();
-  // 延迟 50ms 重新计算覆盖图层的大小和坐标，防止网格重排延迟导致偏移
   setTimeout(positionOverlay, 50);
 }
 
@@ -568,9 +552,7 @@ function loadAnalysisCanvases() {
       const context = canvas.getContext("2d", { willReadFrequently: true });
       context.drawImage(image, 0, 0);
       state.layerCanvases[layer] = { canvas, context };
-    };
-    image.onerror = () => {
-      console.warn(`无法加载探针图层: ${layer}`);
+      applyInitialProbe();
     };
     image.src = imageBase() + filename;
   });
@@ -580,14 +562,7 @@ function handleImageClick(event) {
   if (!state.introComplete) return;
   if (!state.data || !els.image.naturalWidth || !els.image.naturalHeight) return;
   const imageRect = els.image.getBoundingClientRect();
-  if (
-    event.clientX < imageRect.left ||
-    event.clientX > imageRect.right ||
-    event.clientY < imageRect.top ||
-    event.clientY > imageRect.bottom
-  ) {
-    return;
-  }
+  if (event.clientX < imageRect.left || event.clientX > imageRect.right || event.clientY < imageRect.top || event.clientY > imageRect.bottom) return;
 
   const percentX = ((event.clientX - imageRect.left) / imageRect.width) * 100;
   const percentY = ((event.clientY - imageRect.top) / imageRect.height) * 100;
@@ -598,13 +573,25 @@ function handleImageClick(event) {
   renderProbePanel();
 }
 
+function applyInitialProbe() {
+  if (!initialProbe || !els.image.naturalWidth || !els.image.naturalHeight) return;
+  const [x, y] = initialProbe.split(",").map(Number);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+  const percentX = clamp(x, 0, 100);
+  const percentY = clamp(y, 0, 100);
+  const pixelX = Math.round((percentX / 100) * els.image.naturalWidth);
+  const pixelY = Math.round((percentY / 100) * els.image.naturalHeight);
+  state.probe = analyzeProbe(pixelX, pixelY, percentX, percentY);
+  renderOverlay();
+  renderProbePanel();
+}
+
 function analyzeProbe(pixelX, pixelY, percentX, percentY) {
-  const original = state.layerCanvases.original;
-  const width = original?.canvas.width || els.image.naturalWidth;
-  const height = original?.canvas.height || els.image.naturalHeight;
-  const base = Math.min(width, height);
-  const sampleWidth = clamp(Math.round(base * 0.08), 42, 120);
-  const sampleHeight = clamp(Math.round(base * 0.34), 150, 360);
+  const width = els.image.naturalWidth || state.layerCanvases.original?.canvas.width || 100;
+  const height = els.image.naturalHeight || state.layerCanvases.original?.canvas.height || 100;
+  const shortSide = Math.min(width, height);
+  const sampleWidth = Math.min(width, Math.round(clamp(shortSide * 0.1, 56, 160)));
+  const sampleHeight = Math.min(height, Math.round(clamp(shortSide * 0.28, 120, 320)));
   const x = clamp(Math.round(pixelX - sampleWidth / 2), 0, Math.max(0, width - sampleWidth));
   const y = clamp(Math.round(pixelY - sampleHeight / 2), 0, Math.max(0, height - sampleHeight));
   const sample = { x, y, width: sampleWidth, height: sampleHeight };
@@ -639,9 +626,7 @@ function analyzeProbe(pixelX, pixelY, percentX, percentY) {
 
 function measureInkRatio(sample) {
   const binary = state.layerCanvases.binary;
-  if (binary) {
-    return samplePixels(binary.context, sample, (r, g, b) => luminance(r, g, b) < 150);
-  }
+  if (binary) return samplePixels(binary.context, sample, (r, g, b) => luminance(r, g, b) < 150);
   const original = state.layerCanvases.original;
   if (!original) return 0;
   return samplePixels(original.context, sample, (r, g, b) => luminance(r, g, b) < 185);
@@ -679,9 +664,7 @@ function measureContrast(sample) {
   if (!layer) return 0;
   const data = layer.context.getImageData(sample.x, sample.y, sample.width, sample.height).data;
   const values = [];
-  for (let i = 0; i < data.length; i += 16) {
-    values.push(luminance(data[i], data[i + 1], data[i + 2]));
-  }
+  for (let i = 0; i < data.length; i += 16) values.push(luminance(data[i], data[i + 1], data[i + 2]));
   return normalizedStdDev(values);
 }
 
@@ -706,13 +689,13 @@ function normalizedStdDev(values) {
 function makeCandidateText(metrics) {
   const parts = [];
   if (metrics.inkRatio > 0.24 && metrics.voidCue > 0.08) {
-    parts.push("可能适合作为“虚实 / 疏密平衡”观察候选：附近墨迹较密，同时辅助图提示有明显空白参与结构。");
+    parts.push("可能适合作为“虚实 / 疏密平衡”观察候选：附近墨迹较密，同时辅助图层提示有明显空白参与结构。");
   }
   if (metrics.inkRatio > 0.08 && metrics.inkRatio < 0.34 && metrics.strokeVariation > 0.18) {
-    parts.push("可能适合作为“笔墨轻重”观察候选：局部粗细热力变化较明显，可继续对照原作判断。");
+    parts.push("可能适合作为“笔墨轻重”观察候选：局部粗细或色彩变化较明显，可继续对照原作判断。");
   }
   if (metrics.skeletonCue > 0.025 && metrics.inkRatio > 0.06) {
-    parts.push("可能适合作为“气脉”观察候选：骨架或墨迹线索较集中，可以观察上下左右是否存在方向承接。");
+    parts.push("可能适合作为“气脉”观察候选：骨架或墨迹线索较集中，可观察上下是否存在方向承接。");
   }
   if (metrics.inkContrast > 0.2) {
     parts.push("这里存在一定墨色或明暗变化，可以辅助观察枯润、轻重和节奏。");
@@ -735,17 +718,17 @@ function renderProbeMark() {
     class: "probeBox",
   });
   const hLine = svg("line", {
-    x1: percentXToPixel(Math.max(0, percentX - 4.2)),
+    x1: percentXToPixel(Math.max(0, percentX - 2.8)),
     y1: percentYToPixel(percentY),
-    x2: percentXToPixel(Math.min(100, percentX + 4.2)),
+    x2: percentXToPixel(Math.min(100, percentX + 2.8)),
     y2: percentYToPixel(percentY),
     class: "probeCross",
   });
   const vLine = svg("line", {
     x1: percentXToPixel(percentX),
-    y1: percentYToPixel(Math.max(0, percentY - 9)),
+    y1: percentYToPixel(Math.max(0, percentY - 7)),
     x2: percentXToPixel(percentX),
-    y2: percentYToPixel(Math.min(100, percentY + 9)),
+    y2: percentYToPixel(Math.min(100, percentY + 7)),
     class: "probeCross",
   });
   els.overlay.append(rect, hLine, vLine);
@@ -755,7 +738,7 @@ function renderProbePanel() {
   const probe = state.probe;
   if (!probe) {
     els.probeTitle.textContent = "点击图像任意位置";
-    els.probeSummary.textContent = "按书法竖列取样，只给候选线索。";
+    els.probeSummary.textContent = "按书法竖列取样，只给出候选线索。";
     els.inkMetric.textContent = "--";
     els.voidMetric.textContent = "--";
     els.strokeMetric.textContent = "--";
@@ -773,21 +756,23 @@ function renderProbePanel() {
 }
 
 function insertReflection(text) {
-  const saved = state.reflections[state.selectedId];
-  if (saved?.submitted) return; // 已提交则不允许插入
+  const item = selectedAnnotation();
+  if (!item) return;
+  const saved = state.reflections[item.id];
+  if (saved?.submitted) return;
   const current = els.reflectionInput.value.trim();
   els.reflectionInput.value = current ? `${current}\n${text}` : text;
+  state.reflections[item.id] = { text: els.reflectionInput.value, submitted: false };
+  saveReflections();
   els.reflectionInput.focus();
 }
 
 function setReflectionTask(task) {
-  const saved = state.reflections[state.selectedId];
-  if (saved?.submitted) return; // 已提交则不允许切换任务
+  const item = selectedAnnotation();
+  if (item && state.reflections[item.id]?.submitted) return;
   const prompt = reflectionTasks[task] || reflectionTasks.motion;
   els.reflectionInput.placeholder = prompt;
-  if (!els.reflectionInput.value.trim()) {
-    els.reflectionInput.value = `${prompt}\n`;
-  }
+  if (!els.reflectionInput.value.trim()) els.reflectionInput.value = `${prompt}\n`;
   document.querySelectorAll(".taskButton").forEach((button) => {
     button.classList.toggle("active", button.dataset.task === task);
   });
@@ -796,34 +781,20 @@ function setReflectionTask(task) {
 
 function renderReflectionPanel() {
   const item = selectedAnnotation();
-  const saved = item ? (state.reflections[item.id] || {}) : {};
+  const saved = item ? state.reflections[item.id] || {} : {};
   const hasReflection = item?.reflection;
 
-  // 根据当前观察点的类型自动选择并锁定对应任务（气脉对应运动感，虚实对应空白，笔墨对应证据）
   const typeToTask = {
     qi_flow: "motion",
     void_solid: "space",
     brush_ink: "evidence",
   };
+  document.querySelectorAll(".taskButton").forEach((button) => {
+    const lockedTask = item ? typeToTask[item.type] : null;
+    button.classList.toggle("active", lockedTask ? button.dataset.task === lockedTask : button.dataset.task === "motion");
+    button.disabled = !item || Boolean(saved.submitted);
+  });
 
-  if (item && typeToTask[item.type]) {
-    const activeTask = typeToTask[item.type];
-    document.querySelectorAll(".taskButton").forEach((button) => {
-      button.classList.toggle("active", button.dataset.task === activeTask);
-      button.style.pointerEvents = "none"; // 锁定以指向特定任务
-      button.style.opacity = "0.75";
-    });
-    const prompt = reflectionTasks[activeTask];
-    els.reflectionInput.placeholder = prompt;
-  } else {
-    // 恢复全局或自由选择模式
-    document.querySelectorAll(".taskButton").forEach((button) => {
-      button.style.pointerEvents = "auto";
-      button.style.opacity = "1";
-    });
-  }
-
-  // 显示/隐藏观察点专属提示
   if (hasReflection && item) {
     els.reflectionPrompt.hidden = false;
     els.reflectionConcept.textContent = item.reflection.concept;
@@ -833,19 +804,21 @@ function renderReflectionPanel() {
     els.reflectionPrompt.hidden = true;
   }
 
-  // 恢复该观察点已保存的笔记
   els.reflectionInput.value = saved.text || "";
-  els.reflectionInput.disabled = !!saved.submitted;
-
-  // 提交/编辑按钮状态
-  els.reflectionSubmit.hidden = !!saved.submitted;
+  els.reflectionInput.disabled = !item || Boolean(saved.submitted);
+  els.reflectionInput.placeholder = item ? reflectionTasks[typeToTask[item.type] || "motion"] : "先选择一个观察点，再用自己的话回答。";
+  els.reflectionSubmit.hidden = Boolean(saved.submitted);
+  els.reflectionSubmit.disabled = !item;
   els.reflectionEdit.hidden = !saved.submitted;
 
-  // 专家反馈区
   if (saved.submitted && hasReflection) {
     els.expertFeedbackPanel.hidden = false;
     els.feedbackUserText.textContent = saved.text || "（未填写）";
     els.feedbackExpertText.textContent = item.reflection.expertFeedback;
+  } else if (saved.submitted && item) {
+    els.expertFeedbackPanel.hidden = false;
+    els.feedbackUserText.textContent = saved.text || "（未填写）";
+    els.feedbackExpertText.textContent = item.aesthetic || "请继续对照形式证据和自己的观看感受。";
   } else {
     els.expertFeedbackPanel.hidden = true;
   }
@@ -860,28 +833,18 @@ function submitReflection() {
     els.reflectionInput.placeholder = "请先写下你的理解，再提交。";
     return;
   }
-  // 保存到 state
   state.reflections[item.id] = { text, submitted: true };
   saveReflections();
-  
-  // 重新渲染反思面板，揭示专家结论
   renderReflectionPanel();
-  
-  // 滚动到反馈区
   requestAnimationFrame(() => els.expertFeedbackPanel.scrollIntoView({ behavior: "smooth", block: "nearest" }));
 }
 
 function editReflection() {
   const item = selectedAnnotation();
   if (!item) return;
-  if (state.reflections[item.id]) {
-    state.reflections[item.id].submitted = false;
-  }
+  if (state.reflections[item.id]) state.reflections[item.id].submitted = false;
   saveReflections();
-  
-  // 编辑时重新隐藏对照区
   renderReflectionPanel();
-  
   requestAnimationFrame(() => els.reflectionInput.focus());
 }
 
@@ -942,7 +905,6 @@ function handleFirstLookSubmit(event) {
   localStorage.setItem(firstLookStorageKey(), JSON.stringify(firstLook));
   els.firstLookError.hidden = true;
   renderAll();
-  renderFilterButtons();
 }
 
 function editFirstLook() {
@@ -959,7 +921,6 @@ function editFirstLook() {
     els.summaryEditError.hidden = false;
     return;
   }
-
   state.firstLook = firstLook;
   state.editingFirstLook = false;
   localStorage.setItem(firstLookStorageKey(), JSON.stringify(firstLook));
@@ -982,26 +943,21 @@ function returnToFirstLook() {
   els.firstLookError.hidden = true;
   els.summaryEditError.hidden = true;
   renderAll();
-  renderFilterButtons();
   window.scrollTo({ top: 0, behavior: "smooth" });
   requestAnimationFrame(() => els.firstOverall.focus());
 }
 
 function whereText(item) {
   const hintByType = {
-    qi_flow: "看左侧虚线圈出的观察区域：它不是笔顺还原，也不是自动判定气脉，只提示这里适合观察上下承接。",
-    void_solid: "看左侧虚线框出的留白区域：重点是空白如何参与结构和节奏。",
-    brush_ink: "看左侧虚线框出的笔墨区域：它提示粗细、浓淡或视觉重量。",
+    qi_flow: "看作品上虚线圈出的纵向区域：它不是笔顺还原，也不是自动判定气脉，只提示这里适合观察上下承接。",
+    void_solid: "看作品上虚线框出的留白区域：重点是空白如何参与结构、停顿和疏密节奏。",
+    brush_ink: "看作品上虚线框出的笔墨区域：它提示粗细、浓淡或视觉重量。",
   };
-  if (hintByType[item.type]) return hintByType[item.type];
-  if (item.type === "qi_flow") return "看左侧虚线圈出的观察区域：它不是笔顺还原，而是人工确认的观看趋势。";
-  if (item.type === "void_solid") return "看左侧被轻微罩出的绿色窄带：重点是空白如何参与结构和节奏。";
-  if (item.type === "brush_ink") return "看左侧被点亮的笔墨区域：它提示粗细、浓淡或视觉重量。";
-  return "看左侧当前高亮位置。";
+  return hintByType[item.type] || "看作品上当前高亮位置。";
 }
 
-function summarize(text) {
-  return text.length > 42 ? `${text.slice(0, 42)}...` : text;
+function summarize(text = "") {
+  return text.length > 40 ? `${text.slice(0, 40)}...` : text;
 }
 
 function formatPercent(value) {
@@ -1042,9 +998,7 @@ function percentYToPixel(value) {
 function pathPoints(path) {
   const numbers = path.match(/-?\d+(?:\.\d+)?/g)?.map(Number) || [];
   const points = [];
-  for (let i = 0; i < numbers.length - 1; i += 2) {
-    points.push({ x: numbers[i], y: numbers[i + 1] });
-  }
+  for (let i = 0; i < numbers.length - 1; i += 2) points.push({ x: numbers[i], y: numbers[i + 1] });
   return points;
 }
 
@@ -1057,7 +1011,6 @@ function regionFromPoints(points, options = {}) {
   const maxY = Math.max(...ys);
   const width = Math.max(options.minWidth || 0, maxX - minX + (options.padX || 0) * 2);
   const height = Math.max(options.minHeight || 0, maxY - minY + (options.padY || 0) * 2);
-
   return {
     cx: clamp((minX + maxX) / 2, width / 2, 100 - width / 2),
     cy: clamp((minY + maxY) / 2, height / 2, 100 - height / 2),
@@ -1080,6 +1033,11 @@ function svg(tag, attrs) {
   return node;
 }
 
+function handleEntryScroll() {
+  if (state.screen !== "home") return;
+  els.entryScreen.classList.toggle("scrolled", window.scrollY > 80);
+}
+
 document.querySelectorAll(".filterButton").forEach((button) => {
   button.addEventListener("click", () => setFilter(button.dataset.filter));
 });
@@ -1093,20 +1051,17 @@ document.querySelectorAll(".layoutButton").forEach((button) => {
 });
 
 els.storedWorks.addEventListener("click", () => {
-  state.screen = "stored";
-  renderEntry();
+  setScreen("library");
   requestAnimationFrame(() => els.storedWorksPanel.scrollIntoView({ behavior: "smooth", block: "start" }));
 });
 
 els.uploadEntry.addEventListener("click", () => {
-  state.screen = "upload";
-  renderEntry();
+  setScreen("upload");
   requestAnimationFrame(() => els.uploadPanel.scrollIntoView({ behavior: "smooth", block: "start" }));
 });
 
 els.browseFromUpload.addEventListener("click", () => {
-  state.screen = "stored";
-  renderEntry();
+  setScreen("library");
   requestAnimationFrame(() => els.storedWorksPanel.scrollIntoView({ behavior: "smooth", block: "start" }));
 });
 
@@ -1140,8 +1095,10 @@ els.reflectionInput.addEventListener("input", () => {
   const item = selectedAnnotation();
   if (item && state.reflections[item.id] && !state.reflections[item.id].submitted) {
     state.reflections[item.id].text = els.reflectionInput.value;
+    saveReflections();
   }
 });
 window.addEventListener("resize", positionOverlay);
+window.addEventListener("scroll", handleEntryScroll, { passive: true });
 
 boot();

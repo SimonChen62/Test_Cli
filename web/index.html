@@ -4,48 +4,47 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>CalliLens</title>
-    <link rel="stylesheet" href="./styles.css?v=7" />
+    <link rel="stylesheet" href="./styles.css?v=8" />
   </head>
   <body>
     <section id="entryScreen" class="entryScreen" aria-label="CalliLens 入口">
-      <div class="entryHero">
-        <p class="eyebrow">CalliLens · 书法观察式导览</p>
+      <div class="entrySticky">
+        <p class="entrySubtitle">书法观察式导览</p>
         <h1>CalliLens</h1>
-        <p class="entryLead">先看原作，再进入证据层、人工导览点和反思任务。系统只辅助观察，不替你判断书法好坏。</p>
       </div>
 
-      <div class="entryActions" aria-label="选择使用方式">
+      <div class="entryReveal" aria-label="选择使用方式">
         <button id="uploadEntryButton" class="entryActionButton" type="button">
           <span>上传个性化书法作品</span>
-          <small>V1.6 预留入口，说明后续上传和 OpenCV 图层生成流程</small>
+          <small>V2 入口：上传图片、生成辅助图层、人工确认观察点。</small>
         </button>
         <button id="storedWorksButton" class="entryActionButton primaryEntryAction" type="button">
-          <span>浏览已存作品</span>
-          <small>选择当前项目已有样例，进入观察式导览</small>
+          <span>网页已存库</span>
+          <small>进入当前样例作品，开始分层观察与反思任务。</small>
         </button>
       </div>
 
-      <section id="storedWorksPanel" class="entryPanel" hidden>
+      <section id="storedWorksPanel" class="entryPanel libraryPanel" hidden>
         <div class="entryPanelHeader">
-          <p class="eyebrow">已存作品</p>
-          <h2>选择一个导览样例</h2>
+          <p class="eyebrow">网页已存库</p>
+          <h2>选择作品</h2>
         </div>
         <div id="storedWorksList" class="storedWorksList" aria-label="已存作品列表"></div>
       </section>
 
       <section id="uploadPanel" class="entryPanel uploadPanel" hidden>
         <div class="entryPanelHeader">
-          <p class="eyebrow">上传入口</p>
-          <h2>个性化作品上传将在 V2 完成</h2>
+          <p class="eyebrow">V2 预留</p>
+          <h2>个性化上传暂不开放</h2>
         </div>
-        <p>这一版先保留上传入口，用于说明未来流程：上传图片、生成 OpenCV 证据图层、人工确认观察点，再进入导览。当前版本不会把图片上传到服务器，也不会自动判断气韵。</p>
+        <p>本轮答辩版先做单作品导览。后续再加入上传、图层生成和人工校正流程，避免把还不稳定的自动分析误说成审美判断。</p>
         <div class="uploadSteps">
-          <span>1 上传图片</span>
-          <span>2 生成图层</span>
-          <span>3 人工标注</span>
-          <span>4 进入导览</span>
+          <span>上传图片</span>
+          <span>生成证据图层</span>
+          <span>人工确认观察点</span>
+          <span>进入导览</span>
         </div>
-        <button id="browseFromUploadButton" class="secondaryButton" type="button">先体验已存作品</button>
+        <button id="browseFromUploadButton" class="secondaryButton" type="button">先看网页已存库</button>
       </section>
     </section>
 
@@ -53,31 +52,31 @@
       <section class="viewer">
         <header class="topbar">
           <div>
-            <p class="eyebrow">CalliLens · 观察式导览</p>
+            <p class="eyebrow">CalliLens</p>
             <h1 id="workTitle">单作品书法导览</h1>
           </div>
           <div class="topActions">
-            <button id="returnFirstLookButton" class="secondaryButton returnFirstLookButton" type="button">返回第一印象</button>
-            <div class="layoutSwitch" aria-label="布局模式">
-              <button class="layoutButton active" data-layout="portrait" type="button">竖屏</button>
-              <button class="layoutButton" data-layout="landscape" type="button">横屏</button>
+            <button id="returnFirstLookButton" class="secondaryButton returnFirstLookButton" type="button">回到第一印象</button>
+            <div class="layoutSwitch" aria-label="作品排布">
+              <button class="layoutButton active" data-layout="portrait" type="button">竖向</button>
+              <button class="layoutButton" data-layout="landscape" type="button">宽屏</button>
             </div>
             <button id="clearButton" class="iconButton" type="button" title="清除高亮" aria-label="清除高亮">×</button>
             <button id="speakButton" class="iconButton" type="button" title="播放语音导览" aria-label="播放语音导览">▶</button>
           </div>
         </header>
 
-        <div class="evidenceBar" aria-label="观看模式">
-          <span>观看模式</span>
+        <div class="evidenceBar" aria-label="图层切换">
+          <span>图层</span>
           <button class="modeButton active" data-mode="original" type="button">原作</button>
           <button class="modeButton" data-mode="qi" type="button">气脉</button>
-          <button class="modeButton" data-mode="solid" type="button">实：墨迹</button>
-          <button class="modeButton" data-mode="void" type="button">虚：留白</button>
-          <button class="modeButton" data-mode="relation" type="button">虚实关系</button>
+          <button class="modeButton" data-mode="solid" type="button">墨迹</button>
+          <button class="modeButton" data-mode="void" type="button">留白</button>
+          <button class="modeButton" data-mode="relation" type="button">虚实</button>
           <button class="modeButton" data-mode="ink" type="button">笔墨</button>
         </div>
 
-        <div class="canvasShell" aria-label="作品查看器，点击图像可生成局部证据报告">
+        <div class="canvasShell" aria-label="作品查看器，点击图像可生成局部证据探针">
           <img id="workImage" alt="书法作品或辅助分析图" />
           <svg id="overlay" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="当前观察点高亮"></svg>
           <div id="imageFallback" class="fallback" hidden>
@@ -86,32 +85,33 @@
         </div>
       </section>
 
-      <aside class="guidePanel">
-        <article id="originalPrompt" class="originalPrompt" aria-label="原作观看模式引导">
-          <h2>你的第一印象</h2>
+      <aside class="guidePanel" aria-label="观察工作流">
+        <article id="originalPrompt" class="workflowBlock originalPrompt" aria-label="第一印象">
+          <p class="workflowStep">第一印象</p>
+          <h2>先用自己的话看原作</h2>
           <form id="firstLookForm" class="firstLookForm">
             <label class="questionField">
-              <span>你觉得这幅作品给你的整体感觉是什么？</span>
-              <textarea id="firstOverall" rows="3" placeholder="例如：安静、有力量、流动、疏朗……"></textarea>
+              <span>整体感觉是什么？</span>
+              <textarea id="firstOverall" rows="3" placeholder="例如：安静、流动、紧密、有停顿感……"></textarea>
             </label>
             <label class="questionField">
-              <span>你认为哪里最有运动感？</span>
-              <textarea id="firstMotion" rows="3" placeholder="先凭直觉描述位置或区域，不需要专业术语。"></textarea>
+              <span>哪里最有运动感？</span>
+              <textarea id="firstMotion" rows="3" placeholder="先凭直觉描述位置，不需要专业术语。"></textarea>
             </label>
             <label class="questionField">
-              <span>你觉得哪些地方最疏朗或最紧密？</span>
+              <span>哪里最疏朗或最紧密？</span>
               <textarea id="firstDensity" rows="3" placeholder="可以说某一列、某个字附近、题名旁边等。"></textarea>
             </label>
             <p id="firstLookError" class="formError" hidden>请先写完三个问题，再进入导览。</p>
-            <button class="primaryButton" type="submit">提交回答</button>
+            <button class="primaryButton" type="submit">进入观察</button>
           </form>
         </article>
 
-        <section id="firstResponseSummary" class="firstResponseSummary" aria-label="用户第一印象答案">
+        <section id="firstResponseSummary" class="workflowBlock firstResponseSummary" aria-label="第一印象回答">
           <div class="summaryHeader">
             <div>
-              <p class="eyebrow">你的第一印象</p>
-              <h2>进入导览前的回答</h2>
+              <p class="workflowStep">第一印象</p>
+              <h2>你的原始判断</h2>
             </div>
             <button id="editFirstLookButton" class="secondaryButton" type="button">修改</button>
           </div>
@@ -121,7 +121,7 @@
               <span id="summaryOverall" class="summaryRead">尚未填写</span>
               <textarea id="summaryOverallInput" class="summaryEditField" rows="3"></textarea>
             </dd>
-            <dt>最有运动感</dt>
+            <dt>运动感</dt>
             <dd>
               <span id="summaryMotion" class="summaryRead">尚未填写</span>
               <textarea id="summaryMotionInput" class="summaryEditField" rows="3"></textarea>
@@ -135,33 +135,35 @@
           <p id="summaryEditError" class="formError" hidden>请先写完三个问题，再保存。</p>
         </section>
 
-        <div class="panelIntro">
-          <p class="eyebrow">观察清单</p>
-          <h2>逐点观察</h2>
-          <p>选一张卡片看人工导览，点图像看局部证据。</p>
-        </div>
+        <section class="workflowBlock observationBlock">
+          <div class="sectionHeader">
+            <div>
+              <p class="workflowStep">观察点</p>
+              <h2>人工导览卡</h2>
+            </div>
+          </div>
+          <div class="filterTabs" aria-label="观察类型筛选">
+            <button class="filterButton active" data-filter="all" type="button">全部</button>
+            <button class="filterButton" data-filter="qi_flow" type="button">气脉</button>
+            <button class="filterButton" data-filter="void_solid" type="button">虚实</button>
+            <button class="filterButton" data-filter="brush_ink" type="button">笔墨</button>
+          </div>
+          <div id="guideList" class="guideList" aria-label="观察点列表"></div>
+        </section>
 
-        <div class="filterTabs" aria-label="观察类型筛选">
-          <button class="filterButton active" data-filter="all" type="button">全部</button>
-          <button class="filterButton" data-filter="qi_flow" type="button">气脉</button>
-          <button class="filterButton" data-filter="void_solid" type="button">虚实</button>
-          <button class="filterButton" data-filter="brush_ink" type="button">笔墨</button>
-        </div>
-
-        <div id="guideList" class="guideList" aria-label="观察点列表"></div>
-
-        <article class="detailPanel" aria-live="polite">
+        <article class="workflowBlock detailPanel" aria-live="polite">
+          <p class="workflowStep">形式证据</p>
           <p id="detailType" class="eyebrow">请选择观察点</p>
           <h3 id="annotationTitle">先看原作整体</h3>
           <dl>
             <dt>看哪里</dt>
-            <dd id="whereText">从右侧观察清单选择一项，左侧会临时点亮对应位置。</dd>
-            <dt>形式描述</dt>
-            <dd id="formalText">这里会说明画面上客观能看到什么。</dd>
-            <dt>感知经验</dt>
-            <dd id="perceptionText">这里会说明普通观众可能产生什么观看感受。</dd>
-            <dt>美学解释</dt>
-            <dd id="aestheticText">这里会说明它如何帮助理解气脉、虚实或笔墨节奏。</dd>
+            <dd id="whereText">从观察卡选择一项，作品上会出现对应虚线圈。</dd>
+            <dt>形式证据</dt>
+            <dd id="formalText">这里说明画面上客观能看到什么。</dd>
+            <dt>观看感受</dt>
+            <dd id="perceptionText">这里说明普通观众可能产生的观看感受。</dd>
+            <dt>审美解释</dt>
+            <dd id="aestheticText">这里说明它如何帮助理解气脉、虚实或笔墨节奏。</dd>
           </dl>
           <div class="stepButtons">
             <button id="prevButton" type="button">上一个</button>
@@ -169,10 +171,10 @@
           </div>
         </article>
 
-        <article class="probePanel" aria-live="polite">
-          <p class="eyebrow">竖向证据探针</p>
+        <article class="workflowBlock probePanel" aria-live="polite">
+          <p class="workflowStep">局部探针</p>
           <h3 id="probeTitle">点击图像任意位置</h3>
-          <p id="probeSummary" class="probeSummary">按书法竖列取样，只给候选线索。</p>
+          <p id="probeSummary" class="probeSummary">按书法竖列取样，只给出候选线索。</p>
           <div class="metricGrid" aria-label="局部证据指标">
             <div>
               <span>墨迹</span>
@@ -194,10 +196,8 @@
           <p id="probeCandidate" class="candidateText">尚未选择局部。</p>
         </article>
 
-        <article class="reflectionPanel">
-          <p class="eyebrow">反思任务</p>
-
-          <!-- 当前观察点的专属反思提示（选中观察点后动态更新） -->
+        <article class="workflowBlock reflectionPanel">
+          <p class="workflowStep">我的反思</p>
           <div id="reflectionPrompt" class="reflectionPrompt" hidden>
             <span class="reflectionConceptTag" id="reflectionConcept"></span>
             <p id="reflectionPromptText"></p>
@@ -206,23 +206,22 @@
           <div class="taskList" aria-label="反思任务列表">
             <button class="taskButton active" type="button" data-task="motion">哪里最有运动感？</button>
             <button class="taskButton" type="button" data-task="space">哪块空白参与结构？</button>
-            <button class="taskButton" type="button" data-task="evidence">你如何用证据解释？</button>
+            <button class="taskButton" type="button" data-task="evidence">如何用证据解释？</button>
           </div>
 
-          <textarea id="reflectionInput" rows="4" placeholder="先选一个任务，再用自己的话回答。"></textarea>
+          <textarea id="reflectionInput" rows="4" placeholder="先选择一个观察点，再用自己的话回答。"></textarea>
 
           <div class="reflectionChips" aria-label="快速插入观察句">
             <button class="reflectionChip" type="button" data-text="我看到上下笔画之间有方向承接，像是运动没有完全停住。">方向承接</button>
             <button class="reflectionChip" type="button" data-text="我看到密集墨迹旁边留出空白，让画面有呼吸感。">留白呼吸</button>
-            <button class="reflectionChip" type="button" data-text="我看到这一处粗细或墨色变化明显，可以作为笔墨轻重线索。">粗细变化</button>
+            <button class="reflectionChip" type="button" data-text="我看到这里粗细或墨色变化明显，可以作为笔墨轻重线索。">粗细变化</button>
           </div>
 
           <div class="reflectionActions">
-            <button id="reflectionSubmitButton" class="primaryButton reflectionSubmitButton" type="button">提交反思 ▶</button>
+            <button id="reflectionSubmitButton" class="primaryButton reflectionSubmitButton" type="button">提交反思</button>
             <button id="reflectionEditButton" class="secondaryButton reflectionEditButton" type="button" hidden>重新编辑</button>
           </div>
 
-          <!-- 专家反馈区（提交后展开） -->
           <div id="expertFeedbackPanel" class="expertFeedbackPanel" hidden>
             <div class="feedbackDivider">
               <span>专家视角对照</span>
@@ -235,12 +234,12 @@
               <p class="feedbackLabel">专家解释</p>
               <p id="feedbackExpertText"></p>
             </div>
-            <p class="feedbackNote">系统只提供观察候选，不代表唯一正确答案。你的感受同样有价值。</p>
+            <p class="feedbackNote">系统只提供观察候选，不代表唯一正确答案；你的感受同样有价值。</p>
           </div>
         </article>
       </aside>
     </main>
 
-    <script src="./app.js?v=3"></script>
+    <script src="./app.js?v=4"></script>
   </body>
 </html>
