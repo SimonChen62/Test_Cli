@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>CalliLens</title>
-    <link rel="stylesheet" href="./styles.css?v=15" />
+    <link rel="stylesheet" href="./styles.css?v=16" />
   </head>
   <body>
     <section id="entryScreen" class="entryScreen" aria-label="CalliLens 入口">
@@ -87,6 +87,7 @@
           <img id="workImage" alt="书法作品或辅助分析图" />
           <svg id="overlay" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="当前观察点高亮"></svg>
           <canvas id="spaceCanvas" class="spaceCanvas" hidden></canvas>
+          <div id="spaceLabel" class="spaceLabel" hidden>三维气韵：辅助观察，不替代原作判断</div>
           <div id="imageFallback" class="fallback" hidden>
             请确认当前作品文件夹中存在 <code>annotation.json</code> 和对应图像文件。
           </div>
@@ -248,6 +249,6 @@
       </aside>
     </main>
 
-    <script src="./app.js?v=5"></script>
+    <script src="./app.js?v=6"></script>
   </body>
 </html>

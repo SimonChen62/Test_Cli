@@ -1112,6 +1112,247 @@ button:disabled {
   }
 }
 
+/* Final overrides for the semantic Three.js qi-space and readable paper panels. */
+#spaceCanvas {
+  position: absolute;
+  width: min(44%, 460px);
+  height: clamp(190px, 38%, 310px);
+  border-color: rgba(232, 218, 191, 0.34);
+  background:
+    radial-gradient(circle at 50% 42%, rgba(233, 207, 169, 0.15), transparent 38%),
+    linear-gradient(180deg, rgba(22, 19, 15, 0.94), rgba(8, 8, 7, 0.94));
+  box-shadow:
+    0 22px 60px rgba(0, 0, 0, 0.56),
+    inset 0 0 0 1px rgba(255, 249, 236, 0.08);
+}
+
+.canvasShell[data-view="space"] {
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 38%);
+  gap: 16px;
+  align-items: center;
+  justify-items: center;
+  padding: 16px;
+}
+
+.canvasShell[data-view="space"] #workImage {
+  grid-column: 1;
+  max-width: 100%;
+}
+
+.canvasShell[data-view="space"] #spaceCanvas {
+  position: relative;
+  right: auto;
+  bottom: auto;
+  grid-column: 2;
+  width: 100%;
+  height: min(46vh, 310px);
+}
+
+.spaceLabel {
+  position: absolute;
+  top: 22px;
+  right: 24px;
+  bottom: auto;
+  z-index: 5;
+  max-width: min(44%, 460px);
+  padding: 7px 10px;
+  border: 1px solid rgba(232, 218, 191, 0.26);
+  border-radius: 7px;
+  background: rgba(10, 9, 8, 0.84);
+  color: #fff6e8;
+  font-size: 12px;
+  line-height: 1.45;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.36);
+  backdrop-filter: blur(10px);
+}
+
+.guidePanel .workflowBlock,
+.detailPanel dl,
+.probePanel,
+.reflectionPanel,
+.firstResponseSummary,
+.originalPrompt {
+  color: #1b1712;
+}
+
+.guidePanel .workflowBlock h2,
+.guidePanel .workflowBlock h3,
+.guidePanel .workflowBlock dt,
+.guidePanel .workflowBlock dd,
+.guidePanel .workflowBlock p,
+.guidePanel .workflowBlock .questionField span,
+.guidePanel .workflowBlock .summaryRead,
+.detailPanel dd,
+.detailPanel dt,
+.probeSummary,
+.candidateText,
+.reflectionPrompt,
+.reflectionPrompt p,
+.feedbackExpert,
+.feedbackUserAnswer,
+.feedbackNote {
+  color: #241e17;
+}
+
+.guidePanel .workflowBlock .workflowStep,
+.guidePanel .workflowBlock .eyebrow,
+.guidePanel .workflowBlock .feedbackLabel,
+.guidePanel .workflowBlock .probeSummary,
+.guidePanel .workflowBlock .candidateText,
+.guidePanel .workflowBlock .reflectionPrompt p,
+.guidePanel .workflowBlock .feedbackNote {
+  color: #5b5043;
+}
+
+.questionField textarea,
+.summaryEditField,
+.reflectionPanel textarea,
+.guidePanel .workflowBlock .questionField textarea,
+.guidePanel .workflowBlock .summaryEditField,
+.guidePanel .workflowBlock .reflectionPanel textarea {
+  color: #191510;
+  background: rgba(255, 252, 245, 0.98);
+}
+
+@media (max-width: 980px) {
+  .canvasShell[data-view="space"] {
+    grid-template-columns: 1fr;
+  }
+
+  #spaceCanvas {
+    right: 12px;
+    bottom: 12px;
+    width: min(58%, 420px);
+    height: 220px;
+  }
+
+  .spaceLabel {
+    top: 18px;
+    right: 18px;
+    bottom: auto;
+    max-width: min(58%, 420px);
+  }
+
+  .canvasShell[data-view="space"] #spaceCanvas {
+    grid-column: 1;
+    width: min(100%, 420px);
+    height: 220px;
+  }
+}
+
+@media (max-width: 560px) {
+  #spaceCanvas {
+    width: calc(100% - 24px);
+    height: 200px;
+  }
+
+  .canvasShell[data-view="space"] #spaceCanvas {
+    width: calc(100% - 24px);
+    height: 200px;
+  }
+
+  .spaceLabel {
+    top: 14px;
+    left: 12px;
+    right: 12px;
+    bottom: auto;
+    max-width: none;
+  }
+}
+
+/* Three.js qi-space refinement: semantic auxiliary window, not a replacement artwork view. */
+#spaceCanvas {
+  width: min(44%, 460px);
+  height: clamp(190px, 38%, 310px);
+  border-color: rgba(232, 218, 191, 0.34);
+  background:
+    radial-gradient(circle at 50% 42%, rgba(233, 207, 169, 0.15), transparent 38%),
+    linear-gradient(180deg, rgba(22, 19, 15, 0.94), rgba(8, 8, 7, 0.94));
+  box-shadow:
+    0 22px 60px rgba(0, 0, 0, 0.56),
+    inset 0 0 0 1px rgba(255, 249, 236, 0.08);
+}
+
+.spaceLabel {
+  position: absolute;
+  right: 24px;
+  bottom: 338px;
+  z-index: 5;
+  max-width: min(44%, 460px);
+  padding: 7px 10px;
+  border: 1px solid rgba(232, 218, 191, 0.26);
+  border-radius: 7px;
+  background: rgba(10, 9, 8, 0.84);
+  color: #fff6e8;
+  font-size: 12px;
+  line-height: 1.45;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.36);
+  backdrop-filter: blur(10px);
+}
+
+.detailPanel dl,
+.probePanel,
+.reflectionPanel,
+.firstResponseSummary,
+.originalPrompt {
+  color: #1b1712;
+}
+
+.detailPanel dd,
+.detailPanel dt,
+.probeSummary,
+.candidateText,
+.reflectionPrompt,
+.reflectionPrompt p,
+.feedbackExpert,
+.feedbackUserAnswer,
+.feedbackNote {
+  color: #2a241c;
+}
+
+.guidePanel .workflowBlock .probeSummary,
+.guidePanel .workflowBlock .candidateText,
+.guidePanel .workflowBlock .reflectionPrompt p,
+.guidePanel .workflowBlock .feedbackNote {
+  color: #5b5043;
+}
+
+.questionField textarea,
+.summaryEditField,
+.reflectionPanel textarea {
+  color: #191510;
+  background: rgba(255, 252, 245, 0.98);
+}
+
+@media (max-width: 980px) {
+  #spaceCanvas {
+    right: 12px;
+    bottom: 12px;
+    width: min(58%, 420px);
+    height: 220px;
+  }
+
+  .spaceLabel {
+    right: 18px;
+    bottom: 242px;
+    max-width: min(58%, 420px);
+  }
+}
+
+@media (max-width: 560px) {
+  #spaceCanvas {
+    width: calc(100% - 24px);
+    height: 200px;
+  }
+
+  .spaceLabel {
+    left: 12px;
+    right: 12px;
+    bottom: 222px;
+    max-width: none;
+  }
+}
+
 /* Immersive polish pass */
 :root {
   --ink: #0f0e0c;
@@ -1617,5 +1858,106 @@ body::after {
 
   .guideCard {
     grid-template-columns: 28px minmax(0, 1fr);
+  }
+}
+
+/* End-of-file visual corrections for the current demo. */
+#spaceCanvas {
+  width: min(44%, 460px);
+  height: clamp(190px, 38%, 310px);
+  border-color: rgba(232, 218, 191, 0.34);
+  background:
+    radial-gradient(circle at 50% 42%, rgba(233, 207, 169, 0.15), transparent 38%),
+    linear-gradient(180deg, rgba(22, 19, 15, 0.94), rgba(8, 8, 7, 0.94));
+  box-shadow:
+    0 22px 60px rgba(0, 0, 0, 0.56),
+    inset 0 0 0 1px rgba(255, 249, 236, 0.08);
+}
+
+.spaceLabel {
+  position: absolute;
+  top: 22px;
+  right: 24px;
+  bottom: auto;
+  z-index: 5;
+  max-width: min(44%, 460px);
+  padding: 7px 10px;
+  border: 1px solid rgba(232, 218, 191, 0.26);
+  border-radius: 7px;
+  background: rgba(10, 9, 8, 0.84);
+  color: #fff6e8;
+  font-size: 12px;
+  line-height: 1.45;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.36);
+  backdrop-filter: blur(10px);
+}
+
+.guidePanel .workflowBlock h2,
+.guidePanel .workflowBlock h3,
+.guidePanel .workflowBlock dt,
+.guidePanel .workflowBlock dd,
+.guidePanel .workflowBlock p,
+.guidePanel .workflowBlock .questionField span,
+.guidePanel .workflowBlock .summaryRead,
+.detailPanel dd,
+.detailPanel dt,
+.probeSummary,
+.candidateText,
+.reflectionPrompt,
+.reflectionPrompt p,
+.feedbackExpert,
+.feedbackUserAnswer,
+.feedbackNote {
+  color: #241e17;
+}
+
+.guidePanel .workflowBlock .workflowStep,
+.guidePanel .workflowBlock .eyebrow,
+.guidePanel .workflowBlock .feedbackLabel,
+.guidePanel .workflowBlock .probeSummary,
+.guidePanel .workflowBlock .candidateText,
+.guidePanel .workflowBlock .reflectionPrompt p,
+.guidePanel .workflowBlock .feedbackNote {
+  color: #5b5043;
+}
+
+.questionField textarea,
+.summaryEditField,
+.reflectionPanel textarea,
+.guidePanel .workflowBlock .questionField textarea,
+.guidePanel .workflowBlock .summaryEditField,
+.guidePanel .workflowBlock .reflectionPanel textarea {
+  color: #191510;
+  background: rgba(255, 252, 245, 0.98);
+}
+
+@media (max-width: 980px) {
+  #spaceCanvas {
+    right: 12px;
+    bottom: 12px;
+    width: min(58%, 420px);
+    height: 220px;
+  }
+
+  .spaceLabel {
+    top: 18px;
+    right: 18px;
+    bottom: auto;
+    max-width: min(58%, 420px);
+  }
+}
+
+@media (max-width: 560px) {
+  #spaceCanvas {
+    width: calc(100% - 24px);
+    height: 200px;
+  }
+
+  .spaceLabel {
+    top: 14px;
+    left: 12px;
+    right: 12px;
+    bottom: auto;
+    max-width: none;
   }
 }

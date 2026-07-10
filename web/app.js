@@ -118,6 +118,7 @@ const els = {
   fallback: document.querySelector("#imageFallback"),
   overlay: document.querySelector("#overlay"),
   spaceCanvas: document.querySelector("#spaceCanvas"),
+  spaceLabel: document.querySelector("#spaceLabel"),
   guideList: document.querySelector("#guideList"),
   detailType: document.querySelector("#detailType"),
   annotationTitle: document.querySelector("#annotationTitle"),
@@ -383,6 +384,7 @@ function renderImage() {
 function syncCanvasVisibility() {
   const useSpace = state.mode === "space" && state.space.sceneReady;
   if (els.spaceCanvas) els.spaceCanvas.hidden = !useSpace;
+  if (els.spaceLabel) els.spaceLabel.hidden = !useSpace;
   if (els.image) els.image.hidden = false;
   if (els.overlay) els.overlay.hidden = false;
 }
@@ -659,78 +661,38 @@ function initSpaceScene(THREE) {
     canvas: els.spaceCanvas,
     antialias: true,
     alpha: true,
-    preserveDrawingBuffer: false,
+    preserveDrawingBuffer: true,
   });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.setSize(width, height, false);
   renderer.setClearColor(0x000000, 0);
 
   const scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x120f0c, 0.035);
+  scene.fog = new THREE.FogExp2(0x0e0d0b, 0.055);
 
-  const camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 100);
-  camera.position.set(0, 0.55, 6.9);
+  const camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 100);
+  camera.position.set(0, 0.22, 7.4);
 
   const root = new THREE.Group();
-  root.position.y = 0.18;
+  root.position.y = 0.08;
   scene.add(root);
 
-  const ambient = new THREE.AmbientLight(0xfff1df, 1.35);
+  const ambient = new THREE.AmbientLight(0xf7ead6, 1.05);
   scene.add(ambient);
 
-  const key = new THREE.DirectionalLight(0xffd4b5, 2.8);
-  key.position.set(4, 7, 10);
+  const key = new THREE.DirectionalLight(0xffe0b6, 2.1);
+  key.position.set(3.5, 5.5, 8);
   scene.add(key);
 
-  const rim = new THREE.DirectionalLight(0x84b5c8, 1.45);
-  rim.position.set(-6, 3, -4);
+  const rim = new THREE.DirectionalLight(0x86b5c7, 1.25);
+  rim.position.set(-5, 3, -3);
   scene.add(rim);
 
-  const fill = new THREE.PointLight(0xf8e7cf, 1.2, 24);
-  fill.position.set(0, 1.8, 5.5);
+  const fill = new THREE.PointLight(0xe9cfa9, 0.9, 20);
+  fill.position.set(0, 1.4, 5.2);
   scene.add(fill);
 
-  const planeGeo = new THREE.PlaneGeometry(9.5, 4.4, 34, 12);
-  const planeMat = new THREE.MeshStandardMaterial({
-    color: 0xffffff,
-    roughness: 0.88,
-    metalness: 0.03,
-    emissive: 0x231912,
-    emissiveIntensity: 0.16,
-    side: THREE.DoubleSide,
-    transparent: true,
-    opacity: 0.98,
-  });
-  const plane = new THREE.Mesh(planeGeo, planeMat);
-  plane.rotation.x = -0.2;
-  plane.position.y = 0.04;
-  root.add(plane);
-
-  const particlesGeo = new THREE.BufferGeometry();
-  const particleCount = 260;
-  const positions = new Float32Array(particleCount * 3);
-  const colors = new Float32Array(particleCount * 3);
-  for (let i = 0; i < particleCount; i += 1) {
-    const i3 = i * 3;
-    positions[i3] = (Math.random() - 0.5) * 8.8;
-    positions[i3 + 1] = (Math.random() - 0.5) * 3.6;
-    positions[i3 + 2] = (Math.random() - 0.5) * 2.8;
-    const palette = [0.94, 0.78, 0.62];
-    colors[i3] = palette[(i % 3)];
-    colors[i3 + 1] = palette[((i + 1) % 3)];
-    colors[i3 + 2] = palette[((i + 2) % 3)];
-  }
-  particlesGeo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-  particlesGeo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-  const particlesMat = new THREE.PointsMaterial({
-    size: 0.045,
-    transparent: true,
-    opacity: 0.7,
-    depthWrite: false,
-    vertexColors: true,
-  });
-  const particles = new THREE.Points(particlesGeo, particlesMat);
-  root.add(particles);
+  root.add(createSpaceField(THREE));
 
   const annotationsGroup = new THREE.Group();
   root.add(annotationsGroup);
@@ -739,10 +701,11 @@ function initSpaceScene(THREE) {
   state.space.scene = scene;
   state.space.camera = camera;
   state.space.root = root;
-  state.space.plane = plane;
-  state.space.particles = particles;
+  state.space.plane = null;
+  state.space.particles = null;
   state.space.annotationsGroup = annotationsGroup;
   state.space.renderKey = "";
+  state.space.sceneReady = true;
   state.space.running = true;
 
   els.canvasShell.addEventListener("pointerdown", handleSpacePointerDown);
@@ -751,63 +714,237 @@ function initSpaceScene(THREE) {
   animateSpaceScene();
 }
 
+function createSpaceField(THREE) {
+  const group = new THREE.Group();
+  const backPlate = new THREE.Mesh(
+    new THREE.PlaneGeometry(9.4, 4.7, 1, 1),
+    new THREE.MeshBasicMaterial({
+      color: 0x18140f,
+      transparent: true,
+      opacity: 0.74,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    })
+  );
+  backPlate.position.z = -0.36;
+  group.add(backPlate);
+
+  const guideMaterial = new THREE.LineBasicMaterial({
+    color: 0xd8c5a4,
+    transparent: true,
+    opacity: 0.23,
+  });
+  for (let i = 0; i <= 5; i += 1) {
+    const y = -2.1 + i * 0.84;
+    const geometry = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(-4.55, y, -0.1),
+      new THREE.Vector3(4.55, y, -0.1),
+    ]);
+    group.add(new THREE.Line(geometry, guideMaterial.clone()));
+  }
+  for (let i = 0; i <= 8; i += 1) {
+    const x = -4.2 + i * 1.05;
+    const geometry = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(x, -2.18, -0.08),
+      new THREE.Vector3(x, 2.18, -0.08),
+    ]);
+    const line = new THREE.Line(geometry, guideMaterial.clone());
+    line.material.opacity = i % 2 === 0 ? 0.17 : 0.1;
+    group.add(line);
+  }
+
+  const baseline = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(-4.65, 0, 0.02),
+    new THREE.Vector3(4.65, 0, 0.02),
+  ]);
+  group.add(
+    new THREE.Line(
+      baseline,
+      new THREE.LineBasicMaterial({ color: 0xa33a2c, transparent: true, opacity: 0.38 })
+    )
+  );
+  return group;
+}
+
 function updateSpacePlane(THREE) {
-  const source = state.layerCanvases.original;
-  if (!source || !state.space.plane) return false;
-  const geometry = state.space.plane.geometry;
-  const params = geometry.parameters || {};
-  const planeWidth = params.width || 9.5;
-  const planeHeight = params.height || 4.4;
-  const { canvas, context } = source;
-  if (!canvas || !context) return false;
-
-  if (!state.space.texture || state.space.texture.image !== canvas) {
-    state.space.texture?.dispose?.();
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.colorSpace = THREE.SRGBColorSpace || texture.colorSpace;
-    texture.anisotropy = 4;
-    state.space.texture = texture;
-    state.space.plane.material.map = texture;
-    state.space.plane.material.needsUpdate = true;
-  }
-
-  const data = context.getImageData(0, 0, canvas.width, canvas.height).data;
-  const position = geometry.attributes.position;
-  for (let i = 0; i < position.count; i += 1) {
-    const x = position.getX(i);
-    const y = position.getY(i);
-    const u = clamp(x / planeWidth + 0.5, 0, 1);
-    const v = clamp(0.5 - y / planeHeight, 0, 1);
-    const px = Math.round(u * (canvas.width - 1));
-    const py = Math.round(v * (canvas.height - 1));
-    const idx = (py * canvas.width + px) * 4;
-    const luma = luminance(data[idx], data[idx + 1], data[idx + 2]);
-    const relief = (1 - luma / 255) * 0.74;
-    const ripple = Math.sin((u + v) * Math.PI * 5) * 0.022;
-    position.setZ(i, relief + ripple);
-  }
-  position.needsUpdate = true;
-  geometry.computeVertexNormals();
+  void THREE;
   return true;
 }
 
 function annotationVector(item, point, planeWidth, planeHeight, depthBias, THREE, index = 0, sourceData = null) {
+  void item;
+  void sourceData;
   const x = (point.x / 100 - 0.5) * planeWidth;
   const y = (0.5 - point.y / 100) * planeHeight;
-  const source = state.layerCanvases.original;
-  let z = depthBias;
-  if (source?.context && source.canvas) {
-    const canvas = source.canvas;
-    const data = sourceData || source.context.getImageData(0, 0, canvas.width, canvas.height).data;
-    const px = Math.round(clamp((point.x / 100) * (canvas.width - 1), 0, canvas.width - 1));
-    const py = Math.round(clamp((point.y / 100) * (canvas.height - 1), 0, canvas.height - 1));
-    const idx = (py * canvas.width + px) * 4;
-    const luma = luminance(data[idx], data[idx + 1], data[idx + 2]);
-    z += (1 - luma / 255) * 0.6;
-  }
-  z += Math.sin((index + 1) * 0.62) * 0.03;
-  if (state.selectedId === item.id) z += 0.28;
+  let z = depthBias + Math.sin((index + 1) * 0.62) * 0.045;
   return new THREE.Vector3(x, y, z);
+}
+
+function annotationCenter(item) {
+  if (item.box) {
+    return {
+      x: item.box.x + item.box.width / 2,
+      y: item.box.y + item.box.height / 2,
+    };
+  }
+  const points = pathPoints(item.path || "");
+  if (!points.length) return { x: 50, y: 50 };
+  const sum = points.reduce(
+    (acc, point) => {
+      acc.x += point.x;
+      acc.y += point.y;
+      return acc;
+    },
+    { x: 0, y: 0 }
+  );
+  return { x: sum.x / points.length, y: sum.y / points.length };
+}
+
+function spaceDepth(type, index, selected) {
+  const base = type === "qi_flow" ? 0.42 : type === "void_solid" ? 0.08 : 0.24;
+  return base + (index % 5) * 0.055 + (selected ? 0.18 : 0);
+}
+
+function spaceOpacity(selected, muted) {
+  if (selected) return 0.92;
+  return muted ? 0.22 : 0.56;
+}
+
+function addSpaceQi(THREE, group, annotation, color, selected, muted, index) {
+  const points = pathPoints(annotation.path || "");
+  const sourcePoints = points.length >= 2 ? points : [annotationCenter(annotation), { x: annotationCenter(annotation).x, y: annotationCenter(annotation).y + 12 }];
+  const depth = spaceDepth(annotation.type, index, selected);
+  const vectors = sourcePoints.map((point, pointIndex) =>
+    annotationVector(annotation, point, 9.2, 4.45, depth, THREE, pointIndex)
+  );
+  const curve = new THREE.CatmullRomCurve3(vectors, false, "catmullrom", 0.45);
+  const opacity = spaceOpacity(selected, muted);
+
+  const haloMaterial = new THREE.MeshBasicMaterial({
+    color,
+    transparent: true,
+    opacity: selected ? 0.24 : 0.09,
+    depthWrite: false,
+  });
+  const lineMaterial = new THREE.MeshStandardMaterial({
+    color: selected ? spacePalette.selected : color,
+    emissive: selected ? spacePalette.selected : color,
+    emissiveIntensity: selected ? 0.75 : 0.22,
+    transparent: true,
+    opacity,
+    roughness: 0.58,
+    metalness: 0.04,
+  });
+  group.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 96, selected ? 0.075 : 0.042, 10, false), lineMaterial));
+  group.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 96, selected ? 0.14 : 0.09, 10, false), haloMaterial));
+
+  const beadGeometry = new THREE.SphereGeometry(selected ? 0.072 : 0.045, 16, 10);
+  for (let beadIndex = 0; beadIndex < 5; beadIndex += 1) {
+    const beadMaterial = new THREE.MeshBasicMaterial({
+      color: selected ? spacePalette.selected : color,
+      transparent: true,
+      opacity: selected ? 0.74 : 0.32,
+      depthWrite: false,
+    });
+    const bead = new THREE.Mesh(beadGeometry, beadMaterial);
+    bead.userData = {
+      pulse: "qi",
+      curve,
+      phase: beadIndex / 5,
+      speed: selected ? 0.115 : 0.072,
+      baseScale: selected ? 1 : 0.72,
+      baseOpacity: selected ? 0.82 : 0.36,
+      muted,
+    };
+    bead.position.copy(curve.getPoint(bead.userData.phase));
+    group.add(bead);
+  }
+}
+
+function addSpaceVoid(THREE, group, annotation, color, selected, muted, index) {
+  if (!annotation.box) return;
+  const depth = spaceDepth(annotation.type, index, selected);
+  const width = Math.max((annotation.box.width / 100) * 9.2, 0.12);
+  const height = Math.max((annotation.box.height / 100) * 4.45, 0.16);
+  const center = annotationCenter(annotation);
+  const x = (center.x / 100 - 0.5) * 9.2;
+  const y = (0.5 - center.y / 100) * 4.45;
+  const panel = new THREE.Group();
+  panel.position.set(x, y, depth);
+  panel.userData = { pulse: "void", phase: index * 0.34, selected, muted };
+
+  const fill = new THREE.Mesh(
+    new THREE.PlaneGeometry(width, height, 1, 1),
+    new THREE.MeshBasicMaterial({
+      color,
+      transparent: true,
+      opacity: selected ? 0.34 : muted ? 0.1 : 0.2,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    })
+  );
+  panel.add(fill);
+
+  const outlineGeometry = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(-width / 2, -height / 2, 0.018),
+    new THREE.Vector3(width / 2, -height / 2, 0.018),
+    new THREE.Vector3(width / 2, height / 2, 0.018),
+    new THREE.Vector3(-width / 2, height / 2, 0.018),
+    new THREE.Vector3(-width / 2, -height / 2, 0.018),
+  ]);
+  panel.add(
+    new THREE.Line(
+      outlineGeometry,
+      new THREE.LineBasicMaterial({
+        color: selected ? spacePalette.selected : color,
+        transparent: true,
+        opacity: selected ? 0.9 : muted ? 0.18 : 0.45,
+      })
+    )
+  );
+  group.add(panel);
+}
+
+function addSpaceInk(THREE, group, annotation, color, selected, muted, index) {
+  const center = annotationCenter(annotation);
+  const depth = spaceDepth(annotation.type, index, selected);
+  const x = (center.x / 100 - 0.5) * 9.2;
+  const y = (0.5 - center.y / 100) * 4.45;
+  const local = new THREE.Group();
+  local.position.set(x, y, depth);
+  local.userData = { pulse: "ink", phase: index * 0.27, selected, muted };
+
+  const opacity = spaceOpacity(selected, muted);
+  const material = new THREE.MeshStandardMaterial({
+    color: selected ? spacePalette.selected : color,
+    emissive: color,
+    emissiveIntensity: selected ? 0.4 : 0.12,
+    transparent: true,
+    opacity,
+    roughness: 0.7,
+    metalness: 0.04,
+  });
+  const width = annotation.box ? Math.max((annotation.box.width / 100) * 9.2, 0.18) : 0.72;
+  for (let i = 0; i < 5; i += 1) {
+    const height = (selected ? 0.46 : 0.28) + Math.sin(i * 1.7 + index) * 0.08;
+    const column = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.055, height, 16), material.clone());
+    column.rotation.x = Math.PI / 2;
+    column.position.set((i - 2) * (width / 4), 0, height / 2);
+    local.add(column);
+  }
+
+  const ring = new THREE.Mesh(
+    new THREE.TorusGeometry(Math.max(width * 0.56, 0.26), selected ? 0.026 : 0.018, 8, 42),
+    new THREE.MeshBasicMaterial({
+      color: selected ? spacePalette.selected : color,
+      transparent: true,
+      opacity: selected ? 0.8 : muted ? 0.17 : 0.36,
+      depthWrite: false,
+    })
+  );
+  ring.rotation.x = Math.PI / 2;
+  local.add(ring);
+  group.add(local);
 }
 
 function updateSpaceSceneContent() {
@@ -815,112 +952,68 @@ function updateSpaceSceneContent() {
   const THREE = state.space.THREE;
   const item = selectedAnnotation();
   const key = `${activeWorkId}:${state.mode}:${state.filter}:${state.selectedId || "none"}`;
-  if (key === state.space.renderKey) {
-    if (state.space.particles) state.space.particles.rotation.y += 0.002;
-    return;
-  }
+  if (key === state.space.renderKey) return;
   state.space.renderKey = key;
   clearThreeGroup(state.space.annotationsGroup);
   state.space.sceneReady = updateSpacePlane(THREE) || state.space.sceneReady;
-  const source = state.layerCanvases.original;
-  const sourceData = source?.context && source.canvas ? source.context.getImageData(0, 0, source.canvas.width, source.canvas.height).data : null;
 
   const selectedColor = new THREE.Color(spacePalette.selected);
   const qiColor = new THREE.Color(spacePalette.qi_flow);
   const voidColor = new THREE.Color(spacePalette.void_solid);
   const inkColor = new THREE.Color(spacePalette.brush_ink);
   const items = visibleAnnotations();
+  const hasSelection = Boolean(item);
 
   items.forEach((annotation, index) => {
-    const points = pathPoints(annotation.path || "");
-    const depth = (index - items.length / 2) * 0.18;
     const color = annotation.type === "qi_flow" ? qiColor : annotation.type === "void_solid" ? voidColor : inkColor;
     const isSelected = item?.id === annotation.id;
-
-    if (points.length >= 2) {
-      const vectors = points.map((point, pointIndex) => annotationVector(annotation, point, 9.5, 4.4, depth, THREE, pointIndex, sourceData));
-      const curve = new THREE.CatmullRomCurve3(vectors, false, "catmullrom", 0.5);
-      const haloMaterial = new THREE.MeshStandardMaterial({
-        color,
-        emissive: color,
-        emissiveIntensity: isSelected ? 1.05 : 0.22,
-        transparent: true,
-        opacity: isSelected ? 0.2 : 0.08,
-        roughness: 0.7,
-        metalness: 0.08,
-        side: THREE.DoubleSide,
-      });
-      const strokeMaterial = new THREE.MeshStandardMaterial({
-        color: isSelected ? selectedColor : color,
-        emissive: isSelected ? selectedColor : color,
-        emissiveIntensity: isSelected ? 1.35 : 0.42,
-        transparent: true,
-        opacity: isSelected ? 0.92 : 0.5,
-        roughness: 0.55,
-        metalness: 0.12,
-        side: THREE.DoubleSide,
-      });
-      const stroke = new THREE.Mesh(
-        new THREE.TubeGeometry(curve, Math.max(48, vectors.length * 8), isSelected ? 0.09 : 0.05, 10, false),
-        strokeMaterial
-      );
-      const halo = new THREE.Mesh(
-        new THREE.TubeGeometry(curve, Math.max(48, vectors.length * 8), isSelected ? 0.14 : 0.08, 10, false),
-        haloMaterial
-      );
-      state.space.annotationsGroup.add(halo, stroke);
-    } else if (annotation.box) {
-      const boxWidth = (annotation.box.width / 100) * 9.5;
-      const boxHeight = (annotation.box.height / 100) * 4.4;
-      const centerX = (annotation.box.x + annotation.box.width / 2) / 100 - 0.5;
-      const centerY = 0.5 - (annotation.box.y + annotation.box.height / 2) / 100;
-      const centerZ = depth + 0.28 + (isSelected ? 0.2 : 0);
-      const wire = new THREE.LineSegments(
-        new THREE.EdgesGeometry(new THREE.BoxGeometry(boxWidth, boxHeight, isSelected ? 0.22 : 0.12)),
-        new THREE.LineBasicMaterial({
-          color: isSelected ? selectedColor : color,
-          transparent: true,
-          opacity: isSelected ? 0.9 : 0.32,
-        })
-      );
-      wire.position.set(centerX * 9.5, centerY * 4.4, centerZ);
-      state.space.annotationsGroup.add(wire);
-    } else {
-      const marker = new THREE.Mesh(
-        new THREE.TorusGeometry(0.42, isSelected ? 0.052 : 0.028, 10, 28),
-        new THREE.MeshStandardMaterial({
-          color: isSelected ? selectedColor : color,
-          emissive: isSelected ? selectedColor : color,
-          emissiveIntensity: isSelected ? 1 : 0.2,
-          transparent: true,
-          opacity: isSelected ? 0.92 : 0.36,
-          roughness: 0.65,
-          metalness: 0.08,
-        })
-      );
-      marker.position.set((annotation.box?.x || 50) / 100 * 9.5 - 4.75, (0.5 - (annotation.box?.y || 50) / 100) * 4.4, depth);
-      marker.rotation.x = Math.PI / 2;
-      state.space.annotationsGroup.add(marker);
-    }
+    const muted = hasSelection && !isSelected;
+    if (annotation.type === "qi_flow") addSpaceQi(THREE, state.space.annotationsGroup, annotation, color, isSelected, muted, index);
+    if (annotation.type === "void_solid") addSpaceVoid(THREE, state.space.annotationsGroup, annotation, color, isSelected, muted, index);
+    if (annotation.type === "brush_ink") addSpaceInk(THREE, state.space.annotationsGroup, annotation, color, isSelected, muted, index);
   });
 
   const sweep = new THREE.Mesh(
-    new THREE.PlaneGeometry(9.2, 0.18, 32, 1),
-    new THREE.MeshBasicMaterial({ color: 0xd9b08c, transparent: true, opacity: 0.08 })
+    new THREE.PlaneGeometry(9.1, 0.11, 1, 1),
+    new THREE.MeshBasicMaterial({ color: selectedColor, transparent: true, opacity: 0.055, depthWrite: false })
   );
-  sweep.position.set(0, 0.95, 0.5);
+  sweep.position.set(0, 0.92, 0.02);
+  sweep.userData = { pulse: "sweep", phase: 0 };
   state.space.annotationsGroup.add(sweep);
-  state.space.annotationsGroup.rotation.x = -0.15;
-  state.space.annotationsGroup.rotation.y = 0.18;
+  state.space.annotationsGroup.rotation.x = -0.08;
+  state.space.annotationsGroup.rotation.y = 0.12;
   state.space.annotationsGroup.rotation.z = 0.03;
 }
 
 function animateSpaceScene() {
   if (!state.space.running || !state.space.renderer || !state.space.scene || !state.space.camera) return;
   if (state.mode === "space") {
+    const time = performance.now() / 1000;
     state.space.root.rotation.x += (state.space.targetRotationX - state.space.root.rotation.x) * 0.03;
     state.space.root.rotation.y += (state.space.targetRotationY - state.space.root.rotation.y) * 0.03;
-    if (state.space.particles) state.space.particles.rotation.y += 0.0014;
+    if (state.space.annotationsGroup) {
+      state.space.annotationsGroup.traverse((object) => {
+        const pulse = object.userData?.pulse;
+        if (pulse === "qi" && object.userData.curve) {
+          const t = (object.userData.phase + time * object.userData.speed) % 1;
+          object.position.copy(object.userData.curve.getPoint(t));
+          const glow = 0.58 + Math.sin((t + object.userData.phase) * Math.PI * 2) * 0.28;
+          object.scale.setScalar(object.userData.baseScale * (0.8 + glow * 0.35));
+          if (object.material) object.material.opacity = object.userData.muted ? 0.12 : object.userData.baseOpacity * glow;
+        }
+        if (pulse === "void") {
+          const breath = 1 + Math.sin(time * 1.2 + object.userData.phase) * (object.userData.selected ? 0.025 : 0.012);
+          object.scale.set(breath, breath, 1);
+        }
+        if (pulse === "ink") {
+          object.position.z += (spaceDepth("brush_ink", 0, object.userData.selected) - object.position.z) * 0.02;
+          object.rotation.z = Math.sin(time * 0.8 + object.userData.phase) * 0.025;
+        }
+        if (pulse === "sweep") {
+          object.position.y = 1.3 - ((time * 0.34) % 1) * 2.6;
+        }
+      });
+    }
     state.space.renderer.render(state.space.scene, state.space.camera);
   }
   if (state.space.running) requestAnimationFrame(animateSpaceScene);
