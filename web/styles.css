@@ -517,6 +517,10 @@ h3 {
   cursor: crosshair;
 }
 
+.canvasShell[data-view="space"] {
+  cursor: crosshair;
+}
+
 #workImage {
   display: block;
   max-width: 100%;
@@ -524,6 +528,32 @@ h3 {
   object-fit: contain;
   box-shadow: 0 14px 40px rgba(0, 0, 0, 0.36);
   filter: saturate(0.94) contrast(1.03);
+}
+
+#spaceCanvas {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  display: block;
+  width: min(42%, 420px);
+  height: clamp(150px, 34%, 260px);
+  border: 1px solid rgba(226, 210, 185, 0.28);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 50% 20%, rgba(255, 248, 238, 0.12), transparent 34%),
+    rgba(11, 10, 8, 0.88);
+  box-shadow: 0 20px 54px rgba(0, 0, 0, 0.48);
+  touch-action: none;
+  z-index: 4;
+}
+
+.spaceCanvas {
+  pointer-events: auto;
+  cursor: grab;
+}
+
+.canvasShell[data-view="space"] #spaceCanvas {
+  opacity: 1;
 }
 
 #overlay {

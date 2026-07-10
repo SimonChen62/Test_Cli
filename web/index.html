@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>CalliLens</title>
-    <link rel="stylesheet" href="./styles.css?v=12" />
+    <link rel="stylesheet" href="./styles.css?v=15" />
   </head>
   <body>
     <section id="entryScreen" class="entryScreen" aria-label="CalliLens 入口">
@@ -80,11 +80,13 @@
           <button class="modeButton" data-mode="void" type="button">留白</button>
           <button class="modeButton" data-mode="relation" type="button">虚实</button>
           <button class="modeButton" data-mode="ink" type="button">笔墨</button>
+          <button class="modeButton" data-mode="space" type="button">三维气韵</button>
         </div>
 
         <div class="canvasShell" aria-label="作品查看器，点击图像可生成局部证据探针">
           <img id="workImage" alt="书法作品或辅助分析图" />
           <svg id="overlay" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="当前观察点高亮"></svg>
+          <canvas id="spaceCanvas" class="spaceCanvas" hidden></canvas>
           <div id="imageFallback" class="fallback" hidden>
             请确认当前作品文件夹中存在 <code>annotation.json</code> 和对应图像文件。
           </div>

@@ -4,6 +4,13 @@ const initialSelectId = params.get("select");
 const initialProbe = params.get("probe");
 const initialView = params.get("view");
 const WORKS_URL = "../data/works.json";
+const THREE_MODULE_URL = "./vendor/three.module.js";
+const spacePalette = {
+  qi_flow: 0xc6a05b,
+  void_solid: 0x70a08d,
+  brush_ink: 0xd07a63,
+  selected: 0xf2eadf,
+};
 
 const typeMeta = {
   qi_flow: { name: "气脉", markClass: "qiRegion", recommendedLayer: "original" },
@@ -42,6 +49,11 @@ const modeMeta = {
     filter: "brush_ink",
     detail: ["笔墨模式", "墨色和粗细图层只能提示视觉轻重，不能等同于真实书写力道。"],
   },
+  space: {
+    layer: "original",
+    filter: "all",
+    detail: ["三维气韵空间", "把原作、虚实和笔势拉进同一层空间里看，作为辅助观察，不替代二维证据。"],
+  },
 };
 
 const reflectionTasks = {
@@ -65,6 +77,26 @@ const state = {
   introComplete: false,
   editingFirstLook: false,
   reflections: readReflections(),
+  space: {
+    ready: false,
+    sceneReady: false,
+    importing: false,
+    failed: false,
+    THREE: null,
+    renderer: null,
+    scene: null,
+    camera: null,
+    root: null,
+    plane: null,
+    annotationsGroup: null,
+    particles: null,
+    texture: null,
+    renderKey: "",
+    running: false,
+    targetRotationX: -0.26,
+    targetRotationY: 0.22,
+    pointer: { active: false, x: 0, y: 0, rotX: -0.26, rotY: 0.22 },
+  },
 };
 
 state.introComplete = firstLookComplete(state.firstLook);
@@ -85,6 +117,7 @@ const els = {
   image: document.querySelector("#workImage"),
   fallback: document.querySelector("#imageFallback"),
   overlay: document.querySelector("#overlay"),
+  spaceCanvas: document.querySelector("#spaceCanvas"),
   guideList: document.querySelector("#guideList"),
   detailType: document.querySelector("#detailType"),
   annotationTitle: document.querySelector("#annotationTitle"),
@@ -238,6 +271,8 @@ async function openWork(workId, options = {}) {
   state.probe = null;
   state.data = null;
   state.layerCanvases = {};
+  state.space.renderKey = "";
+  state.space.sceneReady = false;
   state.firstLook = readFirstLook();
   state.introComplete = firstLookComplete(state.firstLook);
   state.editingFirstLook = false;
@@ -287,6 +322,7 @@ function renderAll() {
   renderImage();
   renderGuideList();
   renderOverlay();
+  renderSpaceScene();
   renderDetail();
   renderProbePanel();
   renderReflectionPanel();
@@ -298,6 +334,7 @@ function renderLayout() {
   els.app.dataset.mode = state.mode;
   els.app.dataset.hasSelection = state.selectedId ? "true" : "false";
   els.app.dataset.introComplete = state.introComplete ? "true" : "false";
+  els.canvasShell.dataset.view = state.mode === "space" && state.space.sceneReady ? "space" : "image";
   requestAnimationFrame(positionOverlay);
 }
 
@@ -340,6 +377,14 @@ function renderImage() {
   document.querySelectorAll(".modeButton").forEach((button) => {
     button.classList.toggle("active", button.dataset.mode === state.mode);
   });
+  syncCanvasVisibility();
+}
+
+function syncCanvasVisibility() {
+  const useSpace = state.mode === "space" && state.space.sceneReady;
+  if (els.spaceCanvas) els.spaceCanvas.hidden = !useSpace;
+  if (els.image) els.image.hidden = false;
+  if (els.overlay) els.overlay.hidden = false;
 }
 
 function renderGuideList() {
@@ -489,12 +534,16 @@ function selectItem(id) {
 function setMode(mode) {
   if (!state.introComplete) return;
   const nextMode = modeMeta[mode] ? mode : "original";
-  const config = modeMeta[nextMode];
   state.mode = nextMode;
-  state.layer = config.layer;
-  state.filter = config.filter;
-  const matching = config.filter === "all" ? null : annotations().find((item) => item.type === config.filter);
-  state.selectedId = matching?.id || null;
+  if (nextMode === "space") {
+    state.layer = "original";
+  } else {
+    const config = modeMeta[nextMode];
+    state.layer = config.layer;
+    state.filter = config.filter;
+    const matching = config.filter === "all" ? null : annotations().find((item) => item.type === config.filter);
+    state.selectedId = matching?.id || null;
+  }
   renderAll();
 }
 
@@ -530,6 +579,374 @@ function renderFilterButtons() {
   });
 }
 
+function clearThreeGroup(group) {
+  if (!group) return;
+  while (group.children.length) {
+    const child = group.children[group.children.length - 1];
+    group.remove(child);
+    clearThreeObject(child);
+  }
+}
+
+function clearThreeObject(object) {
+  if (!object) return;
+  if (object.geometry) object.geometry.dispose?.();
+  if (object.material) {
+    const materials = Array.isArray(object.material) ? object.material : [object.material];
+    materials.forEach((material) => {
+      if (material?.map) material.map.dispose?.();
+      material?.dispose?.();
+    });
+  }
+  if (object.children?.length) {
+    while (object.children.length) {
+      clearThreeObject(object.children.pop());
+    }
+  }
+}
+
+function renderSpaceScene() {
+  if (state.mode !== "space") {
+    state.space.running = false;
+    syncCanvasVisibility();
+    return;
+  }
+  ensureSpaceScene();
+  if (!state.space.ready || !state.space.renderer || !state.space.scene || !state.space.camera) return;
+
+  updateSpaceSceneContent();
+  syncCanvasVisibility();
+  const width = els.spaceCanvas.clientWidth || els.canvasShell.clientWidth || 1;
+  const height = els.spaceCanvas.clientHeight || els.canvasShell.clientHeight || 1;
+  state.space.renderer.setSize(width, height, false);
+  state.space.camera.aspect = width / height;
+  state.space.camera.updateProjectionMatrix();
+  if (!state.space.running) {
+    state.space.running = true;
+    requestAnimationFrame(animateSpaceScene);
+  }
+  state.space.root.rotation.x += (state.space.targetRotationX - state.space.root.rotation.x) * 0.04;
+  state.space.root.rotation.y += (state.space.targetRotationY - state.space.root.rotation.y) * 0.04;
+  state.space.renderer.render(state.space.scene, state.space.camera);
+}
+
+function ensureSpaceScene() {
+  if (state.space.ready || state.space.importing || state.space.failed) return;
+  state.space.importing = true;
+  import(THREE_MODULE_URL)
+    .then((module) => {
+      state.space.THREE = module;
+      initSpaceScene(module);
+      state.space.ready = true;
+      state.space.importing = false;
+      syncCanvasVisibility();
+      renderSpaceScene();
+    })
+    .catch((error) => {
+      console.error("Three.js load failed", error);
+      state.space.importing = false;
+      state.space.failed = true;
+      syncCanvasVisibility();
+    });
+}
+
+function initSpaceScene(THREE) {
+  if (!els.spaceCanvas) return;
+  const width = els.spaceCanvas.clientWidth || els.canvasShell.clientWidth || 1;
+  const height = els.spaceCanvas.clientHeight || els.canvasShell.clientHeight || 1;
+
+  const renderer = new THREE.WebGLRenderer({
+    canvas: els.spaceCanvas,
+    antialias: true,
+    alpha: true,
+    preserveDrawingBuffer: false,
+  });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setSize(width, height, false);
+  renderer.setClearColor(0x000000, 0);
+
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.FogExp2(0x120f0c, 0.035);
+
+  const camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 100);
+  camera.position.set(0, 0.55, 6.9);
+
+  const root = new THREE.Group();
+  root.position.y = 0.18;
+  scene.add(root);
+
+  const ambient = new THREE.AmbientLight(0xfff1df, 1.35);
+  scene.add(ambient);
+
+  const key = new THREE.DirectionalLight(0xffd4b5, 2.8);
+  key.position.set(4, 7, 10);
+  scene.add(key);
+
+  const rim = new THREE.DirectionalLight(0x84b5c8, 1.45);
+  rim.position.set(-6, 3, -4);
+  scene.add(rim);
+
+  const fill = new THREE.PointLight(0xf8e7cf, 1.2, 24);
+  fill.position.set(0, 1.8, 5.5);
+  scene.add(fill);
+
+  const planeGeo = new THREE.PlaneGeometry(9.5, 4.4, 34, 12);
+  const planeMat = new THREE.MeshStandardMaterial({
+    color: 0xffffff,
+    roughness: 0.88,
+    metalness: 0.03,
+    emissive: 0x231912,
+    emissiveIntensity: 0.16,
+    side: THREE.DoubleSide,
+    transparent: true,
+    opacity: 0.98,
+  });
+  const plane = new THREE.Mesh(planeGeo, planeMat);
+  plane.rotation.x = -0.2;
+  plane.position.y = 0.04;
+  root.add(plane);
+
+  const particlesGeo = new THREE.BufferGeometry();
+  const particleCount = 260;
+  const positions = new Float32Array(particleCount * 3);
+  const colors = new Float32Array(particleCount * 3);
+  for (let i = 0; i < particleCount; i += 1) {
+    const i3 = i * 3;
+    positions[i3] = (Math.random() - 0.5) * 8.8;
+    positions[i3 + 1] = (Math.random() - 0.5) * 3.6;
+    positions[i3 + 2] = (Math.random() - 0.5) * 2.8;
+    const palette = [0.94, 0.78, 0.62];
+    colors[i3] = palette[(i % 3)];
+    colors[i3 + 1] = palette[((i + 1) % 3)];
+    colors[i3 + 2] = palette[((i + 2) % 3)];
+  }
+  particlesGeo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+  particlesGeo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+  const particlesMat = new THREE.PointsMaterial({
+    size: 0.045,
+    transparent: true,
+    opacity: 0.7,
+    depthWrite: false,
+    vertexColors: true,
+  });
+  const particles = new THREE.Points(particlesGeo, particlesMat);
+  root.add(particles);
+
+  const annotationsGroup = new THREE.Group();
+  root.add(annotationsGroup);
+
+  state.space.renderer = renderer;
+  state.space.scene = scene;
+  state.space.camera = camera;
+  state.space.root = root;
+  state.space.plane = plane;
+  state.space.particles = particles;
+  state.space.annotationsGroup = annotationsGroup;
+  state.space.renderKey = "";
+  state.space.running = true;
+
+  els.canvasShell.addEventListener("pointerdown", handleSpacePointerDown);
+  window.addEventListener("pointermove", handleSpacePointerMove, { passive: true });
+  window.addEventListener("pointerup", handleSpacePointerUp, { passive: true });
+  animateSpaceScene();
+}
+
+function updateSpacePlane(THREE) {
+  const source = state.layerCanvases.original;
+  if (!source || !state.space.plane) return false;
+  const geometry = state.space.plane.geometry;
+  const params = geometry.parameters || {};
+  const planeWidth = params.width || 9.5;
+  const planeHeight = params.height || 4.4;
+  const { canvas, context } = source;
+  if (!canvas || !context) return false;
+
+  if (!state.space.texture || state.space.texture.image !== canvas) {
+    state.space.texture?.dispose?.();
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace || texture.colorSpace;
+    texture.anisotropy = 4;
+    state.space.texture = texture;
+    state.space.plane.material.map = texture;
+    state.space.plane.material.needsUpdate = true;
+  }
+
+  const data = context.getImageData(0, 0, canvas.width, canvas.height).data;
+  const position = geometry.attributes.position;
+  for (let i = 0; i < position.count; i += 1) {
+    const x = position.getX(i);
+    const y = position.getY(i);
+    const u = clamp(x / planeWidth + 0.5, 0, 1);
+    const v = clamp(0.5 - y / planeHeight, 0, 1);
+    const px = Math.round(u * (canvas.width - 1));
+    const py = Math.round(v * (canvas.height - 1));
+    const idx = (py * canvas.width + px) * 4;
+    const luma = luminance(data[idx], data[idx + 1], data[idx + 2]);
+    const relief = (1 - luma / 255) * 0.74;
+    const ripple = Math.sin((u + v) * Math.PI * 5) * 0.022;
+    position.setZ(i, relief + ripple);
+  }
+  position.needsUpdate = true;
+  geometry.computeVertexNormals();
+  return true;
+}
+
+function annotationVector(item, point, planeWidth, planeHeight, depthBias, THREE, index = 0, sourceData = null) {
+  const x = (point.x / 100 - 0.5) * planeWidth;
+  const y = (0.5 - point.y / 100) * planeHeight;
+  const source = state.layerCanvases.original;
+  let z = depthBias;
+  if (source?.context && source.canvas) {
+    const canvas = source.canvas;
+    const data = sourceData || source.context.getImageData(0, 0, canvas.width, canvas.height).data;
+    const px = Math.round(clamp((point.x / 100) * (canvas.width - 1), 0, canvas.width - 1));
+    const py = Math.round(clamp((point.y / 100) * (canvas.height - 1), 0, canvas.height - 1));
+    const idx = (py * canvas.width + px) * 4;
+    const luma = luminance(data[idx], data[idx + 1], data[idx + 2]);
+    z += (1 - luma / 255) * 0.6;
+  }
+  z += Math.sin((index + 1) * 0.62) * 0.03;
+  if (state.selectedId === item.id) z += 0.28;
+  return new THREE.Vector3(x, y, z);
+}
+
+function updateSpaceSceneContent() {
+  if (!state.space.THREE || !state.data) return;
+  const THREE = state.space.THREE;
+  const item = selectedAnnotation();
+  const key = `${activeWorkId}:${state.mode}:${state.filter}:${state.selectedId || "none"}`;
+  if (key === state.space.renderKey) {
+    if (state.space.particles) state.space.particles.rotation.y += 0.002;
+    return;
+  }
+  state.space.renderKey = key;
+  clearThreeGroup(state.space.annotationsGroup);
+  state.space.sceneReady = updateSpacePlane(THREE) || state.space.sceneReady;
+  const source = state.layerCanvases.original;
+  const sourceData = source?.context && source.canvas ? source.context.getImageData(0, 0, source.canvas.width, source.canvas.height).data : null;
+
+  const selectedColor = new THREE.Color(spacePalette.selected);
+  const qiColor = new THREE.Color(spacePalette.qi_flow);
+  const voidColor = new THREE.Color(spacePalette.void_solid);
+  const inkColor = new THREE.Color(spacePalette.brush_ink);
+  const items = visibleAnnotations();
+
+  items.forEach((annotation, index) => {
+    const points = pathPoints(annotation.path || "");
+    const depth = (index - items.length / 2) * 0.18;
+    const color = annotation.type === "qi_flow" ? qiColor : annotation.type === "void_solid" ? voidColor : inkColor;
+    const isSelected = item?.id === annotation.id;
+
+    if (points.length >= 2) {
+      const vectors = points.map((point, pointIndex) => annotationVector(annotation, point, 9.5, 4.4, depth, THREE, pointIndex, sourceData));
+      const curve = new THREE.CatmullRomCurve3(vectors, false, "catmullrom", 0.5);
+      const haloMaterial = new THREE.MeshStandardMaterial({
+        color,
+        emissive: color,
+        emissiveIntensity: isSelected ? 1.05 : 0.22,
+        transparent: true,
+        opacity: isSelected ? 0.2 : 0.08,
+        roughness: 0.7,
+        metalness: 0.08,
+        side: THREE.DoubleSide,
+      });
+      const strokeMaterial = new THREE.MeshStandardMaterial({
+        color: isSelected ? selectedColor : color,
+        emissive: isSelected ? selectedColor : color,
+        emissiveIntensity: isSelected ? 1.35 : 0.42,
+        transparent: true,
+        opacity: isSelected ? 0.92 : 0.5,
+        roughness: 0.55,
+        metalness: 0.12,
+        side: THREE.DoubleSide,
+      });
+      const stroke = new THREE.Mesh(
+        new THREE.TubeGeometry(curve, Math.max(48, vectors.length * 8), isSelected ? 0.09 : 0.05, 10, false),
+        strokeMaterial
+      );
+      const halo = new THREE.Mesh(
+        new THREE.TubeGeometry(curve, Math.max(48, vectors.length * 8), isSelected ? 0.14 : 0.08, 10, false),
+        haloMaterial
+      );
+      state.space.annotationsGroup.add(halo, stroke);
+    } else if (annotation.box) {
+      const boxWidth = (annotation.box.width / 100) * 9.5;
+      const boxHeight = (annotation.box.height / 100) * 4.4;
+      const centerX = (annotation.box.x + annotation.box.width / 2) / 100 - 0.5;
+      const centerY = 0.5 - (annotation.box.y + annotation.box.height / 2) / 100;
+      const centerZ = depth + 0.28 + (isSelected ? 0.2 : 0);
+      const wire = new THREE.LineSegments(
+        new THREE.EdgesGeometry(new THREE.BoxGeometry(boxWidth, boxHeight, isSelected ? 0.22 : 0.12)),
+        new THREE.LineBasicMaterial({
+          color: isSelected ? selectedColor : color,
+          transparent: true,
+          opacity: isSelected ? 0.9 : 0.32,
+        })
+      );
+      wire.position.set(centerX * 9.5, centerY * 4.4, centerZ);
+      state.space.annotationsGroup.add(wire);
+    } else {
+      const marker = new THREE.Mesh(
+        new THREE.TorusGeometry(0.42, isSelected ? 0.052 : 0.028, 10, 28),
+        new THREE.MeshStandardMaterial({
+          color: isSelected ? selectedColor : color,
+          emissive: isSelected ? selectedColor : color,
+          emissiveIntensity: isSelected ? 1 : 0.2,
+          transparent: true,
+          opacity: isSelected ? 0.92 : 0.36,
+          roughness: 0.65,
+          metalness: 0.08,
+        })
+      );
+      marker.position.set((annotation.box?.x || 50) / 100 * 9.5 - 4.75, (0.5 - (annotation.box?.y || 50) / 100) * 4.4, depth);
+      marker.rotation.x = Math.PI / 2;
+      state.space.annotationsGroup.add(marker);
+    }
+  });
+
+  const sweep = new THREE.Mesh(
+    new THREE.PlaneGeometry(9.2, 0.18, 32, 1),
+    new THREE.MeshBasicMaterial({ color: 0xd9b08c, transparent: true, opacity: 0.08 })
+  );
+  sweep.position.set(0, 0.95, 0.5);
+  state.space.annotationsGroup.add(sweep);
+  state.space.annotationsGroup.rotation.x = -0.15;
+  state.space.annotationsGroup.rotation.y = 0.18;
+  state.space.annotationsGroup.rotation.z = 0.03;
+}
+
+function animateSpaceScene() {
+  if (!state.space.running || !state.space.renderer || !state.space.scene || !state.space.camera) return;
+  if (state.mode === "space") {
+    state.space.root.rotation.x += (state.space.targetRotationX - state.space.root.rotation.x) * 0.03;
+    state.space.root.rotation.y += (state.space.targetRotationY - state.space.root.rotation.y) * 0.03;
+    if (state.space.particles) state.space.particles.rotation.y += 0.0014;
+    state.space.renderer.render(state.space.scene, state.space.camera);
+  }
+  if (state.space.running) requestAnimationFrame(animateSpaceScene);
+}
+
+function handleSpacePointerDown(event) {
+  if (state.mode !== "space" || !state.space.ready) return;
+  state.space.pointer.active = true;
+  els.canvasShell.setPointerCapture?.(event.pointerId);
+}
+
+function handleSpacePointerMove(event) {
+  if (state.mode !== "space" || !state.space.ready || !state.space.pointer.active) return;
+  const rect = els.canvasShell.getBoundingClientRect();
+  const dx = (event.clientX - rect.left) / rect.width - 0.5;
+  const dy = (event.clientY - rect.top) / rect.height - 0.5;
+  state.space.targetRotationY = 0.22 + dx * 0.9;
+  state.space.targetRotationX = -0.26 + dy * 0.6;
+}
+
+function handleSpacePointerUp() {
+  state.space.pointer.active = false;
+  state.space.targetRotationX = clamp(state.space.targetRotationX, -0.7, 0.15);
+  state.space.targetRotationY = clamp(state.space.targetRotationY, -0.9, 0.9);
+}
+
 function setStepButtonsDisabled(disabled) {
   els.prev.disabled = disabled;
   els.next.disabled = disabled;
@@ -562,6 +979,7 @@ function loadAnalysisCanvases() {
       context.drawImage(image, 0, 0);
       state.layerCanvases[layer] = { canvas, context };
       applyInitialProbe();
+      renderSpaceScene();
     };
     image.src = imageBase() + filename;
   });
@@ -1058,6 +1476,11 @@ function handleEntryScroll() {
   els.entryScreen.classList.toggle("scrolled", window.scrollY > 12);
 }
 
+function handleViewportResize() {
+  positionOverlay();
+  renderSpaceScene();
+}
+
 document.querySelectorAll(".filterButton").forEach((button) => {
   button.addEventListener("click", () => setFilter(button.dataset.filter));
 });
@@ -1119,7 +1542,7 @@ els.reflectionInput.addEventListener("input", () => {
     saveReflections();
   }
 });
-window.addEventListener("resize", positionOverlay);
+window.addEventListener("resize", handleViewportResize);
 window.addEventListener("scroll", handleEntryScroll, { passive: true });
 
 boot();
