@@ -5,6 +5,7 @@ const initialProbe = params.get("probe");
 const initialView = params.get("view");
 const WORKS_URL = "../data/works.json";
 const THREE_MODULE_URL = "./vendor/three.module.js";
+const GLYPHS_MANIFEST = "glyphs/glyphs.json";
 const spacePalette = {
   qi_flow: 0xc6a05b,
   void_solid: 0x70a08d,
@@ -52,7 +53,7 @@ const modeMeta = {
   space: {
     layer: "original",
     filter: "all",
-    detail: ["三维气韵空间", "把原作、虚实和笔势拉进同一层空间里看，作为辅助观察，不替代二维证据。"],
+    detail: ["3D字形模式", "把人工框选的单字墨迹提取出来，生成可旋转的三维浮雕；动态扫光只提示骨架路线，不代表真实笔顺。"],
   },
 };
 
@@ -97,6 +98,9 @@ const state = {
     targetRotationY: 0.22,
     pointer: { active: false, x: 0, y: 0, rotX: -0.26, rotY: 0.22 },
   },
+  glyphs: [],
+  selectedGlyphId: null,
+  glyphAssets: {},
 };
 
 state.introComplete = firstLookComplete(state.firstLook);
@@ -119,6 +123,10 @@ const els = {
   overlay: document.querySelector("#overlay"),
   spaceCanvas: document.querySelector("#spaceCanvas"),
   spaceLabel: document.querySelector("#spaceLabel"),
+  glyphPanel: document.querySelector("#glyphPanel"),
+  glyphList: document.querySelector("#glyphList"),
+  glyphTitle: document.querySelector("#glyphTitle"),
+  glyphSummary: document.querySelector("#glyphSummary"),
   guideList: document.querySelector("#guideList"),
   detailType: document.querySelector("#detailType"),
   annotationTitle: document.querySelector("#annotationTitle"),
@@ -169,6 +177,14 @@ function dataUrl() {
 
 function imageBase() {
   return `../data/${activeWorkId}/`;
+}
+
+function glyphDataUrl() {
+  return `${imageBase()}${GLYPHS_MANIFEST}`;
+}
+
+function glyphBase() {
+  return `${imageBase()}glyphs/`;
 }
 
 function firstLookStorageKey() {
@@ -272,6 +288,9 @@ async function openWork(workId, options = {}) {
   state.probe = null;
   state.data = null;
   state.layerCanvases = {};
+  state.glyphs = [];
+  state.selectedGlyphId = null;
+  state.glyphAssets = {};
   state.space.renderKey = "";
   state.space.sceneReady = false;
   state.firstLook = readFirstLook();
@@ -298,9 +317,24 @@ async function openWork(workId, options = {}) {
     state.filter = item.type;
   }
   els.title.textContent = state.data.title || "单作品书法导览";
+  await loadGlyphs();
   renderAll();
   loadAnalysisCanvases();
   applyInitialProbe();
+}
+
+async function loadGlyphs() {
+  state.glyphs = [];
+  state.selectedGlyphId = null;
+  try {
+    const response = await fetch(glyphDataUrl());
+    if (!response.ok) return;
+    const manifest = await response.json();
+    state.glyphs = manifest.glyphs || [];
+    state.selectedGlyphId = state.glyphs[0]?.id || null;
+  } catch (error) {
+    console.warn("Glyph manifest unavailable", error);
+  }
 }
 
 function annotations() {
@@ -316,6 +350,14 @@ function selectedAnnotation() {
   return annotations().find((item) => item.id === state.selectedId) || null;
 }
 
+function selectedGlyph() {
+  return state.glyphs.find((item) => item.id === state.selectedGlyphId) || state.glyphs[0] || null;
+}
+
+function glyphForAnnotation(annotationId) {
+  return state.glyphs.find((glyph) => glyph.annotationId === annotationId) || null;
+}
+
 function renderAll() {
   enforceIntroGate();
   renderLayout();
@@ -324,6 +366,7 @@ function renderAll() {
   renderGuideList();
   renderOverlay();
   renderSpaceScene();
+  renderGlyphPanel();
   renderDetail();
   renderProbePanel();
   renderReflectionPanel();
@@ -423,6 +466,43 @@ function renderGuideList() {
     button.append(number, content);
     els.guideList.append(button);
   });
+}
+
+function renderGlyphPanel() {
+  if (!els.glyphPanel || !els.glyphList) return;
+  const active = state.mode === "space";
+  els.glyphPanel.hidden = !active;
+  if (!active) return;
+
+  const glyph = selectedGlyph();
+  els.glyphList.replaceChildren();
+  if (!state.glyphs.length) {
+    els.glyphTitle.textContent = "没有可用字形";
+    els.glyphSummary.textContent = "请先运行 python scripts/extract_glyphs.py --work data/work_003 生成 glyphs.json。";
+    return;
+  }
+
+  els.glyphTitle.textContent = glyph ? `3D字形：${glyph.label}` : "选择一个字形";
+  const assetState = glyph ? state.glyphAssets[glyph.id] : null;
+  const statusText = assetState?.failed ? " 字形资源加载失败，请重新运行提取脚本。" : assetState?.loading ? " 正在载入 3D 字形资源。" : "";
+  els.glyphSummary.textContent = `${glyph?.description || "从人工框选区域中提取墨迹 mask、骨架和厚度图，再生成 3D 浮雕。"}${statusText}`;
+
+  state.glyphs.forEach((item) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "glyphButton";
+    button.classList.toggle("active", item.id === state.selectedGlyphId);
+    button.innerHTML = `<strong>${item.label}</strong><span>${item.id}</span>`;
+    button.addEventListener("click", () => selectGlyph(item.id));
+    els.glyphList.append(button);
+  });
+}
+
+function selectGlyph(id) {
+  if (!state.glyphs.some((glyph) => glyph.id === id)) return;
+  state.selectedGlyphId = id;
+  state.space.renderKey = "";
+  renderAll();
 }
 
 function renderOverlay() {
@@ -530,6 +610,8 @@ function selectItem(id) {
   state.selectedId = id;
   const item = selectedAnnotation();
   if (item) state.layer = typeMeta[item.type]?.recommendedLayer || "original";
+  const glyph = item ? glyphForAnnotation(item.id) : null;
+  if (glyph) state.selectedGlyphId = glyph.id;
   renderAll();
 }
 
@@ -539,6 +621,8 @@ function setMode(mode) {
   state.mode = nextMode;
   if (nextMode === "space") {
     state.layer = "original";
+    state.filter = "all";
+    if (!selectedGlyph()) state.selectedGlyphId = state.glyphs[0]?.id || null;
   } else {
     const config = modeMeta[nextMode];
     state.layer = config.layer;
@@ -947,41 +1031,179 @@ function addSpaceInk(THREE, group, annotation, color, selected, muted, index) {
   group.add(local);
 }
 
+function loadImageCanvas(url) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.crossOrigin = "anonymous";
+    image.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      const context = canvas.getContext("2d", { willReadFrequently: true });
+      context.drawImage(image, 0, 0);
+      resolve({ canvas, context });
+    };
+    image.onerror = () => reject(new Error(`Could not load ${url}`));
+    image.src = url;
+  });
+}
+
+function ensureGlyphAssets(glyph) {
+  if (!glyph) return false;
+  const cached = state.glyphAssets[glyph.id];
+  if (cached?.ready) return true;
+  if (cached?.loading) return false;
+
+  state.glyphAssets[glyph.id] = { loading: true, ready: false };
+  Promise.all([
+    loadImageCanvas(glyphBase() + glyph.mask),
+    loadImageCanvas(glyphBase() + glyph.height),
+    glyph.skeleton ? loadImageCanvas(glyphBase() + glyph.skeleton) : Promise.resolve(null),
+  ])
+    .then(([mask, height, skeleton]) => {
+      state.glyphAssets[glyph.id] = {
+        loading: false,
+        ready: true,
+        mask,
+        height,
+        skeleton,
+        texture: null,
+      };
+      state.space.renderKey = "";
+      renderSpaceScene();
+      renderGlyphPanel();
+    })
+    .catch((error) => {
+      console.warn("Glyph asset load failed", error);
+      state.glyphAssets[glyph.id] = { loading: false, ready: false, failed: true };
+      renderGlyphPanel();
+    });
+  return false;
+}
+
+function createGlyphMesh(THREE, glyph, assets) {
+  const maskCanvas = assets.mask.canvas;
+  const heightCanvas = assets.height.canvas;
+  const heightData = assets.height.context.getImageData(0, 0, heightCanvas.width, heightCanvas.height).data;
+  const maskData = assets.mask.context.getImageData(0, 0, maskCanvas.width, maskCanvas.height).data;
+  const aspect = maskCanvas.width / Math.max(1, maskCanvas.height);
+  const planeHeight = 3.45;
+  const planeWidth = clamp(planeHeight * aspect, 1.8, 5.4);
+  const xSegments = clamp(Math.round(maskCanvas.width * 1.15), 48, 150);
+  const ySegments = clamp(Math.round(maskCanvas.height * 1.15), 48, 150);
+  const geometry = new THREE.PlaneGeometry(planeWidth, planeHeight, xSegments, ySegments);
+  const position = geometry.attributes.position;
+
+  for (let i = 0; i < position.count; i += 1) {
+    const u = clamp(position.getX(i) / planeWidth + 0.5, 0, 1);
+    const v = clamp(0.5 - position.getY(i) / planeHeight, 0, 1);
+    const px = Math.round(u * (heightCanvas.width - 1));
+    const py = Math.round(v * (heightCanvas.height - 1));
+    const idx = (py * heightCanvas.width + px) * 4;
+    const maskIdx = (Math.min(py, maskCanvas.height - 1) * maskCanvas.width + Math.min(px, maskCanvas.width - 1)) * 4;
+    const alpha = maskData[maskIdx + 3] / 255;
+    const relief = heightData[idx] / 255;
+    position.setZ(i, alpha > 0.04 ? 0.04 + relief * 0.82 : -0.04);
+  }
+  position.needsUpdate = true;
+  geometry.computeVertexNormals();
+
+  if (assets.texture) assets.texture.dispose?.();
+  const texture = new THREE.CanvasTexture(maskCanvas);
+  texture.colorSpace = THREE.SRGBColorSpace || texture.colorSpace;
+  texture.anisotropy = 6;
+  assets.texture = texture;
+
+  const material = new THREE.MeshStandardMaterial({
+    color: 0xffffff,
+    map: texture,
+    transparent: true,
+    alphaTest: 0.05,
+    roughness: 0.78,
+    metalness: 0.02,
+    emissive: 0x2a211a,
+    emissiveIntensity: 0.28,
+    side: THREE.DoubleSide,
+  });
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.userData = { pulse: "glyphMesh", glyphId: glyph.id };
+  return { mesh, planeWidth, planeHeight };
+}
+
+function createGlyphTrace(THREE, glyph, planeWidth, planeHeight) {
+  const points = glyph.tracePath?.length
+    ? glyph.tracePath
+    : [
+        { x: 50, y: 8 },
+        { x: 48, y: 34 },
+        { x: 55, y: 64 },
+        { x: 50, y: 92 },
+      ];
+  const vectors = points.map((point) => {
+    const x = (point.x / 100 - 0.5) * planeWidth;
+    const y = (0.5 - point.y / 100) * planeHeight;
+    return new THREE.Vector3(x, y, 0.95);
+  });
+  const curve = new THREE.CatmullRomCurve3(vectors, false, "catmullrom", 0.45);
+  const group = new THREE.Group();
+  group.add(
+    new THREE.Mesh(
+      new THREE.TubeGeometry(curve, 96, 0.018, 8, false),
+      new THREE.MeshBasicMaterial({
+        color: 0xf0d8a8,
+        transparent: true,
+        opacity: 0.32,
+        depthWrite: false,
+      })
+    )
+  );
+  const bead = new THREE.Mesh(
+    new THREE.SphereGeometry(0.07, 18, 12),
+    new THREE.MeshBasicMaterial({
+      color: 0xfff1d6,
+      transparent: true,
+      opacity: 0.9,
+      depthWrite: false,
+    })
+  );
+  bead.userData = { pulse: "glyphTrace", curve, speed: 0.135, phase: 0 };
+  group.add(bead);
+  return group;
+}
+
 function updateSpaceSceneContent() {
   if (!state.space.THREE || !state.data) return;
   const THREE = state.space.THREE;
-  const item = selectedAnnotation();
-  const key = `${activeWorkId}:${state.mode}:${state.filter}:${state.selectedId || "none"}`;
+  const glyph = selectedGlyph();
+  const asset = glyph ? state.glyphAssets[glyph.id] : null;
+  const key = `${activeWorkId}:${state.mode}:glyph:${glyph?.id || "none"}:${asset?.ready ? "ready" : "loading"}`;
   if (key === state.space.renderKey) return;
   state.space.renderKey = key;
   clearThreeGroup(state.space.annotationsGroup);
   state.space.sceneReady = updateSpacePlane(THREE) || state.space.sceneReady;
 
-  const selectedColor = new THREE.Color(spacePalette.selected);
-  const qiColor = new THREE.Color(spacePalette.qi_flow);
-  const voidColor = new THREE.Color(spacePalette.void_solid);
-  const inkColor = new THREE.Color(spacePalette.brush_ink);
-  const items = visibleAnnotations();
-  const hasSelection = Boolean(item);
+  if (!glyph) return;
+  if (!ensureGlyphAssets(glyph)) return;
+  const assets = state.glyphAssets[glyph.id];
+  if (!assets?.ready) return;
 
-  items.forEach((annotation, index) => {
-    const color = annotation.type === "qi_flow" ? qiColor : annotation.type === "void_solid" ? voidColor : inkColor;
-    const isSelected = item?.id === annotation.id;
-    const muted = hasSelection && !isSelected;
-    if (annotation.type === "qi_flow") addSpaceQi(THREE, state.space.annotationsGroup, annotation, color, isSelected, muted, index);
-    if (annotation.type === "void_solid") addSpaceVoid(THREE, state.space.annotationsGroup, annotation, color, isSelected, muted, index);
-    if (annotation.type === "brush_ink") addSpaceInk(THREE, state.space.annotationsGroup, annotation, color, isSelected, muted, index);
-  });
-
-  const sweep = new THREE.Mesh(
-    new THREE.PlaneGeometry(9.1, 0.11, 1, 1),
-    new THREE.MeshBasicMaterial({ color: selectedColor, transparent: true, opacity: 0.055, depthWrite: false })
+  const stage = new THREE.Group();
+  const { mesh, planeWidth, planeHeight } = createGlyphMesh(THREE, glyph, assets);
+  const plate = new THREE.Mesh(
+    new THREE.PlaneGeometry(planeWidth + 0.52, planeHeight + 0.52, 1, 1),
+    new THREE.MeshBasicMaterial({
+      color: 0xe8dcc8,
+      transparent: true,
+      opacity: 0.92,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    })
   );
-  sweep.position.set(0, 0.92, 0.02);
-  sweep.userData = { pulse: "sweep", phase: 0 };
-  state.space.annotationsGroup.add(sweep);
-  state.space.annotationsGroup.rotation.x = -0.08;
-  state.space.annotationsGroup.rotation.y = 0.12;
+  plate.position.z = -0.08;
+  stage.add(plate, mesh, createGlyphTrace(THREE, glyph, planeWidth, planeHeight));
+  state.space.annotationsGroup.add(stage);
+  state.space.annotationsGroup.rotation.x = -0.12;
+  state.space.annotationsGroup.rotation.y = 0.16;
   state.space.annotationsGroup.rotation.z = 0.03;
 }
 
@@ -1012,6 +1234,17 @@ function animateSpaceScene() {
         if (pulse === "sweep") {
           object.position.y = 1.3 - ((time * 0.34) % 1) * 2.6;
         }
+        if (pulse === "glyphMesh") {
+          const breath = 1 + Math.sin(time * 1.4) * 0.035;
+          object.scale.z = breath;
+        }
+        if (pulse === "glyphTrace" && object.userData.curve) {
+          const t = (object.userData.phase + time * object.userData.speed) % 1;
+          object.position.copy(object.userData.curve.getPoint(t));
+          const glow = 0.78 + Math.sin(t * Math.PI * 2) * 0.2;
+          object.scale.setScalar(glow);
+          if (object.material) object.material.opacity = 0.62 + glow * 0.28;
+        }
       });
     }
     state.space.renderer.render(state.space.scene, state.space.camera);
@@ -1021,8 +1254,9 @@ function animateSpaceScene() {
 
 function handleSpacePointerDown(event) {
   if (state.mode !== "space" || !state.space.ready) return;
+  if (event.target !== els.spaceCanvas) return;
   state.space.pointer.active = true;
-  els.canvasShell.setPointerCapture?.(event.pointerId);
+  els.spaceCanvas.setPointerCapture?.(event.pointerId);
 }
 
 function handleSpacePointerMove(event) {

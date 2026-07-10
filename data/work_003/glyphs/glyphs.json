@@ -1,0 +1,251 @@
+{
+  "workId": "work_003",
+  "source": "original.png",
+  "sourceSize": {
+    "width": 2800,
+    "height": 613
+  },
+  "method": "manual boxes + OpenCV Otsu ink mask + distance-transform height map",
+  "glyphs": [
+    {
+      "id": "song",
+      "label": "宋",
+      "annotationId": "qi_1",
+      "description": "气脉观察点附近的正文小字，用于展示上下承接中的单字墨迹厚度。",
+      "box": {
+        "x": 70.9,
+        "y": 66.0,
+        "width": 3.1,
+        "height": 12.0
+      },
+      "pixelBox": {
+        "x": 1985,
+        "y": 405,
+        "width": 87,
+        "height": 74
+      },
+      "mask": "song_mask.png",
+      "height": "song_height.png",
+      "skeleton": "song_skeleton.png",
+      "contours": "song_contours.json",
+      "tracePath": [
+        {
+          "x": 52,
+          "y": 8
+        },
+        {
+          "x": 48,
+          "y": 30
+        },
+        {
+          "x": 56,
+          "y": 55
+        },
+        {
+          "x": 46,
+          "y": 88
+        }
+      ]
+    },
+    {
+      "id": "zhi",
+      "label": "至",
+      "annotationId": "qi_1",
+      "description": "气脉观察点下方字形，用于与“宋”形成承接对照。",
+      "box": {
+        "x": 71.0,
+        "y": 84.0,
+        "width": 3.0,
+        "height": 12.5
+      },
+      "pixelBox": {
+        "x": 1988,
+        "y": 515,
+        "width": 84,
+        "height": 77
+      },
+      "mask": "zhi_mask.png",
+      "height": "zhi_height.png",
+      "skeleton": "zhi_skeleton.png",
+      "contours": "zhi_contours.json",
+      "tracePath": [
+        {
+          "x": 44,
+          "y": 10
+        },
+        {
+          "x": 58,
+          "y": 34
+        },
+        {
+          "x": 45,
+          "y": 62
+        },
+        {
+          "x": 55,
+          "y": 90
+        }
+      ]
+    },
+    {
+      "id": "zhen",
+      "label": "震",
+      "annotationId": "qi_2",
+      "description": "形断势连观察点上部字形，用于展示断续笔画的骨架扫光。",
+      "box": {
+        "x": 66.0,
+        "y": 7.5,
+        "width": 3.1,
+        "height": 12.5
+      },
+      "pixelBox": {
+        "x": 1848,
+        "y": 46,
+        "width": 87,
+        "height": 77
+      },
+      "mask": "zhen_mask.png",
+      "height": "zhen_height.png",
+      "skeleton": "zhen_skeleton.png",
+      "contours": "zhen_contours.json",
+      "tracePath": [
+        {
+          "x": 55,
+          "y": 6
+        },
+        {
+          "x": 45,
+          "y": 30
+        },
+        {
+          "x": 58,
+          "y": 58
+        },
+        {
+          "x": 48,
+          "y": 92
+        }
+      ]
+    },
+    {
+      "id": "zhi_qi",
+      "label": "之",
+      "annotationId": "qi_2",
+      "description": "形断势连观察点中段字形，用于展示字内转折和轻重起伏。",
+      "box": {
+        "x": 65.0,
+        "y": 38.0,
+        "width": 3.1,
+        "height": 12.0
+      },
+      "pixelBox": {
+        "x": 1820,
+        "y": 233,
+        "width": 87,
+        "height": 74
+      },
+      "mask": "zhi_qi_mask.png",
+      "height": "zhi_qi_height.png",
+      "skeleton": "zhi_qi_skeleton.png",
+      "contours": "zhi_qi_contours.json",
+      "tracePath": [
+        {
+          "x": 48,
+          "y": 12
+        },
+        {
+          "x": 60,
+          "y": 35
+        },
+        {
+          "x": 42,
+          "y": 60
+        },
+        {
+          "x": 64,
+          "y": 86
+        }
+      ]
+    },
+    {
+      "id": "lai",
+      "label": "来",
+      "annotationId": "qi_2",
+      "description": "形断势连观察点下部字形，用于展示连续观看路线的末端。",
+      "box": {
+        "x": 64.7,
+        "y": 58.5,
+        "width": 3.2,
+        "height": 13.5
+      },
+      "pixelBox": {
+        "x": 1812,
+        "y": 359,
+        "width": 90,
+        "height": 83
+      },
+      "mask": "lai_mask.png",
+      "height": "lai_height.png",
+      "skeleton": "lai_skeleton.png",
+      "contours": "lai_contours.json",
+      "tracePath": [
+        {
+          "x": 50,
+          "y": 8
+        },
+        {
+          "x": 52,
+          "y": 30
+        },
+        {
+          "x": 44,
+          "y": 60
+        },
+        {
+          "x": 60,
+          "y": 90
+        }
+      ]
+    },
+    {
+      "id": "fu",
+      "label": "福",
+      "annotationId": "ink_1",
+      "description": "右侧题名区较大字形，用于展示题名和正文之间的笔墨重量差异。",
+      "box": {
+        "x": 95.7,
+        "y": 7.3,
+        "width": 3.0,
+        "height": 14.0
+      },
+      "pixelBox": {
+        "x": 2680,
+        "y": 45,
+        "width": 84,
+        "height": 86
+      },
+      "mask": "fu_mask.png",
+      "height": "fu_height.png",
+      "skeleton": "fu_skeleton.png",
+      "contours": "fu_contours.json",
+      "tracePath": [
+        {
+          "x": 54,
+          "y": 6
+        },
+        {
+          "x": 46,
+          "y": 28
+        },
+        {
+          "x": 58,
+          "y": 54
+        },
+        {
+          "x": 48,
+          "y": 88
+        }
+      ]
+    }
+  ]
+}
