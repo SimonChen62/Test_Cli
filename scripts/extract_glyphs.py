@@ -9,6 +9,9 @@ import cv2
 import numpy as np
 
 
+ASSET_SCALE = 3
+
+
 def read_image(path: Path, flags: int = cv2.IMREAD_COLOR) -> np.ndarray:
     data = np.fromfile(str(path), dtype=np.uint8)
     image = cv2.imdecode(data, flags)
@@ -85,7 +88,7 @@ def make_mask_rgba(crop: np.ndarray, mask: np.ndarray) -> np.ndarray:
     rgba[..., 0] = ink_tone
     rgba[..., 1] = np.clip(ink_tone * 0.88, 10, 38).astype(np.uint8)
     rgba[..., 2] = np.clip(ink_tone * 0.74, 8, 34).astype(np.uint8)
-    rgba[..., 3] = mask
+    rgba[..., 3] = cv2.GaussianBlur(mask, (0, 0), 1.25)
     return rgba
 
 
@@ -106,7 +109,7 @@ def find_contours(mask: np.ndarray) -> list[list[list[int]]]:
     for contour in contours:
         if cv2.contourArea(contour) < 12:
             continue
-        epsilon = max(1.0, 0.006 * cv2.arcLength(contour, True))
+        epsilon = max(0.7, 0.0025 * cv2.arcLength(contour, True))
         approx = cv2.approxPolyDP(contour, epsilon, True)
         result.append(approx.reshape(-1, 2).astype(int).tolist())
     return result
@@ -124,13 +127,51 @@ def percent_box_to_pixels(box: dict[str, float], width: int, height: int) -> tup
     return x, y, bw, bh
 
 
-def extract_glyphs(work_dir: Path) -> None:
-    source_path = work_dir / "original.png"
+def source_right_crop(source: np.ndarray, reference: np.ndarray) -> tuple[np.ndarray, dict[str, Any]]:
+    """Map the current work_003 crop to the right side of the full scroll.
+
+    The web demo image is a right-end crop downsampled to the current display
+    height. Keeping the same percent boxes on this high-resolution crop gives
+    smoother glyph masks without changing annotation semantics.
+    """
+    source_h, source_w = source.shape[:2]
+    ref_h, ref_w = reference.shape[:2]
+    crop_w = int(round(ref_w * source_h / ref_h))
+    crop_w = max(1, min(source_w, crop_w))
+    crop_x = max(0, source_w - crop_w)
+    crop = source[:, crop_x : crop_x + crop_w]
+    return crop, {
+        "mode": "right-end crop scaled from work original",
+        "sourceWidth": source_w,
+        "sourceHeight": source_h,
+        "cropX": crop_x,
+        "cropY": 0,
+        "cropWidth": crop.shape[1],
+        "cropHeight": crop.shape[0],
+    }
+
+
+def extract_glyphs(work_dir: Path, source_path: Path | None = None) -> None:
     boxes_path = work_dir / "glyphs" / "glyph-boxes.json"
     output_dir = work_dir / "glyphs"
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    image = read_image(source_path)
+    work_image_path = work_dir / "original.png"
+    reference_image = read_image(work_image_path)
+    image = reference_image
+    source_meta: dict[str, Any] = {
+        "mode": "work original",
+        "sourceWidth": reference_image.shape[1],
+        "sourceHeight": reference_image.shape[0],
+        "cropX": 0,
+        "cropY": 0,
+        "cropWidth": reference_image.shape[1],
+        "cropHeight": reference_image.shape[0],
+    }
+    if source_path and source_path.exists():
+        full_source = read_image(source_path)
+        image, source_meta = source_right_crop(full_source, reference_image)
+
     _gray, full_mask = build_ink_mask(image)
     height, width = full_mask.shape
     config = load_boxes(boxes_path)
@@ -143,6 +184,10 @@ def extract_glyphs(work_dir: Path) -> None:
         x, y, bw, bh = percent_box_to_pixels(item["box"], width, height)
         crop = image[y : y + bh, x : x + bw]
         crop_mask = clean_crop_mask(full_mask[y : y + bh, x : x + bw])
+        if ASSET_SCALE > 1:
+            asset_size = (crop.shape[1] * ASSET_SCALE, crop.shape[0] * ASSET_SCALE)
+            crop = cv2.resize(crop, asset_size, interpolation=cv2.INTER_CUBIC)
+            crop_mask = cv2.resize(crop_mask, asset_size, interpolation=cv2.INTER_NEAREST)
 
         mask_file = f"{glyph_id}_mask.png"
         height_file = f"{glyph_id}_height.png"
@@ -179,6 +224,7 @@ def extract_glyphs(work_dir: Path) -> None:
         "workId": config.get("workId", work_dir.name),
         "source": "original.png",
         "sourceSize": {"width": width, "height": height},
+        "sourceMap": source_meta,
         "method": "manual boxes + OpenCV Otsu ink mask + distance-transform height map",
         "glyphs": glyphs,
     }
@@ -186,7 +232,14 @@ def extract_glyphs(work_dir: Path) -> None:
         json.dumps(manifest, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
-    write_image(output_dir / "glyph_preview.png", preview)
+    preview_output = preview
+    if preview.shape[1] > reference_image.shape[1] or preview.shape[0] > reference_image.shape[0]:
+        preview_output = cv2.resize(
+            preview,
+            (reference_image.shape[1], reference_image.shape[0]),
+            interpolation=cv2.INTER_AREA,
+        )
+    write_image(output_dir / "glyph_preview.png", preview_output)
 
     print(f"Wrote {output_dir / 'glyphs.json'}")
     print(f"Wrote {len(glyphs)} glyphs to {output_dir}")
@@ -202,8 +255,14 @@ def main() -> None:
         type=Path,
         help="Work directory containing original.png and glyphs/glyph-boxes.json.",
     )
+    parser.add_argument(
+        "--source",
+        default=None,
+        type=Path,
+        help="Optional full-resolution scroll image. If provided, glyphs are extracted from the right-end crop that maps to the work image.",
+    )
     args = parser.parse_args()
-    extract_glyphs(args.work)
+    extract_glyphs(args.work, args.source)
 
 
 if __name__ == "__main__":
