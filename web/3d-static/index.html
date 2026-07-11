@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>CalliLens 静态 3D 字形</title>
+    <title>CalliLens 全文长卷 3D 浮雕</title>
     <style>
       * { box-sizing: border-box; }
       body {
@@ -55,6 +55,7 @@
         gap: 8px;
         margin-top: 10px;
       }
+      .glyphs p { grid-column: 1 / -1; }
       button {
         min-height: 48px;
         border: 1px solid rgba(234, 223, 201, 0.2);
@@ -86,6 +87,33 @@
         color: rgba(255, 248, 236, 0.72);
         font-size: 12px;
       }
+      .zoomControls {
+        position: absolute;
+        right: 24px;
+        bottom: 22px;
+        z-index: 5;
+        display: inline-flex;
+        gap: 8px;
+        padding: 7px;
+        border: 1px solid rgba(234, 223, 201, 0.16);
+        border-radius: 8px;
+        background: rgba(12, 11, 9, 0.72);
+        backdrop-filter: blur(8px);
+      }
+      .zoomControls button {
+        width: 42px;
+        height: 42px;
+        border: 1px solid rgba(234, 223, 201, 0.24);
+        border-radius: 7px;
+        background: rgba(255, 249, 236, 0.1);
+        color: #fff8ec;
+        font: 700 24px/1 "Microsoft YaHei", system-ui, sans-serif;
+        cursor: pointer;
+      }
+      .zoomControls button:hover {
+        border-color: rgba(163, 58, 44, 0.78);
+        background: #a33a2c;
+      }
       #error {
         position: fixed;
         left: 24px;
@@ -107,25 +135,29 @@
     <main>
       <section class="stage">
         <canvas id="scene"></canvas>
-        <div class="hint">拖拽旋转视角；厚笔画由 height map 形成更深的三维起伏。</div>
+        <div class="zoomControls" aria-label="3D zoom controls">
+          <button id="zoomOut" type="button" title="缩小" aria-label="缩小">-</button>
+          <button id="zoomIn" type="button" title="放大" aria-label="放大">+</button>
+        </div>
+        <div class="hint">拖拽平移长卷，滚轮放大局部，右键拖拽调整 3D 视角</div>
         <div id="error" hidden></div>
       </section>
       <aside>
-        <p class="eyebrow">CalliLens / OpenCV mask + height map + Three.js</p>
-        <h1>静态 3D 字形浮雕</h1>
+        <p class="eyebrow">CalliLens / full-scroll height map / Three.js</p>
+        <h1>全文长卷 3D 浮雕</h1>
         <section class="card">
-          <p id="summary">从题名区大字提取墨迹 mask 和距离变换 height map，在 Three.js 中生成静态三维浮雕。当前不声明真实笔顺。</p>
+          <p id="summary">正在读取全文坐标和字形高度图。</p>
           <div id="glyphButtons" class="glyphs"></div>
         </section>
         <section class="card metrics">
-          <div><span>当前字形</span><strong id="glyphLabel">--</strong></div>
-          <div><span>ROI像素</span><strong id="contourCount">--</strong></div>
+          <div><span>当前视图</span><strong id="glyphLabel">--</strong></div>
+          <div><span>字形数量 / ROI</span><strong id="contourCount">--</strong></div>
         </section>
         <section class="card">
-          <p>技术边界：PaddleOCR 可作为候选检测工具，但复杂行草书的精确单字边界和真实笔顺恢复仍需要专门模型或人工校正。这里展示的是“字形墨迹实体化”的静态 3D 原型。</p>
+          <p>技术边界：这里把已提取的单字墨迹和高度图重新放回长卷坐标系，形成静态 3D 拓扑展示；它不声称恢复真实笔顺，也不替代人工校正的全文 OCR。</p>
         </section>
       </aside>
     </main>
-    <script type="module" src="./main.js?v=2"></script>
+    <script type="module" src="./main.js?v=3"></script>
   </body>
 </html>

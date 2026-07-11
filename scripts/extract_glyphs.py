@@ -10,6 +10,7 @@ import numpy as np
 
 
 ASSET_SCALE = 3
+AUTO_SCROLL_DIR = "full_scroll_glyphs"
 
 
 def read_image(path: Path, flags: int = cv2.IMREAD_COLOR) -> np.ndarray:
@@ -151,6 +152,138 @@ def source_right_crop(source: np.ndarray, reference: np.ndarray) -> tuple[np.nda
     }
 
 
+def web_path(path: Path) -> str:
+    return path.as_posix()
+
+
+def build_full_scroll_records(manifest: dict[str, Any], output_dir: Path) -> list[dict[str, Any]]:
+    source_map = manifest.get("sourceMap", {})
+    crop_x = int(source_map.get("cropX", 0))
+    crop_y = int(source_map.get("cropY", 0))
+
+    records: list[dict[str, Any]] = []
+    for glyph in manifest.get("glyphs", []):
+        pixel_box = glyph.get("pixelBox") or {}
+        x = int(pixel_box.get("x", 0))
+        y = int(pixel_box.get("y", 0))
+        width = int(pixel_box.get("width", 0))
+        height = int(pixel_box.get("height", 0))
+        mask = glyph.get("mask")
+        height_map = glyph.get("height")
+        if not mask or not height_map or width <= 0 or height <= 0:
+            continue
+
+        records.append(
+            {
+                "id": glyph.get("id", ""),
+                "char": glyph.get("label", glyph.get("id", "")),
+                "scroll_x": crop_x + x,
+                "scroll_y": crop_y + y,
+                "width": width,
+                "height": height,
+                "img_path": web_path(output_dir / mask),
+                "height_path": web_path(output_dir / height_map),
+            }
+        )
+    return records
+
+
+def sort_scroll_boxes(boxes: list[dict[str, int]]) -> list[dict[str, int]]:
+    return sorted(boxes, key=lambda box: (-box["x"], box["y"], box["width"] * box["height"]))
+
+
+def build_auto_scroll_records(boxes: list[dict[str, int]], output_dir: Path) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    for index, box in enumerate(sort_scroll_boxes(boxes), start=1):
+        glyph_id = f"glyph_{index:04d}"
+        records.append(
+            {
+                "id": glyph_id,
+                "char": glyph_id,
+                "scroll_x": int(box["x"]),
+                "scroll_y": int(box["y"]),
+                "width": int(box["width"]),
+                "height": int(box["height"]),
+                "img_path": web_path(output_dir / f"{glyph_id}_mask.png"),
+                "height_path": web_path(output_dir / f"{glyph_id}_height.png"),
+            }
+        )
+    return records
+
+
+def pad_box(
+    box: tuple[int, int, int, int],
+    image_width: int,
+    image_height: int,
+    padding: int,
+) -> dict[str, int]:
+    x, y, width, height = box
+    left = max(0, x - padding)
+    top = max(0, y - padding)
+    right = min(image_width, x + width + padding)
+    bottom = min(image_height, y + height + padding)
+    return {"x": left, "y": top, "width": right - left, "height": bottom - top}
+
+
+def detect_full_scroll_boxes(ink_mask: np.ndarray) -> list[dict[str, int]]:
+    height, width = ink_mask.shape
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (15, 15))
+    merged = cv2.morphologyEx(ink_mask, cv2.MORPH_CLOSE, kernel, iterations=1)
+    labels_count, _labels, stats, _centroids = cv2.connectedComponentsWithStats(merged, 8)
+
+    boxes: list[dict[str, int]] = []
+    min_area = max(360, int(width * height * 0.000006))
+    max_area = int(width * height * 0.012)
+    for idx in range(1, labels_count):
+        x, y, box_width, box_height, area = [int(value) for value in stats[idx]]
+        if area < min_area or area > max_area:
+            continue
+        if box_width < 18 or box_height < 24:
+            continue
+        if box_width > 720 or box_height > 720:
+            continue
+        aspect = box_width / max(1, box_height)
+        if aspect < 0.12 or aspect > 4.2:
+            continue
+        boxes.append(pad_box((x, y, box_width, box_height), width, height, padding=8))
+    return boxes
+
+
+def write_full_scroll_preview(source: np.ndarray, boxes: list[dict[str, int]], output_path: Path) -> None:
+    preview = source.copy()
+    for box in boxes:
+        x, y, width, height = box["x"], box["y"], box["width"], box["height"]
+        cv2.rectangle(preview, (x, y), (x + width, y + height), (40, 70, 230), 2)
+    if preview.shape[1] > 2600:
+        preview_height = int(round(preview.shape[0] * 2600 / preview.shape[1]))
+        preview = cv2.resize(preview, (2600, preview_height), interpolation=cv2.INTER_AREA)
+    write_image(output_path, preview)
+
+
+def extract_auto_full_scroll(work_dir: Path, source_path: Path) -> None:
+    output_dir = work_dir / AUTO_SCROLL_DIR
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    source = read_image(source_path)
+    _gray, ink_mask = build_ink_mask(source)
+    boxes = detect_full_scroll_boxes(ink_mask)
+    records = build_auto_scroll_records(boxes, output_dir)
+
+    for record, box in zip(records, sort_scroll_boxes(boxes)):
+        x, y, width, height = box["x"], box["y"], box["width"], box["height"]
+        crop = source[y : y + height, x : x + width]
+        crop_mask = clean_crop_mask(ink_mask[y : y + height, x : x + width])
+        write_image(output_dir / f"{record['id']}_mask.png", make_mask_rgba(crop, crop_mask))
+        write_image(output_dir / f"{record['id']}_height.png", make_height(crop_mask))
+
+    data_path = work_dir / "full_scroll_3d_data.json"
+    data_path.write_text(json.dumps(records, ensure_ascii=False, indent=2), encoding="utf-8")
+    write_full_scroll_preview(source, sort_scroll_boxes(boxes), work_dir / "full_scroll_detection_preview.png")
+
+    print(f"Wrote {data_path}")
+    print(f"Wrote {len(records)} full-scroll glyph candidates to {output_dir}")
+
+
 def extract_glyphs(work_dir: Path, source_path: Path | None = None) -> None:
     boxes_path = work_dir / "glyphs" / "glyph-boxes.json"
     output_dir = work_dir / "glyphs"
@@ -232,6 +365,11 @@ def extract_glyphs(work_dir: Path, source_path: Path | None = None) -> None:
         json.dumps(manifest, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
+    full_scroll_records = build_full_scroll_records(manifest, output_dir)
+    (work_dir / "full_scroll_3d_data.json").write_text(
+        json.dumps(full_scroll_records, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
     preview_output = preview
     if preview.shape[1] > reference_image.shape[1] or preview.shape[0] > reference_image.shape[0]:
         preview_output = cv2.resize(
@@ -242,6 +380,7 @@ def extract_glyphs(work_dir: Path, source_path: Path | None = None) -> None:
     write_image(output_dir / "glyph_preview.png", preview_output)
 
     print(f"Wrote {output_dir / 'glyphs.json'}")
+    print(f"Wrote {work_dir / 'full_scroll_3d_data.json'}")
     print(f"Wrote {len(glyphs)} glyphs to {output_dir}")
 
 
@@ -261,7 +400,16 @@ def main() -> None:
         type=Path,
         help="Optional full-resolution scroll image. If provided, glyphs are extracted from the right-end crop that maps to the work image.",
     )
+    parser.add_argument(
+        "--auto-full-scroll-source",
+        default=None,
+        type=Path,
+        help="Optional full scroll image used to auto-detect many glyph candidates for full-scroll 3D.",
+    )
     args = parser.parse_args()
+    if args.auto_full_scroll_source:
+        extract_auto_full_scroll(args.work, args.auto_full_scroll_source)
+        return
     extract_glyphs(args.work, args.source)
 
 

@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>CalliLens</title>
-    <link rel="stylesheet" href="./styles.css?v=18" />
+    <link rel="stylesheet" href="./styles.css?v=20" />
   </head>
   <body>
     <section id="entryScreen" class="entryScreen" aria-label="CalliLens 入口">
@@ -80,14 +80,25 @@
           <button class="modeButton" data-mode="void" type="button">留白</button>
           <button class="modeButton" data-mode="relation" type="button">虚实</button>
           <button class="modeButton" data-mode="ink" type="button">笔墨</button>
-          <button class="modeButton" data-mode="space" type="button">3D字形</button>
+          <button class="modeButton" data-mode="space" type="button">全文3D</button>
         </div>
 
         <div class="canvasShell" aria-label="作品查看器，点击图像可生成局部证据探针">
           <img id="workImage" alt="书法作品或辅助分析图" />
           <svg id="overlay" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="当前观察点高亮"></svg>
           <canvas id="spaceCanvas" class="spaceCanvas" hidden></canvas>
-          <div id="spaceLabel" class="spaceLabel" hidden>3D字形：OpenCV提取墨迹，不代表真实笔顺</div>
+          <div id="spaceZoomControls" class="spaceZoomControls" hidden aria-label="3D 缩放控制">
+            <label class="spacePanControl" title="水平移动">
+              <span>水平</span>
+              <input id="spacePanX" type="range" min="-100" max="100" value="0" aria-label="水平移动" />
+            </label>
+            <button id="spaceRotateLeft" type="button" title="左侧视角" aria-label="左侧视角">左</button>
+            <button id="spaceViewReset" type="button" title="回到正面" aria-label="回到正面">正</button>
+            <button id="spaceRotateRight" type="button" title="右侧视角" aria-label="右侧视角">右</button>
+            <button id="spaceZoomOut" type="button" title="缩小" aria-label="缩小">-</button>
+            <button id="spaceZoomIn" type="button" title="放大" aria-label="放大">+</button>
+          </div>
+          <div id="spaceLabel" class="spaceLabel" hidden>全文3D：候选墨迹块平铺为长卷浮雕</div>
           <div id="imageFallback" class="fallback" hidden>
             请确认当前作品文件夹中存在 <code>annotation.json</code> 和对应图像文件。
           </div>
@@ -258,6 +269,6 @@
       </aside>
     </main>
 
-    <script src="./app.js?v=7"></script>
+    <script src="./app.js?v=12"></script>
   </body>
 </html>

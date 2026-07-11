@@ -6,6 +6,8 @@ const initialView = params.get("view");
 const WORKS_URL = "../data/works.json";
 const THREE_MODULE_URL = "./vendor/three.module.js";
 const GLYPHS_MANIFEST = "glyphs/glyphs.json";
+const FULL_SCROLL_DATA = "full_scroll_3d_data.json";
+const FULL_SCROLL_IMAGE_BATCH_SIZE = 32;
 const spacePalette = {
   qi_flow: 0xc6a05b,
   void_solid: 0x70a08d,
@@ -92,13 +94,23 @@ const state = {
     annotationsGroup: null,
     particles: null,
     texture: null,
+    fullScrollAsset: null,
+    fullScrollLoading: false,
+    fullScrollFailed: false,
+    fullScrollPlane: null,
+    zoom: 1,
+    panX: 0,
+    panY: 0,
+    fullRotationX: 0,
+    fullRotationY: 0,
     renderKey: "",
     running: false,
     targetRotationX: -0.26,
     targetRotationY: 0.22,
-    pointer: { active: false, x: 0, y: 0, rotX: -0.26, rotY: 0.22 },
+    pointer: { active: false, mode: "pan", x: 0, y: 0, panX: 0, panY: 0, rotX: 0, rotY: 0 },
   },
   glyphs: [],
+  fullScrollRecords: [],
   selectedGlyphId: null,
   glyphAssets: {},
 };
@@ -123,6 +135,13 @@ const els = {
   overlay: document.querySelector("#overlay"),
   spaceCanvas: document.querySelector("#spaceCanvas"),
   spaceLabel: document.querySelector("#spaceLabel"),
+  spaceZoomControls: document.querySelector("#spaceZoomControls"),
+  spacePanX: document.querySelector("#spacePanX"),
+  spaceZoomIn: document.querySelector("#spaceZoomIn"),
+  spaceZoomOut: document.querySelector("#spaceZoomOut"),
+  spaceRotateLeft: document.querySelector("#spaceRotateLeft"),
+  spaceRotateRight: document.querySelector("#spaceRotateRight"),
+  spaceViewReset: document.querySelector("#spaceViewReset"),
   glyphPanel: document.querySelector("#glyphPanel"),
   glyphList: document.querySelector("#glyphList"),
   glyphTitle: document.querySelector("#glyphTitle"),
@@ -181,6 +200,10 @@ function imageBase() {
 
 function glyphDataUrl() {
   return `${imageBase()}${GLYPHS_MANIFEST}`;
+}
+
+function fullScrollDataUrl() {
+  return `${imageBase()}${FULL_SCROLL_DATA}`;
 }
 
 function glyphBase() {
@@ -289,8 +312,18 @@ async function openWork(workId, options = {}) {
   state.data = null;
   state.layerCanvases = {};
   state.glyphs = [];
+  state.fullScrollRecords = [];
   state.selectedGlyphId = null;
   state.glyphAssets = {};
+  state.space.fullScrollAsset = null;
+  state.space.fullScrollLoading = false;
+  state.space.fullScrollFailed = false;
+  state.space.fullScrollPlane = null;
+  state.space.zoom = 1;
+  state.space.panX = 0;
+  state.space.panY = 0;
+  state.space.fullRotationX = 0;
+  state.space.fullRotationY = 0;
   state.space.renderKey = "";
   state.space.sceneReady = false;
   state.firstLook = readFirstLook();
@@ -325,8 +358,28 @@ async function openWork(workId, options = {}) {
 
 async function loadGlyphs() {
   state.glyphs = [];
+  state.fullScrollRecords = [];
   state.selectedGlyphId = null;
   try {
+    const fullScrollResponse = await fetch(fullScrollDataUrl());
+    if (fullScrollResponse.ok) {
+      const records = await fullScrollResponse.json();
+      state.fullScrollRecords = Array.isArray(records) ? records : [];
+      state.glyphs = state.fullScrollRecords.map((record) => ({
+        id: record.id,
+        label: record.char || record.id,
+        description: `全文长卷候选：scroll_x=${record.scroll_x}, scroll_y=${record.scroll_y}, ROI=${record.width}x${record.height}`,
+        pixelBox: {
+          x: record.scroll_x,
+          y: record.scroll_y,
+          width: record.width,
+          height: record.height,
+        },
+      }));
+      state.selectedGlyphId = state.glyphs[0]?.id || null;
+      return;
+    }
+
     const response = await fetch(glyphDataUrl());
     if (!response.ok) return;
     const manifest = await response.json();
@@ -429,6 +482,7 @@ function syncCanvasVisibility() {
   if (els.canvasShell) els.canvasShell.dataset.view = useSpace ? "space" : "image";
   if (els.spaceCanvas) els.spaceCanvas.hidden = !useSpace;
   if (els.spaceLabel) els.spaceLabel.hidden = !useSpace;
+  if (els.spaceZoomControls) els.spaceZoomControls.hidden = !(useSpace && state.fullScrollRecords.length);
   if (els.image) els.image.hidden = false;
   if (els.overlay) els.overlay.hidden = false;
 }
@@ -475,20 +529,41 @@ function renderGlyphPanel() {
   els.glyphPanel.hidden = !active;
   if (!active) return;
 
+  if (state.fullScrollRecords.length) {
+    els.glyphPanel.hidden = true;
+    els.glyphList.replaceChildren();
+    return;
+  }
+
   const glyph = selectedGlyph();
   els.glyphList.replaceChildren();
   if (!state.glyphs.length) {
     els.glyphTitle.textContent = "没有可用字形";
-    els.glyphSummary.textContent = "请先运行 python scripts/extract_glyphs.py --work data/work_003 生成 glyphs.json。";
+    els.glyphSummary.textContent = "请先运行 python scripts/extract_glyphs.py --work data/work_003 --auto-full-scroll-source data/source/Zmf_full.jpg 生成全文长卷数据。";
     return;
   }
 
-  els.glyphTitle.textContent = glyph ? `3D字形：${glyph.label}` : "选择一个字形";
-  const assetState = glyph ? state.glyphAssets[glyph.id] : null;
-  const statusText = assetState?.failed ? " 字形资源加载失败，请重新运行提取脚本。" : assetState?.loading ? " 正在载入 3D 字形资源。" : "";
-  els.glyphSummary.textContent = `${glyph?.description || "从人工框选区域中提取墨迹 mask、骨架和厚度图，再生成 3D 浮雕。"}${statusText}`;
+  if (state.fullScrollRecords.length) {
+    els.glyphTitle.textContent = `全文长卷 3D：${state.fullScrollRecords.length} 个候选`;
+    const statusText = state.space.fullScrollFailed
+      ? " 全文 3D 资源加载失败，请重新运行全卷提取脚本。"
+      : state.space.fullScrollLoading
+        ? " 正在合成全文长卷 3D 贴图。"
+        : " 已切换为全文平铺，不再是单字切换。";
+    els.glyphSummary.textContent = `从 full_scroll_3d_data.json 读取全卷坐标，把所有候选墨迹块合成为一张 3D 高度长卷。${statusText}`;
+    const note = document.createElement("p");
+    note.className = "fullScrollNote";
+    note.textContent = "画布会渲染全部候选；使用画布右下角的 + / - 放大或缩小查看局部。";
+    els.glyphList.append(note);
+    return;
+  } else {
+    els.glyphTitle.textContent = glyph ? `3D字形：${glyph.label}` : "选择一个字形";
+    const assetState = glyph ? state.glyphAssets[glyph.id] : null;
+    const statusText = assetState?.failed ? " 字形资源加载失败，请重新运行提取脚本。" : assetState?.loading ? " 正在载入 3D 字形资源。" : "";
+    els.glyphSummary.textContent = `${glyph?.description || "从人工框选区域中提取墨迹 mask、骨架和厚度图，再生成 3D 浮雕。"}${statusText}`;
+  }
 
-  state.glyphs.forEach((item) => {
+  state.glyphs.slice(0, state.fullScrollRecords.length ? 96 : state.glyphs.length).forEach((item) => {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "glyphButton";
@@ -497,6 +572,11 @@ function renderGlyphPanel() {
     button.addEventListener("click", () => selectGlyph(item.id));
     els.glyphList.append(button);
   });
+  if (state.fullScrollRecords.length > 96) {
+    const more = document.createElement("p");
+    more.textContent = `已载入 ${state.fullScrollRecords.length} 个候选，列表仅显示前 96 个；画布会渲染全部候选。`;
+    els.glyphList.append(more);
+  }
 }
 
 function selectGlyph(id) {
@@ -712,8 +792,13 @@ function renderSpaceScene() {
     state.space.running = true;
     requestAnimationFrame(animateSpaceScene);
   }
-  state.space.root.rotation.x += (state.space.targetRotationX - state.space.root.rotation.x) * 0.04;
-  state.space.root.rotation.y += (state.space.targetRotationY - state.space.root.rotation.y) * 0.04;
+  if (state.fullScrollRecords.length) {
+    state.space.root.rotation.x += ((state.space.fullRotationX || 0) - state.space.root.rotation.x) * 0.08;
+    state.space.root.rotation.y += ((state.space.fullRotationY || 0) - state.space.root.rotation.y) * 0.08;
+  } else {
+    state.space.root.rotation.x += (state.space.targetRotationX - state.space.root.rotation.x) * 0.04;
+    state.space.root.rotation.y += (state.space.targetRotationY - state.space.root.rotation.y) * 0.04;
+  }
   state.space.renderer.render(state.space.scene, state.space.camera);
 }
 
@@ -752,25 +837,26 @@ function initSpaceScene(THREE) {
   renderer.setSize(width, height, false);
   renderer.setClearColor(0x000000, 0);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.04;
+  renderer.toneMappingExposure = 1.16;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   const scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x0e0d0b, 0.055);
+  scene.fog = new THREE.FogExp2(0x0e0d0b, 0.012);
 
-  const camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 100);
-  camera.position.set(0, 0.22, 7.4);
+  const camera = new THREE.PerspectiveCamera(32, width / height, 0.1, 320);
+  camera.position.set(0, -18, 44);
+  camera.lookAt(0, 0, 0);
 
   const root = new THREE.Group();
   root.position.y = 0.08;
   scene.add(root);
 
-  scene.add(new THREE.HemisphereLight(0xfff2df, 0x1b211f, 0.56));
-  scene.add(new THREE.AmbientLight(0xf7ead6, 0.34));
+  scene.add(new THREE.HemisphereLight(0xfff2df, 0x2f2a22, 0.78));
+  scene.add(new THREE.AmbientLight(0xf7ead6, 0.58));
 
-  const key = new THREE.DirectionalLight(0xffdfad, 4.2);
-  key.position.set(-6.5, -9, 16);
+  const key = new THREE.DirectionalLight(0xffdfad, 1.65);
+  key.position.set(-4, -6, 34);
   key.castShadow = true;
   key.shadow.mapSize.set(2048, 2048);
   key.shadow.camera.near = 0.5;
@@ -783,15 +869,13 @@ function initSpaceScene(THREE) {
   key.shadow.normalBias = 0.035;
   scene.add(key);
 
-  const rim = new THREE.DirectionalLight(0xb6c3ba, 0.32);
-  rim.position.set(7, 5, 9);
+  const rim = new THREE.DirectionalLight(0xb6c3ba, 0.42);
+  rim.position.set(7, 5, 12);
   scene.add(rim);
 
-  const fill = new THREE.PointLight(0xe9cfa9, 0.9, 20);
-  fill.position.set(0, 1.4, 5.2);
+  const fill = new THREE.PointLight(0xe9cfa9, 1.35, 26);
+  fill.position.set(0, 1.4, 7.2);
   scene.add(fill);
-
-  root.add(createSpaceField(THREE));
 
   const annotationsGroup = new THREE.Group();
   root.add(annotationsGroup);
@@ -806,10 +890,13 @@ function initSpaceScene(THREE) {
   state.space.renderKey = "";
   state.space.sceneReady = true;
   state.space.running = true;
+  applySpaceZoom();
 
-  els.canvasShell.addEventListener("pointerdown", handleSpacePointerDown);
+  els.spaceCanvas.addEventListener("pointerdown", handleSpacePointerDown);
   window.addEventListener("pointermove", handleSpacePointerMove, { passive: true });
   window.addEventListener("pointerup", handleSpacePointerUp, { passive: true });
+  els.spaceCanvas.addEventListener("wheel", handleSpaceWheel, { passive: false });
+  els.spaceCanvas.addEventListener("contextmenu", (event) => event.preventDefault());
   animateSpaceScene();
 }
 
@@ -1207,9 +1294,252 @@ function createGlyphTrace(THREE, glyph, planeWidth, planeHeight) {
   return group;
 }
 
+function fullScrollAssetUrl(path) {
+  if (!path) return "";
+  if (/^(https?:)?\/\//.test(path) || path.startsWith("../")) return path;
+  return `../${path.replace(/\\/g, "/").replace(/^\//, "")}`;
+}
+
+function fullScrollSize(records) {
+  const width = Math.max(18332, ...records.map((record) => record.scroll_x + record.width));
+  const height = Math.max(2100, ...records.map((record) => record.scroll_y + record.height));
+  return { width, height };
+}
+
+function makeSpaceCanvasTexture(THREE, canvas, color = false) {
+  const texture = new THREE.CanvasTexture(canvas);
+  if (color && THREE.SRGBColorSpace) texture.colorSpace = THREE.SRGBColorSpace;
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.generateMipmaps = false;
+  texture.anisotropy = Math.min(state.space.renderer?.capabilities.getMaxAnisotropy?.() || 8, 8);
+  texture.needsUpdate = true;
+  return texture;
+}
+
+async function buildFullScrollAsset(THREE) {
+  const records = state.fullScrollRecords;
+  const rendererLimit = state.space.renderer?.capabilities?.maxTextureSize || 4096;
+  const scrollSize = fullScrollSize(records);
+  const atlasWidth = Math.min(8192, Math.max(2048, rendererLimit));
+  const atlasScale = atlasWidth / scrollSize.width;
+  const atlasHeight = Math.max(256, Math.round(scrollSize.height * atlasScale));
+
+  const colorCanvas = document.createElement("canvas");
+  colorCanvas.width = atlasWidth;
+  colorCanvas.height = atlasHeight;
+  const colorContext = colorCanvas.getContext("2d");
+  colorContext.fillStyle = "#ead8b3";
+  colorContext.fillRect(0, 0, atlasWidth, atlasHeight);
+  colorContext.globalAlpha = 0.18;
+  colorContext.fillStyle = "#f7edcf";
+  for (let y = 0; y < atlasHeight; y += 7) colorContext.fillRect(0, y, atlasWidth, 1);
+  colorContext.globalAlpha = 1;
+
+  const heightCanvas = document.createElement("canvas");
+  heightCanvas.width = atlasWidth;
+  heightCanvas.height = atlasHeight;
+  const heightContext = heightCanvas.getContext("2d");
+  heightContext.fillStyle = "#000";
+  heightContext.fillRect(0, 0, atlasWidth, atlasHeight);
+
+  for (let start = 0; start < records.length; start += FULL_SCROLL_IMAGE_BATCH_SIZE) {
+    const batch = records.slice(start, start + FULL_SCROLL_IMAGE_BATCH_SIZE);
+    await Promise.all(
+      batch.map(async (record) => {
+        const [mask, height] = await Promise.all([
+          loadImageCanvas(fullScrollAssetUrl(record.img_path)),
+          loadImageCanvas(fullScrollAssetUrl(record.height_path || record.img_path)),
+        ]);
+        const x = Math.round(record.scroll_x * atlasScale);
+        const y = Math.round(record.scroll_y * atlasScale);
+        const width = Math.max(1, Math.round(record.width * atlasScale));
+        const itemHeight = Math.max(1, Math.round(record.height * atlasScale));
+        colorContext.drawImage(mask.canvas, x, y, width, itemHeight);
+        const heightPatch = document.createElement("canvas");
+        heightPatch.width = width;
+        heightPatch.height = itemHeight;
+        const patchContext = heightPatch.getContext("2d");
+        patchContext.filter = "contrast(185%) brightness(118%)";
+        patchContext.drawImage(height.canvas, 0, 0, width, itemHeight);
+        patchContext.filter = "none";
+        patchContext.globalCompositeOperation = "destination-in";
+        patchContext.drawImage(mask.canvas, 0, 0, width, itemHeight);
+        patchContext.globalCompositeOperation = "source-over";
+        heightContext.drawImage(heightPatch, x, y);
+      })
+    );
+  }
+
+  return {
+    colorTexture: makeSpaceCanvasTexture(THREE, colorCanvas, true),
+    heightTexture: makeSpaceCanvasTexture(THREE, heightCanvas, false),
+    scrollSize,
+    atlasSize: { width: atlasWidth, height: atlasHeight },
+  };
+}
+
+function ensureFullScrollAsset(THREE) {
+  if (!state.fullScrollRecords.length) return false;
+  if (state.space.fullScrollAsset?.ready) return true;
+  if (state.space.fullScrollLoading) return false;
+
+  state.space.fullScrollLoading = true;
+  state.space.fullScrollFailed = false;
+  buildFullScrollAsset(THREE)
+    .then((asset) => {
+      state.space.fullScrollAsset = { ready: true, ...asset };
+      state.space.fullScrollLoading = false;
+      state.space.renderKey = "";
+      renderSpaceScene();
+      renderGlyphPanel();
+    })
+    .catch((error) => {
+      console.warn("Full-scroll asset load failed", error);
+      state.space.fullScrollLoading = false;
+      state.space.fullScrollFailed = true;
+      renderGlyphPanel();
+    });
+  renderGlyphPanel();
+  return false;
+}
+
+function createFullScrollMesh(THREE, asset) {
+  const planeHeight = 4.8;
+  const planeWidth = planeHeight * (asset.scrollSize.width / asset.scrollSize.height);
+  const geometry = new THREE.PlaneGeometry(planeWidth, planeHeight, 2048, 256);
+  const material = new THREE.MeshStandardMaterial({
+    map: asset.colorTexture,
+    displacementMap: asset.heightTexture,
+    displacementScale: 0.32,
+    displacementBias: 0,
+    bumpMap: asset.heightTexture,
+    bumpScale: 0.08,
+    roughness: 0.66,
+    metalness: 0.01,
+    color: 0xffffff,
+    emissive: 0x241f17,
+    emissiveIntensity: 0.08,
+    side: THREE.FrontSide,
+  });
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.castShadow = false;
+  mesh.receiveShadow = false;
+  mesh.userData = { pulse: "fullScroll" };
+  state.space.fullScrollPlane = { width: planeWidth, height: planeHeight };
+  return { mesh, planeWidth, planeHeight };
+}
+
+function fullScrollViewSize() {
+  const camera = state.space.camera;
+  if (!camera) return { width: 1, height: 1 };
+  const distance = Math.max(0.1, Math.abs(camera.position.z));
+  const fovRadians = (camera.fov * Math.PI) / 180;
+  const height = 2 * Math.tan(fovRadians / 2) * distance;
+  return { width: height * camera.aspect, height };
+}
+
+function fullScrollPanLimits() {
+  const plane = state.space.fullScrollPlane;
+  if (!plane) return { x: 0, y: 0 };
+  const view = fullScrollViewSize();
+  return {
+    x: Math.max(0, (plane.width - view.width) / 2 + 0.35),
+    y: Math.max(0, (plane.height - view.height) / 2 + 0.25),
+  };
+}
+
+function syncSpacePanSlider(limitX) {
+  if (!els.spacePanX) return;
+  els.spacePanX.disabled = limitX <= 0.001;
+  const percent = limitX > 0 ? Math.round(((state.space.panX || 0) / limitX) * 100) : 0;
+  els.spacePanX.value = String(clamp(percent, -100, 100));
+}
+
+function applySpaceZoom() {
+  if (!state.space.camera || !state.fullScrollRecords.length) return;
+  const zoom = clamp(state.space.zoom || 1, 0.55, 3.8);
+  state.space.zoom = zoom;
+  state.space.camera.position.set(0, 0, 44 / zoom);
+  state.space.camera.lookAt(0, 0, 0);
+  const plane = state.space.fullScrollPlane;
+  if (plane && state.space.annotationsGroup) {
+    const panLimits = fullScrollPanLimits();
+    state.space.panX = clamp(state.space.panX || 0, -panLimits.x, panLimits.x);
+    state.space.panY = clamp(state.space.panY || 0, -panLimits.y, panLimits.y);
+    state.space.annotationsGroup.position.set(state.space.panX, state.space.panY, 0);
+    syncSpacePanSlider(panLimits.x);
+  }
+  if (els.spaceZoomControls) {
+    els.spaceZoomControls.dataset.zoom = zoom.toFixed(2);
+    els.spaceZoomControls.dataset.panX = (state.space.panX || 0).toFixed(2);
+    els.spaceZoomControls.dataset.panY = (state.space.panY || 0).toFixed(2);
+  }
+}
+
+function adjustSpaceZoom(direction) {
+  if (state.mode !== "space" || !state.fullScrollRecords.length) return;
+  const factor = direction > 0 ? 1.28 : 1 / 1.28;
+  state.space.zoom = clamp((state.space.zoom || 1) * factor, 0.55, 3.8);
+  applySpaceZoom();
+  renderSpaceScene();
+}
+
+function setFullScrollView(rotationY = 0, rotationX = 0) {
+  if (state.mode !== "space" || !state.fullScrollRecords.length) return;
+  state.space.fullRotationY = clamp(rotationY, -1.05, 1.05);
+  state.space.fullRotationX = clamp(rotationX, -0.55, 0.55);
+  if (els.spaceZoomControls) {
+    els.spaceZoomControls.dataset.rotateX = state.space.fullRotationX.toFixed(2);
+    els.spaceZoomControls.dataset.rotateY = state.space.fullRotationY.toFixed(2);
+  }
+  renderSpaceScene();
+}
+
+function setFullScrollPanFromSlider(value) {
+  if (state.mode !== "space" || !state.fullScrollRecords.length) return;
+  const percent = clamp(Number(value) || 0, -100, 100) / 100;
+  const panLimits = fullScrollPanLimits();
+  state.space.panX = percent * panLimits.x;
+  state.space.panY = 0;
+  applySpaceZoom();
+  renderSpaceScene();
+}
+
 function updateSpaceSceneContent() {
   if (!state.space.THREE || !state.data) return;
   const THREE = state.space.THREE;
+  if (state.fullScrollRecords.length) {
+    const asset = state.space.fullScrollAsset;
+    const key = `${activeWorkId}:${state.mode}:full-scroll:${state.fullScrollRecords.length}:${asset?.ready ? "ready" : "loading"}`;
+    if (key === state.space.renderKey) return;
+    state.space.renderKey = key;
+    clearThreeGroup(state.space.annotationsGroup);
+    state.space.sceneReady = updateSpacePlane(THREE) || state.space.sceneReady;
+    if (!ensureFullScrollAsset(THREE)) return;
+
+    const stage = new THREE.Group();
+    const { mesh, planeWidth, planeHeight } = createFullScrollMesh(THREE, state.space.fullScrollAsset);
+    const plate = new THREE.Mesh(
+      new THREE.PlaneGeometry(planeWidth + 0.46, planeHeight + 0.46, 1, 1),
+      new THREE.MeshStandardMaterial({
+        color: 0xe8dcc8,
+        transparent: true,
+        opacity: 0.92,
+        roughness: 0.82,
+        metalness: 0,
+        side: THREE.DoubleSide,
+      })
+    );
+    plate.position.z = -0.12;
+    plate.receiveShadow = false;
+    stage.add(plate, mesh);
+    state.space.annotationsGroup.add(stage);
+    return;
+  }
+
   const glyph = selectedGlyph();
   const asset = glyph ? state.glyphAssets[glyph.id] : null;
   const key = `${activeWorkId}:${state.mode}:glyph:${glyph?.id || "none"}:${asset?.ready ? "ready" : "loading"}`;
@@ -1249,8 +1579,14 @@ function animateSpaceScene() {
   if (!state.space.running || !state.space.renderer || !state.space.scene || !state.space.camera) return;
   if (state.mode === "space") {
     const time = performance.now() / 1000;
-    state.space.root.rotation.x += (state.space.targetRotationX - state.space.root.rotation.x) * 0.03;
-    state.space.root.rotation.y += (state.space.targetRotationY - state.space.root.rotation.y) * 0.03;
+    applySpaceZoom();
+    if (state.fullScrollRecords.length) {
+      state.space.root.rotation.x += ((state.space.fullRotationX || 0) - state.space.root.rotation.x) * 0.08;
+      state.space.root.rotation.y += ((state.space.fullRotationY || 0) - state.space.root.rotation.y) * 0.08;
+    } else {
+      state.space.root.rotation.x += (state.space.targetRotationX - state.space.root.rotation.x) * 0.03;
+      state.space.root.rotation.y += (state.space.targetRotationY - state.space.root.rotation.y) * 0.03;
+    }
     if (state.space.annotationsGroup) {
       state.space.annotationsGroup.traverse((object) => {
         const pulse = object.userData?.pulse;
@@ -1293,13 +1629,32 @@ function animateSpaceScene() {
 function handleSpacePointerDown(event) {
   if (state.mode !== "space" || !state.space.ready) return;
   if (event.target !== els.spaceCanvas) return;
+  if (state.fullScrollRecords.length) event.preventDefault();
   state.space.pointer.active = true;
+  state.space.pointer.mode = state.fullScrollRecords.length ? "rotate" : "pan";
+  state.space.pointer.x = event.clientX;
+  state.space.pointer.y = event.clientY;
+  state.space.pointer.panX = state.space.panX || 0;
+  state.space.pointer.panY = state.space.panY || 0;
+  state.space.pointer.rotX = state.space.fullRotationX || 0;
+  state.space.pointer.rotY = state.space.fullRotationY || 0;
   els.spaceCanvas.setPointerCapture?.(event.pointerId);
 }
 
 function handleSpacePointerMove(event) {
   if (state.mode !== "space" || !state.space.ready || !state.space.pointer.active) return;
-  const rect = els.canvasShell.getBoundingClientRect();
+  const rect = els.spaceCanvas.getBoundingClientRect();
+  if (state.fullScrollRecords.length) {
+    const dx = event.clientX - state.space.pointer.x;
+    const dy = event.clientY - state.space.pointer.y;
+    state.space.fullRotationY = clamp(state.space.pointer.rotY + dx * 0.006, -1.05, 1.05);
+    state.space.fullRotationX = clamp(state.space.pointer.rotX + dy * 0.0045, -0.55, 0.55);
+    if (els.spaceZoomControls) {
+      els.spaceZoomControls.dataset.rotateX = state.space.fullRotationX.toFixed(2);
+      els.spaceZoomControls.dataset.rotateY = state.space.fullRotationY.toFixed(2);
+    }
+    return;
+  }
   const dx = (event.clientX - rect.left) / rect.width - 0.5;
   const dy = (event.clientY - rect.top) / rect.height - 0.5;
   state.space.targetRotationY = 0.22 + dx * 0.9;
@@ -1308,8 +1663,15 @@ function handleSpacePointerMove(event) {
 
 function handleSpacePointerUp() {
   state.space.pointer.active = false;
+  state.space.pointer.mode = "pan";
   state.space.targetRotationX = clamp(state.space.targetRotationX, -0.7, 0.15);
   state.space.targetRotationY = clamp(state.space.targetRotationY, -0.9, 0.9);
+}
+
+function handleSpaceWheel(event) {
+  if (state.mode !== "space" || !state.fullScrollRecords.length) return;
+  event.preventDefault();
+  adjustSpaceZoom(event.deltaY < 0 ? 1 : -1);
 }
 
 function setStepButtonsDisabled(disabled) {
@@ -1852,6 +2214,36 @@ document.querySelectorAll(".filterButton").forEach((button) => {
 
 document.querySelectorAll(".modeButton").forEach((button) => {
   button.addEventListener("click", () => setMode(button.dataset.mode));
+});
+
+els.spaceZoomIn?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  adjustSpaceZoom(1);
+});
+
+els.spaceZoomOut?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  adjustSpaceZoom(-1);
+});
+
+els.spacePanX?.addEventListener("input", (event) => {
+  event.stopPropagation();
+  setFullScrollPanFromSlider(event.currentTarget.value);
+});
+
+els.spaceRotateLeft?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  setFullScrollView(-0.72, 0.08);
+});
+
+els.spaceRotateRight?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  setFullScrollView(0.72, 0.08);
+});
+
+els.spaceViewReset?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  setFullScrollView(0, 0);
 });
 
 els.storedWorks.addEventListener("click", () => {

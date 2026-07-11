@@ -1419,6 +1419,69 @@ button:disabled {
   gap: 8px;
 }
 
+.fullScrollNote {
+  grid-column: 1 / -1;
+  padding: 12px 14px;
+  border: 1px solid rgba(232, 218, 191, 0.16);
+  border-radius: 7px;
+  background: rgba(255, 249, 236, 0.06);
+}
+
+.spaceZoomControls {
+  position: absolute;
+  right: 22px;
+  bottom: 22px;
+  z-index: 8;
+  display: inline-flex;
+  gap: 8px;
+  padding: 7px;
+  border: 1px solid rgba(232, 218, 191, 0.2);
+  border-radius: 8px;
+  background: rgba(12, 11, 9, 0.76);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(8px);
+}
+
+.spaceZoomControls[hidden] {
+  display: none;
+}
+
+.spaceZoomControls button {
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(232, 218, 191, 0.28);
+  border-radius: 7px;
+  background: rgba(255, 249, 236, 0.1);
+  color: #fff8ec;
+  font: 700 24px/1 "Microsoft YaHei", system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.spaceZoomControls button:hover {
+  border-color: rgba(198, 89, 67, 0.84);
+  background: rgba(163, 58, 44, 0.82);
+}
+
+.spacePanControl {
+  display: inline-grid;
+  grid-template-columns: auto minmax(120px, 190px);
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 10px;
+  border: 1px solid rgba(232, 218, 191, 0.22);
+  border-radius: 7px;
+  background: rgba(255, 249, 236, 0.08);
+  color: #fff8ec;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.spacePanControl input {
+  width: 100%;
+  accent-color: #c65943;
+}
+
 .glyphButton {
   display: grid;
   gap: 2px;
@@ -2170,5 +2233,61 @@ body::after {
     right: 12px;
     bottom: auto;
     max-width: none;
+  }
+}
+
+/* Final full-scroll 3D override. This must stay at the end of the file because
+   older 3D-mode rules above also use !important. */
+.app .canvasShell[data-view="space"] {
+  display: block !important;
+  grid-template-columns: none !important;
+  min-height: clamp(440px, 62vh, 640px) !important;
+  padding: 18px !important;
+}
+
+.app .canvasShell[data-view="space"] #workImage,
+.app .canvasShell[data-view="space"] #overlay {
+  display: none !important;
+}
+
+.app .canvasShell[data-view="space"] #spaceCanvas {
+  position: relative !important;
+  inset: auto !important;
+  grid-column: auto !important;
+  display: block !important;
+  width: 100% !important;
+  max-width: none !important;
+  height: clamp(420px, 58vh, 620px) !important;
+  min-height: 420px !important;
+  cursor: grab;
+  touch-action: none;
+}
+
+.app .canvasShell[data-view="space"] #spaceCanvas:active {
+  cursor: grabbing;
+}
+
+.app .canvasShell[data-view="space"] .spaceLabel {
+  top: 28px !important;
+  right: 28px !important;
+  bottom: auto !important;
+  max-width: min(46%, 560px) !important;
+}
+
+@media (max-width: 700px) {
+  .app .canvasShell[data-view="space"] {
+    min-height: 380px !important;
+    padding: 12px !important;
+  }
+
+  .app .canvasShell[data-view="space"] #spaceCanvas {
+    height: 380px !important;
+    min-height: 380px !important;
+  }
+
+  .app .canvasShell[data-view="space"] .spaceLabel {
+    left: 20px !important;
+    right: 20px !important;
+    max-width: none !important;
   }
 }
