@@ -1260,6 +1260,129 @@ button:disabled {
   }
 }
 
+/* Final integration override: make 3D glyph mode a real in-page workspace. */
+.app .canvasShell[data-view="space"] {
+  display: grid !important;
+  grid-template-columns: minmax(0, 0.82fr) minmax(440px, 1.18fr) !important;
+  gap: 18px !important;
+  align-items: center !important;
+  justify-items: stretch !important;
+  min-height: 430px !important;
+  max-height: none !important;
+  padding: 18px !important;
+}
+
+.app .canvasShell[data-view="space"] #workImage {
+  position: relative !important;
+  grid-column: 1 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  max-height: 380px !important;
+  object-fit: contain !important;
+  opacity: 0.72 !important;
+}
+
+.app .canvasShell[data-view="space"] #overlay {
+  display: none !important;
+}
+
+.app .canvasShell[data-view="space"] #spaceCanvas {
+  position: relative !important;
+  inset: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  grid-column: 2 !important;
+  width: 100% !important;
+  height: clamp(360px, 52vh, 540px) !important;
+  min-height: 360px !important;
+  max-width: none !important;
+  z-index: 2 !important;
+}
+
+.app .canvasShell[data-view="space"] .spaceLabel {
+  top: 30px !important;
+  right: 32px !important;
+  bottom: auto !important;
+  max-width: min(46%, 520px) !important;
+}
+
+@media (max-width: 980px) {
+  .app .canvasShell[data-view="space"] {
+    grid-template-columns: 1fr !important;
+    min-height: auto !important;
+  }
+
+  .app .canvasShell[data-view="space"] #workImage,
+  .app .canvasShell[data-view="space"] #spaceCanvas {
+    grid-column: 1 !important;
+  }
+
+  .app .canvasShell[data-view="space"] #spaceCanvas {
+    width: 100% !important;
+    height: 360px !important;
+  }
+}
+
+/* Integrated 3D glyph mode: original artwork remains as reference, while the
+   Three.js glyph relief becomes the main working view. */
+.canvasShell[data-view="space"] {
+  display: grid;
+  grid-template-columns: minmax(0, 0.82fr) minmax(440px, 1.18fr);
+  gap: 18px;
+  align-items: center;
+  justify-items: stretch;
+  min-height: 430px;
+  max-height: none;
+  padding: 18px;
+}
+
+.canvasShell[data-view="space"] #workImage {
+  grid-column: 1;
+  width: 100%;
+  max-width: 100%;
+  max-height: 380px;
+  object-fit: contain;
+  opacity: 0.72;
+}
+
+.canvasShell[data-view="space"] #overlay {
+  display: none;
+}
+
+.canvasShell[data-view="space"] #spaceCanvas {
+  position: relative;
+  inset: auto;
+  grid-column: 2;
+  width: 100%;
+  height: clamp(360px, 52vh, 540px);
+  min-height: 360px;
+  z-index: 2;
+}
+
+.canvasShell[data-view="space"] .spaceLabel {
+  top: 30px;
+  right: 32px;
+  bottom: auto;
+  max-width: min(46%, 520px);
+}
+
+@media (max-width: 980px) {
+  .canvasShell[data-view="space"] {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .canvasShell[data-view="space"] #workImage,
+  .canvasShell[data-view="space"] #spaceCanvas {
+    grid-column: 1;
+  }
+
+  .canvasShell[data-view="space"] #spaceCanvas {
+    width: 100%;
+    height: 360px;
+  }
+}
+
 /* V1.7 glyph extraction panel */
 .glyphPanel {
   display: grid;

@@ -426,6 +426,7 @@ function renderImage() {
 
 function syncCanvasVisibility() {
   const useSpace = state.mode === "space" && state.space.sceneReady;
+  if (els.canvasShell) els.canvasShell.dataset.view = useSpace ? "space" : "image";
   if (els.spaceCanvas) els.spaceCanvas.hidden = !useSpace;
   if (els.spaceLabel) els.spaceLabel.hidden = !useSpace;
   if (els.image) els.image.hidden = false;
@@ -750,6 +751,10 @@ function initSpaceScene(THREE) {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.setSize(width, height, false);
   renderer.setClearColor(0x000000, 0);
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.04;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   const scene = new THREE.Scene();
   scene.fog = new THREE.FogExp2(0x0e0d0b, 0.055);
@@ -761,15 +766,25 @@ function initSpaceScene(THREE) {
   root.position.y = 0.08;
   scene.add(root);
 
-  const ambient = new THREE.AmbientLight(0xf7ead6, 1.05);
-  scene.add(ambient);
+  scene.add(new THREE.HemisphereLight(0xfff2df, 0x1b211f, 0.56));
+  scene.add(new THREE.AmbientLight(0xf7ead6, 0.34));
 
-  const key = new THREE.DirectionalLight(0xffe0b6, 2.1);
-  key.position.set(3.5, 5.5, 8);
+  const key = new THREE.DirectionalLight(0xffdfad, 4.2);
+  key.position.set(-6.5, -9, 16);
+  key.castShadow = true;
+  key.shadow.mapSize.set(2048, 2048);
+  key.shadow.camera.near = 0.5;
+  key.shadow.camera.far = 48;
+  key.shadow.camera.left = -8;
+  key.shadow.camera.right = 8;
+  key.shadow.camera.top = 8;
+  key.shadow.camera.bottom = -8;
+  key.shadow.bias = -0.00022;
+  key.shadow.normalBias = 0.035;
   scene.add(key);
 
-  const rim = new THREE.DirectionalLight(0x86b5c7, 1.25);
-  rim.position.set(-5, 3, -3);
+  const rim = new THREE.DirectionalLight(0xb6c3ba, 0.32);
+  rim.position.set(7, 5, 9);
   scene.add(rim);
 
   const fill = new THREE.PointLight(0xe9cfa9, 0.9, 20);
@@ -1081,51 +1096,72 @@ function ensureGlyphAssets(glyph) {
   return false;
 }
 
-function createGlyphMesh(THREE, glyph, assets) {
-  const maskCanvas = assets.mask.canvas;
-  const heightCanvas = assets.height.canvas;
-  const heightData = assets.height.context.getImageData(0, 0, heightCanvas.width, heightCanvas.height).data;
-  const maskData = assets.mask.context.getImageData(0, 0, maskCanvas.width, maskCanvas.height).data;
-  const aspect = maskCanvas.width / Math.max(1, maskCanvas.height);
-  const planeHeight = 3.45;
-  const planeWidth = clamp(planeHeight * aspect, 1.8, 5.4);
-  const xSegments = clamp(Math.round(maskCanvas.width * 1.15), 48, 150);
-  const ySegments = clamp(Math.round(maskCanvas.height * 1.15), 48, 150);
-  const geometry = new THREE.PlaneGeometry(planeWidth, planeHeight, xSegments, ySegments);
-  const position = geometry.attributes.position;
+function makeSmoothedGlyphCanvas(sourceCanvas, blurPx) {
+  const canvas = document.createElement("canvas");
+  canvas.width = sourceCanvas.width;
+  canvas.height = sourceCanvas.height;
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
+  context.filter = `blur(${blurPx}px)`;
+  context.drawImage(sourceCanvas, 0, 0);
+  return { canvas, context, imageData: context.getImageData(0, 0, canvas.width, canvas.height) };
+}
 
-  for (let i = 0; i < position.count; i += 1) {
-    const u = clamp(position.getX(i) / planeWidth + 0.5, 0, 1);
-    const v = clamp(0.5 - position.getY(i) / planeHeight, 0, 1);
-    const px = Math.round(u * (heightCanvas.width - 1));
-    const py = Math.round(v * (heightCanvas.height - 1));
-    const idx = (py * heightCanvas.width + px) * 4;
-    const maskIdx = (Math.min(py, maskCanvas.height - 1) * maskCanvas.width + Math.min(px, maskCanvas.width - 1)) * 4;
-    const alpha = maskData[maskIdx + 3] / 255;
-    const relief = heightData[idx] / 255;
-    position.setZ(i, alpha > 0.04 ? 0.04 + relief * 0.82 : -0.04);
+function sampleGlyphImage(imageData, width, height, u, v, channel = 0) {
+  const x = Math.max(0, Math.min(width - 1, Math.round(u * (width - 1))));
+  const y = Math.max(0, Math.min(height - 1, Math.round(v * (height - 1))));
+  return imageData.data[(y * width + x) * 4 + channel] / 255;
+}
+
+function applyGlyphHeight(geometry, maskField, displacementScale, displacementBias) {
+  const position = geometry.attributes.position;
+  const uv = geometry.attributes.uv;
+  for (let index = 0; index < position.count; index += 1) {
+    const alpha = sampleGlyphImage(maskField.imageData, maskField.canvas.width, maskField.canvas.height, uv.getX(index), uv.getY(index), 3);
+    const relief = Math.pow(alpha, 1.12);
+    position.setZ(index, displacementBias + relief * displacementScale);
   }
   position.needsUpdate = true;
   geometry.computeVertexNormals();
+}
+
+function createGlyphMesh(THREE, glyph, assets) {
+  const maskCanvas = assets.mask.canvas;
+  const maskField = makeSmoothedGlyphCanvas(maskCanvas, 1.25);
+  const aspect = maskCanvas.width / Math.max(1, maskCanvas.height);
+  const planeHeight = 3.45;
+  const planeWidth = clamp(planeHeight * aspect, 1.8, 5.4);
+  const geometry = new THREE.PlaneGeometry(planeWidth, planeHeight, 512, 512);
+  applyGlyphHeight(geometry, maskField, 0.32, 0);
 
   if (assets.texture) assets.texture.dispose?.();
-  const texture = new THREE.CanvasTexture(maskCanvas);
-  texture.colorSpace = THREE.SRGBColorSpace || texture.colorSpace;
-  texture.anisotropy = 6;
+  const texture = new THREE.CanvasTexture(maskField.canvas);
+  if (THREE.SRGBColorSpace) texture.colorSpace = THREE.SRGBColorSpace;
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.generateMipmaps = false;
+  texture.anisotropy = Math.min(state.space.renderer?.capabilities.getMaxAnisotropy?.() || 8, 8);
+  texture.needsUpdate = true;
   assets.texture = texture;
 
   const material = new THREE.MeshStandardMaterial({
-    color: 0xffffff,
+    color: 0x1a1a14,
     map: texture,
     transparent: true,
-    alphaTest: 0.05,
-    roughness: 0.78,
+    alphaTest: 0.025,
+    roughness: 0.5,
     metalness: 0.02,
-    emissive: 0x2a211a,
-    emissiveIntensity: 0.28,
-    side: THREE.DoubleSide,
+    bumpMap: texture,
+    bumpScale: 0.14,
+    side: THREE.FrontSide,
   });
   const mesh = new THREE.Mesh(geometry, material);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
   mesh.userData = { pulse: "glyphMesh", glyphId: glyph.id };
   return { mesh, planeWidth, planeHeight };
 }
@@ -1191,20 +1227,22 @@ function updateSpaceSceneContent() {
   const { mesh, planeWidth, planeHeight } = createGlyphMesh(THREE, glyph, assets);
   const plate = new THREE.Mesh(
     new THREE.PlaneGeometry(planeWidth + 0.52, planeHeight + 0.52, 1, 1),
-    new THREE.MeshBasicMaterial({
+    new THREE.MeshStandardMaterial({
       color: 0xe8dcc8,
       transparent: true,
       opacity: 0.92,
-      depthWrite: false,
+      roughness: 0.78,
+      metalness: 0,
       side: THREE.DoubleSide,
     })
   );
-  plate.position.z = -0.08;
-  stage.add(plate, mesh, createGlyphTrace(THREE, glyph, planeWidth, planeHeight));
+  plate.position.z = -0.18;
+  plate.receiveShadow = true;
+  stage.add(plate, mesh);
   state.space.annotationsGroup.add(stage);
-  state.space.annotationsGroup.rotation.x = -0.12;
+  state.space.annotationsGroup.rotation.x = -0.1;
   state.space.annotationsGroup.rotation.y = 0.16;
-  state.space.annotationsGroup.rotation.z = 0.03;
+  state.space.annotationsGroup.rotation.z = 0.025;
 }
 
 function animateSpaceScene() {
