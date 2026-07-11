@@ -14,6 +14,10 @@ const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDraw
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 renderer.setClearColor(0x11100d, 1);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.04;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 1000);
@@ -25,12 +29,23 @@ scene.add(root);
 const stage = new THREE.Group();
 root.add(stage);
 
-scene.add(new THREE.AmbientLight(0xfff2df, 1.25));
-const key = new THREE.DirectionalLight(0xffd9a8, 3.1);
-key.position.set(7, -9, 15);
+scene.add(new THREE.HemisphereLight(0xfff2df, 0x1b211f, 0.56));
+scene.add(new THREE.AmbientLight(0xfff2df, 0.34));
+const key = new THREE.DirectionalLight(0xffdfad, 4.2);
+key.position.set(-6.5, -9, 16);
+key.castShadow = true;
+key.shadow.mapSize.set(4096, 4096);
+key.shadow.camera.near = 0.5;
+key.shadow.camera.far = 48;
+key.shadow.camera.left = -14;
+key.shadow.camera.right = 14;
+key.shadow.camera.top = 14;
+key.shadow.camera.bottom = -14;
+key.shadow.bias = -0.00022;
+key.shadow.normalBias = 0.035;
 scene.add(key);
-const rim = new THREE.DirectionalLight(0x8fc0d1, 1.45);
-rim.position.set(-7, 5, 10);
+const rim = new THREE.DirectionalLight(0xb6c3ba, 0.32);
+rim.position.set(7, 5, 9);
 scene.add(rim);
 
 const textureLoader = new THREE.TextureLoader();
@@ -79,7 +94,7 @@ function loadTexture(url, color = false) {
             texture.anisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 8);
             texture.wrapS = THREE.ClampToEdgeWrapping;
             texture.wrapT = THREE.ClampToEdgeWrapping;
-            texture.minFilter = THREE.LinearMipmapLinearFilter;
+            texture.minFilter = THREE.LinearFilter;
             texture.magFilter = THREE.LinearFilter;
             resolve(texture);
           },
@@ -90,6 +105,55 @@ function loadTexture(url, color = false) {
     );
   }
   return textureCache.get(url);
+}
+
+function makeSmoothedTexture(sourceTexture, blurPx, color = false) {
+  const image = sourceTexture.image;
+  const width = image.naturalWidth || image.width;
+  const height = image.naturalHeight || image.height;
+  const smoothCanvas = document.createElement("canvas");
+  smoothCanvas.width = width;
+  smoothCanvas.height = height;
+  const context = smoothCanvas.getContext("2d");
+  context.clearRect(0, 0, width, height);
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
+  context.filter = `blur(${blurPx}px)`;
+  context.drawImage(image, 0, 0, width, height);
+
+  const texture = new THREE.CanvasTexture(smoothCanvas);
+  texture.colorSpace = color ? THREE.SRGBColorSpace : THREE.NoColorSpace;
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.generateMipmaps = false;
+  texture.anisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 8);
+  texture.needsUpdate = true;
+  const imageData = context.getImageData(0, 0, width, height);
+  return { texture, imageData, width, height };
+}
+
+function sampleImageData(imageData, imageWidth, imageHeight, u, v, channel = 0) {
+  const x = Math.max(0, Math.min(imageWidth - 1, Math.round(u * (imageWidth - 1))));
+  const y = Math.max(0, Math.min(imageHeight - 1, Math.round(v * (imageHeight - 1))));
+  const index = (y * imageWidth + x) * 4;
+  return imageData.data[index + channel] / 255;
+}
+
+function applyHeightToGeometry(geometry, maskField, heightField, displacementScale, displacementBias) {
+  const position = geometry.attributes.position;
+  const uv = geometry.attributes.uv;
+  for (let index = 0; index < position.count; index += 1) {
+    const u = uv.getX(index);
+    const v = uv.getY(index);
+    const alphaValue = sampleImageData(maskField.imageData, maskField.width, maskField.height, u, v, 3);
+    void heightField;
+    const heightValue = Math.pow(alphaValue, 1.12);
+    position.setZ(index, displacementBias + heightValue * displacementScale);
+  }
+  position.needsUpdate = true;
+  geometry.computeVertexNormals();
 }
 
 function textureSize(texture) {
@@ -105,19 +169,20 @@ function addPaper(width, height) {
     new THREE.PlaneGeometry(width + 1.8, height + 1.8, 1, 1),
     new THREE.MeshStandardMaterial({
       color: 0xf2dfbb,
-      roughness: 0.94,
+      roughness: 0.78,
       metalness: 0,
       side: THREE.DoubleSide,
     })
   );
-  paper.position.z = -0.42;
+  paper.position.z = -0.18;
+  paper.receiveShadow = true;
   stage.add(paper);
 
   const border = new THREE.LineSegments(
     new THREE.EdgesGeometry(new THREE.PlaneGeometry(width + 1.8, height + 1.8)),
     new THREE.LineBasicMaterial({ color: 0x8d7652, transparent: true, opacity: 0.5 })
   );
-  border.position.z = -0.39;
+  border.position.z = -0.15;
   stage.add(border);
 }
 
@@ -139,7 +204,7 @@ function makeTraceBrush(glyph, width, height) {
   const points = (glyph.tracePath || []).map((point) => {
     const x = (point.x / 100 - 0.5) * width;
     const y = (0.5 - point.y / 100) * height;
-    return new THREE.Vector3(x, y, 0.48);
+    return new THREE.Vector3(x, y, 2.15);
   });
   if (points.length < 2) return null;
   const curve = new THREE.CatmullRomCurve3(points, false, "catmullrom", 0.5);
@@ -157,6 +222,7 @@ function makeTraceBrush(glyph, width, height) {
       roughness: 0.45,
     })
   );
+  brush.castShadow = true;
   brush.userData = { curve, phase: 0 };
   stage.add(brush);
   return brush;
@@ -166,10 +232,14 @@ async function addGlyphRelief(glyph) {
   clearStage();
   activeGlyph = glyph;
 
-  const [maskTexture, heightTexture] = await Promise.all([
+  const [rawMaskTexture, rawHeightTexture] = await Promise.all([
     loadTexture(GLYPH_BASE + glyph.mask, true),
     loadTexture(GLYPH_BASE + glyph.height, false),
   ]);
+  const maskField = makeSmoothedTexture(rawMaskTexture, 1.25, true);
+  const heightField = makeSmoothedTexture(rawHeightTexture, 3.2, false);
+  const maskTexture = maskField.texture;
+  const heightTexture = heightField.texture;
   const size = textureSize(maskTexture);
   const aspect = size.width / Math.max(1, size.height);
   const height = 15.5;
@@ -178,30 +248,36 @@ async function addGlyphRelief(glyph) {
   addPaper(width, height);
   addDepthGuide(width, height);
 
-  const segmentsX = Math.min(260, Math.max(90, Math.round(size.width / 2)));
-  const segmentsY = Math.min(320, Math.max(120, Math.round(size.height / 2)));
-  const geometry = new THREE.PlaneGeometry(width, height, segmentsX, segmentsY);
+  const displacementScale = 0.32;
+  const displacementBias = 0.0;
+  const geometry = new THREE.PlaneGeometry(width, height, 512, 512);
+  applyHeightToGeometry(geometry, maskField, heightField, displacementScale, displacementBias);
   const material = new THREE.MeshStandardMaterial({
     map: maskTexture,
     transparent: true,
-    alphaTest: 0.05,
-    color: 0x15100c,
-    roughness: 0.84,
+    alphaTest: 0.025,
+    color: 0x1a1a14,
+    roughness: 0.5,
     metalness: 0.02,
-    displacementMap: heightTexture,
-    displacementScale: -1.15,
-    displacementBias: 0.52,
-    side: THREE.DoubleSide,
+    bumpMap: maskTexture,
+    bumpScale: 0.14,
+    displacementMap: maskTexture,
+    displacementScale: 0,
+    displacementBias: 0,
+    side: THREE.FrontSide,
   });
   activeRelief = new THREE.Mesh(geometry, material);
-  activeRelief.position.z = 0.18;
+  activeRelief.position.z = 0.02;
+  activeRelief.userData = { baseScale: 1 };
+  activeRelief.castShadow = true;
+  activeRelief.receiveShadow = true;
   stage.add(activeRelief);
 
-  activeBrush = makeTraceBrush(glyph, width, height);
+  activeBrush = null;
 
-  stage.rotation.x = -0.22;
-  stage.rotation.y = -0.28;
-  stage.rotation.z = -0.035;
+  stage.rotation.x = -0.1;
+  stage.rotation.y = -0.16;
+  stage.rotation.z = -0.025;
   stage.position.set(0, 0, 0);
   camera.lookAt(0, 0, 0);
 }
@@ -259,7 +335,7 @@ function handlePointerUp(event) {
 function animate(time = 0) {
   const seconds = time * 0.001;
   if (activeRelief) {
-    activeRelief.material.displacementBias = 0.5 + Math.sin(seconds * 1.15) * 0.035;
+    activeRelief.scale.z = 1 + Math.sin(seconds * 1.15) * 0.035;
   }
   if (activeBrush?.userData?.curve) {
     const phase = (seconds * 0.13) % 1;
