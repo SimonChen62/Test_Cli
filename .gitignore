@@ -1,4 +1,4 @@
-__pycache__/
+﻿__pycache__/
 .venv/
 *.pyc
 .DS_Store
@@ -11,3 +11,27 @@ data/work_001/*_full.png
 data/work_001/preview_layers.png
 logs/
 .sync-git/
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Dependencies and build outputs
+node_modules/
+dist/
+build/
+out/
+coverage/
+
+# Editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Temporary files
+.cache/
+tmp/
+temp/
