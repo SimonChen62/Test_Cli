@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CalliLens 全文长卷 3D 浮雕</title>
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: #11100d;
+        color: #fff8ec;
+        font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+      }
+      main {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 340px;
+        min-height: 100vh;
+      }
+      .stage { position: relative; min-width: 0; }
+      canvas { display: block; width: 100%; height: 100vh; cursor: grab; }
+      canvas:active { cursor: grabbing; }
+      aside {
+        padding: 28px 24px;
+        border-left: 1px solid rgba(234, 223, 201, 0.16);
+        background: rgba(12, 11, 9, 0.92);
+      }
+      .eyebrow {
+        margin: 0 0 8px;
+        color: #b8ad99;
+        font-size: 12px;
+      }
+      h1 {
+        margin: 0 0 18px;
+        font-size: 30px;
+        line-height: 1.12;
+      }
+      .card {
+        margin: 0 0 14px;
+        padding: 14px;
+        border: 1px solid rgba(234, 223, 201, 0.16);
+        border-radius: 8px;
+        background: rgba(255, 249, 236, 0.07);
+      }
+      .card p {
+        margin: 0;
+        color: rgba(255, 248, 236, 0.78);
+        font-size: 13px;
+        line-height: 1.7;
+      }
+      .glyphs {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        margin-top: 10px;
+      }
+      .glyphs p { grid-column: 1 / -1; }
+      button {
+        min-height: 48px;
+        border: 1px solid rgba(234, 223, 201, 0.2);
+        border-radius: 7px;
+        background: rgba(255, 249, 236, 0.08);
+        color: #fff8ec;
+        font: inherit;
+        cursor: pointer;
+      }
+      button.active, button:hover {
+        border-color: rgba(163, 58, 44, 0.78);
+        background: #a33a2c;
+      }
+      .metrics {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .metrics strong { display: block; font-size: 22px; }
+      .metrics span { color: #b8ad99; font-size: 12px; }
+      .hint {
+        position: absolute;
+        left: 24px;
+        bottom: 22px;
+        padding: 8px 10px;
+        border: 1px solid rgba(234, 223, 201, 0.14);
+        border-radius: 7px;
+        background: rgba(12, 11, 9, 0.62);
+        color: rgba(255, 248, 236, 0.72);
+        font-size: 12px;
+      }
+      .zoomControls {
+        position: absolute;
+        right: 24px;
+        bottom: 22px;
+        z-index: 5;
+        display: inline-flex;
+        gap: 8px;
+        padding: 7px;
+        border: 1px solid rgba(234, 223, 201, 0.16);
+        border-radius: 8px;
+        background: rgba(12, 11, 9, 0.72);
+        backdrop-filter: blur(8px);
+      }
+      .zoomControls button {
+        width: 42px;
+        height: 42px;
+        border: 1px solid rgba(234, 223, 201, 0.24);
+        border-radius: 7px;
+        background: rgba(255, 249, 236, 0.1);
+        color: #fff8ec;
+        font: 700 24px/1 "Microsoft YaHei", system-ui, sans-serif;
+        cursor: pointer;
+      }
+      .zoomControls button:hover {
+        border-color: rgba(163, 58, 44, 0.78);
+        background: #a33a2c;
+      }
+      #error {
+        position: fixed;
+        left: 24px;
+        top: 24px;
+        max-width: 520px;
+        padding: 14px;
+        border: 1px solid rgba(163, 58, 44, 0.7);
+        border-radius: 8px;
+        background: rgba(12, 11, 9, 0.9);
+      }
+      @media (max-width: 900px) {
+        main { grid-template-columns: 1fr; }
+        canvas { height: 68vh; }
+        aside { border-left: 0; border-top: 1px solid rgba(234, 223, 201, 0.16); }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="stage">
+        <canvas id="scene"></canvas>
+        <div class="zoomControls" aria-label="3D zoom controls">
+          <button id="zoomOut" type="button" title="缩小" aria-label="缩小">-</button>
+          <button id="zoomIn" type="button" title="放大" aria-label="放大">+</button>
+        </div>
+        <div class="hint">拖拽平移长卷，滚轮放大局部，右键拖拽调整 3D 视角</div>
+        <div id="error" hidden></div>
+      </section>
+      <aside>
+        <p class="eyebrow">CalliLens / full-scroll height map / Three.js</p>
+        <h1>全文长卷 3D 浮雕</h1>
+        <section class="card">
+          <p id="summary">正在读取全文坐标和字形高度图。</p>
+          <div id="glyphButtons" class="glyphs"></div>
+        </section>
+        <section class="card metrics">
+          <div><span>当前视图</span><strong id="glyphLabel">--</strong></div>
+          <div><span>字形数量 / ROI</span><strong id="contourCount">--</strong></div>
+        </section>
+        <section class="card">
+          <p>技术边界：这里把已提取的单字墨迹和高度图重新放回长卷坐标系，形成静态 3D 拓扑展示；它不声称恢复真实笔顺，也不替代人工校正的全文 OCR。</p>
+        </section>
+      </aside>
+    </main>
+    <script type="module" src="./main.js?v=3"></script>
+  </body>
+</html>

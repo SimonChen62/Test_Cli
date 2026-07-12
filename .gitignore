@@ -1,14 +1,16 @@
-# OS files
+﻿__pycache__/
+.venv/
+*.pyc
 .DS_Store
 Thumbs.db
-desktop.ini
 
-# Editor files
-.idea/
-.vscode/
-*.swp
-*.swo
-
+# Large local source/crop exploration files. Keep final demo assets in data/work_001/.
+data/source/
+data/work_001/candidates/
+data/work_001/*_full.png
+data/work_001/preview_layers.png
+logs/
+.sync-git/
 # Environment and secrets
 .env
 .env.*
@@ -16,34 +18,18 @@ desktop.ini
 *.pem
 *.key
 
-# Logs
-*.log
-logs/
-
-# Dependencies
+# Dependencies and build outputs
 node_modules/
-vendor/
-
-# Build outputs
 dist/
 build/
 out/
-target/
 coverage/
 
-# Python
-__pycache__/
-*.py[cod]
-.venv/
-venv/
-
-# Java / Kotlin
-*.class
-.gradle/
-
-# .NET
-bin/
-obj/
+# Editor files
+.idea/
+.vscode/
+*.swp
+*.swo
 
 # Temporary files
 .cache/

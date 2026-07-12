@@ -1,0 +1,84 @@
+{
+  "workId": "work_003",
+  "notes": "Glyph boxes for the V1.7 3D glyph demo. These boxes intentionally use the large title characters on the right side so the OpenCV mask and Three.js 3D relief are clear enough for presentation. They do not replace annotation.json.",
+  "glyphs": [
+    {
+      "id": "guang",
+      "label": "光",
+      "annotationId": "ink_1",
+      "description": "题名区大字，适合展示单字墨迹从原作中被提取并转为三维浮雕。",
+      "box": { "x": 96.0, "y": 3.2, "width": 2.0, "height": 8.8 },
+      "tracePath": [
+        { "x": 50, "y": 8 },
+        { "x": 46, "y": 32 },
+        { "x": 58, "y": 58 },
+        { "x": 48, "y": 90 }
+      ]
+    },
+    {
+      "id": "fu",
+      "label": "福",
+      "annotationId": "ink_1",
+      "description": "题名区大字，笔画较厚，适合观察墨迹厚度与三维提按深浅。",
+      "box": { "x": 95.8, "y": 13.0, "width": 2.2, "height": 8.8 },
+      "tracePath": [
+        { "x": 54, "y": 6 },
+        { "x": 46, "y": 28 },
+        { "x": 58, "y": 54 },
+        { "x": 48, "y": 88 }
+      ]
+    },
+    {
+      "id": "zhong",
+      "label": "重",
+      "annotationId": "ink_1",
+      "description": "题名区连续大字之一，用于比较字内中轴、粗细和空间重心。",
+      "box": { "x": 95.8, "y": 22.5, "width": 2.2, "height": 8.2 },
+      "tracePath": [
+        { "x": 52, "y": 8 },
+        { "x": 50, "y": 30 },
+        { "x": 56, "y": 58 },
+        { "x": 48, "y": 88 }
+      ]
+    },
+    {
+      "id": "jian",
+      "label": "建",
+      "annotationId": "ink_1",
+      "description": "题名区连续大字之一，用于展示复杂转折结构在三维浮雕中的层次。",
+      "box": { "x": 95.6, "y": 31.0, "width": 2.5, "height": 8.8 },
+      "tracePath": [
+        { "x": 45, "y": 10 },
+        { "x": 58, "y": 34 },
+        { "x": 44, "y": 62 },
+        { "x": 62, "y": 88 }
+      ]
+    },
+    {
+      "id": "ta",
+      "label": "塔",
+      "annotationId": "ink_1",
+      "description": "题名区连续大字之一，笔画交叉较多，适合说明自动笔画分割仍需人工校正。",
+      "box": { "x": 95.4, "y": 39.3, "width": 2.8, "height": 8.7 },
+      "tracePath": [
+        { "x": 50, "y": 8 },
+        { "x": 43, "y": 32 },
+        { "x": 58, "y": 62 },
+        { "x": 52, "y": 90 }
+      ]
+    },
+    {
+      "id": "ji",
+      "label": "记",
+      "annotationId": "ink_1",
+      "description": "题名区连续大字之一，用于展示单字 ROI、墨迹 mask、厚度图到 Three.js 的完整流程。",
+      "box": { "x": 95.2, "y": 49.2, "width": 3.0, "height": 8.5 },
+      "tracePath": [
+        { "x": 48, "y": 8 },
+        { "x": 58, "y": 34 },
+        { "x": 44, "y": 64 },
+        { "x": 56, "y": 90 }
+      ]
+    }
+  ]
+}

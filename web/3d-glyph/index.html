@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CalliLens 3D 字形动态运笔</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #12100d;
+        --paper: #eadfc9;
+        --paper-deep: #c8b998;
+        --accent: #a33a2c;
+        --muted: #b8ad99;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        overflow: hidden;
+        background:
+          linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px) 0 0 / 42px 42px,
+          radial-gradient(circle at 72% 18%, rgba(163, 58, 44, 0.16), transparent 30%),
+          #11100d;
+        color: #fff8ec;
+        font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+      }
+
+      .shell {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 340px;
+        gap: 0;
+        min-height: 100vh;
+      }
+
+      .stage {
+        position: relative;
+        min-width: 0;
+      }
+
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100vh;
+      }
+
+      .panel {
+        display: grid;
+        align-content: start;
+        gap: 18px;
+        padding: 28px 24px;
+        border-left: 1px solid rgba(234, 223, 201, 0.16);
+        background: rgba(12, 11, 9, 0.86);
+        box-shadow: -18px 0 44px rgba(0, 0, 0, 0.28);
+      }
+
+      .eyebrow {
+        margin: 0 0 6px;
+        color: var(--muted);
+        font-size: 12px;
+        letter-spacing: 0;
+      }
+
+      h1 {
+        margin: 0;
+        color: #fff8ec;
+        font-size: 28px;
+        line-height: 1.12;
+      }
+
+      .status,
+      .note,
+      .metric {
+        border: 1px solid rgba(234, 223, 201, 0.16);
+        border-radius: 8px;
+        background: rgba(255, 249, 236, 0.07);
+        padding: 14px;
+      }
+
+      .status strong {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 16px;
+      }
+
+      .status p,
+      .note p {
+        margin: 0;
+        color: rgba(255, 248, 236, 0.72);
+        font-size: 13px;
+        line-height: 1.7;
+      }
+
+      .controls {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      button {
+        min-height: 42px;
+        border: 1px solid rgba(234, 223, 201, 0.2);
+        border-radius: 7px;
+        background: rgba(255, 249, 236, 0.08);
+        color: #fff8ec;
+        font: inherit;
+        cursor: pointer;
+      }
+
+      button:hover {
+        border-color: rgba(163, 58, 44, 0.72);
+        background: rgba(163, 58, 44, 0.56);
+      }
+
+      button.primary {
+        background: var(--accent);
+        border-color: rgba(163, 58, 44, 0.9);
+      }
+
+      .metric {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .metric span {
+        display: block;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .metric strong {
+        display: block;
+        margin-top: 5px;
+        font-size: 20px;
+      }
+
+      .error {
+        position: absolute;
+        inset: 24px;
+        display: grid;
+        place-items: center;
+        border: 1px solid rgba(163, 58, 44, 0.5);
+        border-radius: 8px;
+        background: rgba(12, 11, 9, 0.84);
+        color: #fff8ec;
+        padding: 24px;
+        text-align: center;
+      }
+
+      @media (max-width: 900px) {
+        body {
+          overflow: auto;
+        }
+
+        .shell {
+          grid-template-columns: 1fr;
+        }
+
+        canvas {
+          height: 66vh;
+        }
+
+        .panel {
+          border-left: 0;
+          border-top: 1px solid rgba(234, 223, 201, 0.16);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="stage">
+        <canvas id="scene"></canvas>
+        <div id="error" class="error" hidden></div>
+      </section>
+
+      <aside class="panel">
+        <header>
+          <p class="eyebrow">CalliLens / OpenCV + Three.js</p>
+          <h1>3D 字形动态运笔</h1>
+        </header>
+
+        <section class="status">
+          <strong id="glyphLabel">载入中</strong>
+          <p id="statusText">读取 character_3d_data.json，按估计时间线重建三维墨迹轨迹。</p>
+        </section>
+
+        <div class="controls">
+          <button id="playButton" class="primary" type="button">播放</button>
+          <button id="pauseButton" type="button">暂停</button>
+          <button id="restartButton" type="button">重播</button>
+          <button id="resetCameraButton" type="button">视角复位</button>
+        </div>
+
+        <section class="metric" aria-label="轨迹指标">
+          <div>
+            <span>估计笔画</span>
+            <strong id="strokeCount">--</strong>
+          </div>
+          <div>
+            <span>轨迹点</span>
+            <strong id="pointCount">--</strong>
+          </div>
+          <div>
+            <span>当前时间</span>
+            <strong id="timeValue">0%</strong>
+          </div>
+          <div>
+            <span>粗细映射</span>
+            <strong>压笔下沉</strong>
+          </div>
+        </section>
+
+        <section class="note">
+          <p>
+            当前动画是基于离线图像的骨架和距离变换生成的估计运笔路线。它用于观察字形结构、粗细和提按纵深，不代表书法家的真实笔顺，也不是自动书法评分。
+          </p>
+        </section>
+      </aside>
+    </main>
+
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

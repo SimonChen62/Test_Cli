@@ -1,0 +1,581 @@
+# CalliLens 项目任务书：单作品书法气脉与虚实可视化 Demo
+
+## 1. 项目定位
+
+项目名称：
+
+**CalliLens：面向普通人的中国书法鉴赏交互式导览系统**
+
+项目目标：
+
+> 帮助普通用户从“看字好不好看”转向“能看出笔画、墨色、留白、结构中如何体现气脉与虚实”。
+
+V1 技术路线：
+
+> OpenCV 辅助分析 + 人工确认标注 + 前端交互展示
+
+OpenCV 只负责生成视觉证据，不负责判断美学。  
+人工负责判断哪些地方体现气脉、虚实、笔墨节奏。  
+Agent 负责把标注结果整理成数据、代码、页面和说明文档。
+
+---
+
+## 2. V1 范围
+
+第一阶段只做：
+
+**单作品书法气脉与虚实可视化 Demo**
+
+最小演示流程：
+
+> 打开网页 → 查看一张书法作品 → 切换 OpenCV 分析图层 → 切换气脉模式 → 看到气脉路径动画 → 切换虚实模式 → 看到留白高亮 → 点击区域 → 右侧显示解释 → 播放语音导览
+
+V1 必须包含：
+
+- 1 幅书法作品原图
+- OpenCV 生成的辅助图
+- 2 条气脉路径
+- 2 个虚实/留白区域
+- 1 个笔墨轻重区域
+- 每个标注点都有三段解释
+- 网页可交互展示
+- 浏览器语音导览
+
+V1 不做：
+
+- 不训练模型
+- 不自动判断气韵
+- 不自动还原真实笔顺
+- 不检测真实力道
+- 不做 AR/VR/3D
+- 不做硬件采集
+- 不做大规模数据集
+
+---
+
+## 3. 输出文件结构
+
+第一幅作品统一放在：
+
+```md
+data/work_001/
+```
+
+需要生成：
+
+```md
+data/work_001/original.png
+data/work_001/binary.png
+data/work_001/skeleton.png
+data/work_001/stroke_width.png
+data/work_001/ink_density.png
+data/work_001/void_candidates.png
+data/work_001/annotation.json
+data/work_001/work-info.md
+```
+
+说明：
+
+- `original.png`：原图
+- `binary.png`：黑白墨迹图
+- `skeleton.png`：笔画骨架图
+- `stroke_width.png`：粗细热力图
+- `ink_density.png`：墨色浓淡图
+- `void_candidates.png`：留白候选图
+- `annotation.json`：人工标注结果
+- `work-info.md`：作品信息、来源、说明
+
+---
+
+## 4. OpenCV 处理任务
+
+OpenCV 只生成辅助图，不做审美判断。
+
+输入：
+
+```md
+data/work_001/original.png
+```
+
+输出：
+
+### 4.1 binary.png
+
+目的：区分墨迹和背景。
+
+处理方式：
+
+- 灰度化
+- 二值化
+- 去噪
+
+用于辅助判断：
+
+- 墨迹区域
+- 空白区域
+- 虚实关系
+
+### 4.2 skeleton.png
+
+目的：把粗笔画压成骨架线，观察笔画走势。
+
+处理方式：
+
+- 先得到二值图
+- 做骨架化 / thinning
+
+用于辅助判断：
+
+- 笔画方向
+- 气脉路径
+- 形断势连
+
+### 4.3 stroke_width.png
+
+目的：观察笔画粗细变化。
+
+处理方式：
+
+- distance transform
+- stroke width estimation
+- 热力图展示
+
+用于辅助判断：
+
+- 粗到细
+- 细到粗
+- 转折变粗
+- 收笔变细
+
+注意：不能写“检测真实力道”，只能写“提示笔墨轻重线索”。
+
+### 4.4 ink_density.png
+
+目的：观察墨色浓淡和枯润变化。
+
+处理方式：
+
+- 灰度值分析
+- 局部对比度
+- 热力图或灰度增强
+
+用于辅助判断：
+
+- 墨色变淡
+- 墨色变浓
+- 飞白
+- 枯润变化
+
+### 4.5 void_candidates.png
+
+目的：找出可能重要的空白区域。
+
+处理方式：
+
+- 反向 mask
+- 连通区域分析
+- 面积过滤
+- 可视化空白候选区域
+
+用于辅助判断：
+
+- 字内空白
+- 字间留白
+- 密旁有空
+- 疏密对比
+
+---
+
+## 5. 人工标注标准
+
+人工标注不是凭空写美学，而是根据原图和 OpenCV 辅助图判断。
+
+每个标注点必须包含：
+
+```md
+形式描述：
+画面上客观能看到什么。
+
+感知经验：
+普通用户看到后可能产生什么感受。
+
+美学解释：
+这个观察如何帮助理解气脉、虚实或笔墨节奏。
+```
+
+---
+
+## 6. 气脉标注
+
+气脉用于表示：
+
+> 笔画之间的运动趋势、连贯感和形断势连。
+
+主要看：
+
+1. 原图
+2. skeleton.png
+3. binary.png
+4. stroke_width.png
+
+满足以下任意 2 条，可以标为气脉候选；满足 3 条以上，优先标注。
+
+| 指标 | 判断方式 | 标签 |
+|---|---|---|
+| 方向承接 | 上一笔收笔方向指向下一笔起笔方向 | 顺势 |
+| 距离接近 | 两笔距离较近，视觉上容易形成连续关系 | 连贯 |
+| 转折牵引 | 笔画有明显转向、回带、牵引 | 转势 |
+| 路径连续 | 多个笔画能形成连续观看路径 | 行气 |
+| 形断势连 | 墨迹断开，但视觉趋势继续 | 形断势连 |
+| 断而复续 | 笔锋似乎重新开始，但方向承接前势 | 断而复续 |
+
+气脉输出格式：
+
+```json
+{
+  "id": "qi_1",
+  "type": "qi_flow",
+  "label": "形断势连",
+  "evidenceLayers": ["original", "skeleton", "binary"],
+  "path": "M 80 120 C 120 150, 160 180, 210 220",
+  "formal": "两笔之间没有实际墨迹连接，但上一笔收势指向下一笔起势。",
+  "perception": "观看时会感觉运动没有完全中断，而是从上一笔延续到下一笔。",
+  "aesthetic": "这可以帮助理解气脉：线条虽断，运动趋势仍然连续。"
+}
+```
+
+---
+
+## 7. 虚实留白标注
+
+虚实用于表示：
+
+> 墨迹和空白如何共同组织结构、节奏和呼吸感。
+
+主要看：
+
+1. 原图
+2. binary.png
+3. void_candidates.png
+4. ink_density.png
+
+满足以下任意 2 条，可以标为虚实候选；满足 3 条以上，优先标注。
+
+| 指标 | 判断方式 | 标签 |
+|---|---|---|
+| 密旁有空 | 密集笔画旁边有明显空白 | 密处得空 |
+| 字内空白 | 字内部被笔画围出空间 | 字内留白 |
+| 字间留白 | 字与字之间形成呼吸距离 | 字间呼吸 |
+| 疏密对比 | 一边密、一边空，形成视觉平衡 | 疏密平衡 |
+| 飞白 | 笔画内部出现白色断裂，实中有虚 | 实中有虚 |
+| 空白导向 | 空白影响视线流动或结构稳定 | 空处有势 |
+
+虚实输出格式：
+
+```json
+{
+  "id": "void_1",
+  "type": "void_solid",
+  "label": "字间呼吸",
+  "evidenceLayers": ["original", "binary", "void_candidates"],
+  "box": { "x": 40, "y": 30, "width": 20, "height": 15 },
+  "formal": "左侧笔画较密，右侧留出较大空白。",
+  "perception": "空白让密集笔画不显拥堵，画面有呼吸感。",
+  "aesthetic": "这可以帮助理解虚实相生：空白不是没有内容，而是参与结构和节奏。"
+}
+```
+
+---
+
+## 8. 笔墨轻重标注
+
+不要叫“力道检测”，统一叫：
+
+**笔墨轻重线索**
+
+原因：
+
+> 静态图片不能准确判断真实书写力道，只能通过粗细、墨色、飞白推测提按、节奏和墨量变化。
+
+主要看：
+
+1. 原图
+2. stroke_width.png
+3. ink_density.png
+4. skeleton.png
+
+判断标准：
+
+| 指标 | 判断方式 | 标签 |
+|---|---|---|
+| 粗到细 | 笔画从重到轻，可能提示提笔 | 由按转提 |
+| 细到粗 | 笔画从轻到重，可能提示按笔 | 由提转按 |
+| 转折变粗 | 转折处粗重，可能有停顿 | 顿挫 |
+| 收笔变细 | 收尾变轻，可能形成连贯或收束 | 收势 |
+| 墨色变淡 | 可能提示速度变快、墨量减少或收尾 | 枯淡 |
+| 墨色变浓 | 可能提示起笔、加重或速度放慢 | 浓重 |
+| 飞白出现 | 可能提示干笔、速度或摩擦 | 飞白 |
+
+笔墨输出格式：
+
+```json
+{
+  "id": "ink_1",
+  "type": "brush_ink",
+  "label": "由按转提",
+  "evidenceLayers": ["original", "stroke_width", "ink_density"],
+  "box": { "x": 52, "y": 44, "width": 18, "height": 12 },
+  "formal": "这一笔由粗逐渐变细，墨色也由浓转淡。",
+  "perception": "观看时会感到笔势逐渐变轻，并向下一笔引出。",
+  "aesthetic": "这可以帮助理解笔墨轻重和节奏变化，但不等同于真实力道检测。"
+}
+```
+
+---
+
+## 9. annotation.json 总格式
+
+最终 `annotation.json` 使用：
+
+```json
+{
+  "workId": "work_001",
+  "title": "行书局部示例",
+  "style": "行书",
+  "source": "示范作品 / 公开来源",
+  "images": {
+    "original": "original.png",
+    "binary": "binary.png",
+    "skeleton": "skeleton.png",
+    "strokeWidth": "stroke_width.png",
+    "inkDensity": "ink_density.png",
+    "voidCandidates": "void_candidates.png"
+  },
+  "guideText": "这幅作品适合观察气脉、虚实和笔墨节奏。请先看原图，再切换气脉和虚实模式，观察笔画之间的运动趋势以及空白如何参与结构。",
+  "annotations": [
+    {
+      "id": "qi_1",
+      "type": "qi_flow",
+      "label": "形断势连",
+      "evidenceLayers": ["original", "skeleton"],
+      "path": "M 80 120 C 120 150, 160 180, 210 220",
+      "formal": "",
+      "perception": "",
+      "aesthetic": ""
+    },
+    {
+      "id": "void_1",
+      "type": "void_solid",
+      "label": "字间呼吸",
+      "evidenceLayers": ["original", "binary", "void_candidates"],
+      "box": { "x": 40, "y": 30, "width": 20, "height": 15 },
+      "formal": "",
+      "perception": "",
+      "aesthetic": ""
+    },
+    {
+      "id": "ink_1",
+      "type": "brush_ink",
+      "label": "由按转提",
+      "evidenceLayers": ["original", "stroke_width", "ink_density"],
+      "box": { "x": 52, "y": 44, "width": 18, "height": 12 },
+      "formal": "",
+      "perception": "",
+      "aesthetic": ""
+    }
+  ]
+}
+```
+
+---
+
+## 10. 前端展示要求
+
+网页需要支持：
+
+- 展示原图
+- 切换 OpenCV 图层：
+  - binary
+  - skeleton
+  - stroke_width
+  - ink_density
+  - void_candidates
+- 气脉模式：
+  - 显示 SVG path
+  - 使用路径动画
+- 虚实模式：
+  - 高亮 box 或 polygon 区域
+- 笔墨模式：
+  - 显示粗细/墨色证据图
+- 点击标注：
+  - 右侧展示形式描述、感知经验、美学解释
+- 语音导览：
+  - 使用浏览器 SpeechSynthesis 播放 `guideText`
+
+---
+
+## 11. 小组分工
+
+### A：作品与资料
+
+负责：
+
+- 找第一幅行书作品
+- 裁剪成适合展示的局部
+- 记录来源
+- 写作品基本信息
+
+产出：
+
+```md
+data/work_001/original.png
+data/work_001/work-info.md
+```
+
+### B：OpenCV 处理
+
+负责：
+
+- 生成 binary.png
+- 生成 skeleton.png
+- 生成 stroke_width.png
+- 生成 ink_density.png
+- 生成 void_candidates.png
+- 写 process.py
+
+产出：
+
+```md
+data/work_001/binary.png
+data/work_001/skeleton.png
+data/work_001/stroke_width.png
+data/work_001/ink_density.png
+data/work_001/void_candidates.png
+scripts/process_work.py
+```
+
+### C：人工解释与导览
+
+负责：
+
+- 标 2 条气脉路径
+- 标 2 个虚实区域
+- 标 1 个笔墨区域
+- 写三段解释
+- 写一分钟导览文案
+
+产出：
+
+```md
+data/work_001/annotation.json
+data/work_001/annotation-draft.md
+data/work_001/guide-text.md
+```
+
+### D：前端展示
+
+负责：
+
+- 页面展示
+- 模式切换
+- SVG 气脉动画
+- 留白高亮
+- 解释面板
+- 语音播放
+
+产出：
+
+```md
+Web demo
+```
+
+---
+
+## 12. 后续技术路线
+
+V1：
+
+> 人工标注 + OpenCV 辅助 + 网页展示
+
+V2：
+
+> OpenCV 自动生成候选区域，人工修正
+
+V3：
+
+> 如果收集到足够标注数据，再考虑训练模型
+
+训练模型前提：
+
+- 至少 100 张以上书法图
+- 每张都有墨迹 mask
+- 每张都有留白区域标注
+- 每张都有气脉路径或关键笔画标注
+- 有明确评价标准
+
+可训练对象：
+
+- 墨迹分割
+- 笔画区域检测
+- 留白候选检测
+- 飞白检测
+- 粗细分布估计
+
+不训练：
+
+- 气韵判断模型
+- 美学评分模型
+- 自动书法鉴赏模型
+
+---
+
+## 13. 第一周验收标准
+
+第一周只验收一个作品。
+
+必须完成：
+
+- 有原图
+- 有 5 张 OpenCV 处理图
+- 有 2 条气脉路径
+- 有 2 个虚实区域
+- 有 1 个笔墨区域
+- 有解释面板
+- 有语音导览
+- 网页能切换模式
+- 能明确说明“不训练模型、不自动判断气韵”
+
+最低演示流程：
+
+> 打开网页 → 看原图 → 切换 OpenCV 分析图层 → 切换气脉模式 → 看到路径动画 → 切换虚实模式 → 看到留白高亮 → 点击标注区域 → 右侧显示解释 → 播放语音导览
+
+---
+
+## 14. 给 Agent 的执行提示
+
+你是 CalliLens 项目的开发 agent。
+
+请严格按以下原则执行：
+
+- 不训练模型
+- 不自动判断书法美学
+- 不自动解释气韵
+- OpenCV 只生成辅助图
+- 气脉、虚实、笔墨标注来自人工输入
+- 前端根据 `annotation.json` 展示图层、动画和解释
+- 所有解释必须分为：
+  - formal
+  - perception
+  - aesthetic
+
+优先实现：
+
+1. OpenCV 处理脚本
+2. `annotation.json` 数据结构
+3. 单作品前端展示
+4. 模式切换
+5. SVG 气脉动画
+6. 留白高亮
+7. 解释面板
+8. 语音导览
+

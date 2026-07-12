@@ -1,0 +1,23 @@
+{
+  "defaultWorkId": "work_003",
+  "works": [
+    {
+      "id": "work_003",
+      "title": "赵孟頫《行书光福重建塔记卷》右段题名与正文局部",
+      "style": "行书",
+      "description": "包含正文、题名与印章的右侧局部，适合观察气脉、虚实和笔墨节奏。",
+      "thumbnail": "original.png",
+      "status": "ready",
+      "primary": true
+    },
+    {
+      "id": "work_001",
+      "title": "书法局部样例 work_001",
+      "style": "待确认",
+      "description": "早期局部样例，保留为数据结构和多作品入口测试。",
+      "thumbnail": "original.png",
+      "status": "draft",
+      "primary": false
+    }
+  ]
+}
