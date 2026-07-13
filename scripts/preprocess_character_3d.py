@@ -259,8 +259,13 @@ def preprocess_character(args: argparse.Namespace) -> None:
     write_image(mask_dir / f"{glyph_id}_height.png", height)
     write_image(mask_dir / f"{glyph_id}_debug.png", draw_debug(crop, skeleton, points))
 
-    data_path = output / "character_3d_data.json"
+    data_path = output / f"character_3d_data_{glyph_id}.json"
     data_path.write_text(json.dumps(points, ensure_ascii=False, indent=2), encoding="utf-8")
+    
+    # Also write to default path for compatibility
+    data_path_default = output / "character_3d_data.json"
+    data_path_default.write_text(json.dumps(points, ensure_ascii=False, indent=2), encoding="utf-8")
+
     meta = {
         "glyph_id": glyph_id,
         "label": label,
@@ -269,9 +274,13 @@ def preprocess_character(args: argparse.Namespace) -> None:
         "stroke_count": len({point["stroke_id"] for point in points}),
         "note": "Stroke order is a geometry-based estimate from an offline image, not the historical writing order.",
     }
-    (output / "character_3d_meta.json").write_text(
-        json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
+    
+    meta_path = output / f"character_3d_meta_{glyph_id}.json"
+    meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+    
+    meta_path_default = output / "character_3d_meta.json"
+    meta_path_default.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+
     print(f"Wrote {data_path}")
     print(f"Wrote {meta['point_count']} points across {meta['stroke_count']} estimated strokes")
 

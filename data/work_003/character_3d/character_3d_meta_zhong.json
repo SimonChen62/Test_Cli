@@ -1,8 +1,8 @@
 {
-  "glyph_id": "ji",
-  "label": "记",
+  "glyph_id": "zhong",
+  "label": "重",
   "source": "data\\work_003\\original.png",
-  "point_count": 84,
-  "stroke_count": 9,
+  "point_count": 79,
+  "stroke_count": 8,
   "note": "Stroke order is a geometry-based estimate from an offline image, not the historical writing order."
 }

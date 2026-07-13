@@ -1,0 +1,575 @@
+﻿Total pages: 25
+=== Page 1 ===
+下面给你一版更像 CHI-style research proposal 的版本。核心思路是：不要把它写成“一个书
+法可视化系统”，而要写成一个 关于人如何在交互式/空间化可视化支持下理解抽象文化审美概念
+的 HCI 研究。
+Proposal Title
+Seeing Qi and Void: CalliLens for Scaffolding
+Novice Viewers’ Aesthetic Understanding of
+Chinese Calligraphy
+中文可理解为：
+看见气与虚：CalliLens 如何支持初学者理解中国书法美学
+1. One-sentence Pitch
+CalliLens is an interactive and spatial visualization system that helps novice viewers
+move from simply seeing Chinese calligraphy as written characters to understanding
+how aesthetic concepts such as qi-flow and void-solid interplay emerge from visible
+brushwork, ink variation, spatial rhythm, and negative space.
+中文：
+CalliLens 是一个交互式与空间化可视化系统，帮助书法初学者从“看见字形”转向“理解笔墨、
+墨色、节奏、留白中如何生成气脉与虚实等书法美学概念”。
+这句话要放在 proposal 前面。它直接说明：
+你不是做书法识别、书法生成、书法临摹，而是做 审美理解的交互脚手架。
+
+=== Page 2 ===
+2. Motivation
+中国书法不仅是文字书写，也是一种高度凝练的视觉艺术。其审美价值并不只存在于字形是否端
+正、作品是否“好看” ，而是体现在笔画运动、墨色变化、粗细轻重、留白关系、行气章法和整体
+节奏之中。对于书法专家来说，“气脉”“ 虚实”“ 行气”“ 飞白”“ 章法”等概念可以从作品形式中被感
+知；但对于非专家观众而言，这些概念往往停留在抽象术语层面，很难从具体作品中指出其视觉
+依据。
+现有数字书法研究和系统多关注几个方向：书法临摹训练、VR 书写体验、书写过程捕捉、字体
+生成、风格识别或笔画分类。这些工作有助于“写得像” 或“识别得准” ，但较少关注一个更基础的
+欣赏问题： 普通观众如何学会看书法，如何从可见的笔墨形式进入抽象的中国美学理解。你原
+proposal 里已经明确指出，这个项目的核心不是做一个普通书法学习软件，而是把书法中的笔
+画、墨色、结构、章法、留白和节奏，转化为用户可理解、可感知、可交互探索的中国美学思
+想。
+因此，本研究提出 CalliLens：一个面向书法初学者的交互式与空间化可视化系统。它通过动态
+气脉流线、虚实切换、留白高亮、3D 笔势路径和反思任务，引导用户从“看见笔画” 进一步走向
+“理解笔画如何产生气、虚、节奏和美感” 。
+3. Research Gap
+这个项目最需要强调的 gap 不是“现有系统没有用 AR/VR/3D” ，而是：
+现有系统较少研究如何把抽象的书法美学概念转化为非专家用户可以观察、理解和表达的
+交互体验。
+可以具体分成三层。
+Gap 1：Skill learning 多，aesthetic understanding
+少
+很多书法系统关注如何临摹、如何写字、如何捕捉书写动作、如何生成某种风格字体。但本项目
+关注的是：
+
+=== Page 3 ===
+用户如何欣赏书法，而不是如何书写书法。
+这是从 skill learning 到 aesthetic understanding 的转向。
+Gap 2：形式识别多，形式—思想连接少
+现有技术可以提取笔画、骨架、粗细、墨色、字形结构等特征。但对于书法欣赏来说，真正重要
+的是：
+这些形式特征如何让用户理解“气脉”“ 虚实”“ 行气”“ 节奏”等审美概念。
+你的 proposal 中提出的核心框架非常重要：
+Brushwork Features → Perceptual Experience → Aesthetic Thought
+笔墨形式特征 → 感知经验 → 美学思想。
+这个框架应该成为 proposal 的理论主线。
+Gap 3：解释容易过度，文化审美需要保留开放性
+书法欣赏不是机械知识灌输。系统如果过度标注、过度解释，可能会遮蔽原作的审美体验。因此
+CHI reviewer 会关心：
+技术是否真的帮助理解？
+是否尊重原作？
+是否允许用户形成自己的感受？
+是否把文化概念说得太死？
+所以本项目不仅研究“如何可视化” ，也研究：
+如何在引导理解和保留审美开放性之间取得平衡。
+
+=== Page 4 ===
+4. Research Questions
+建议设置 4 个 RQ 。
+RQ1: Novice Challenges
+What difficulties do novice viewers encounter when interpreting formal features and
+aesthetic concepts in Chinese calligraphy?
+中文：
+书法初学者在理解书法的形式特征和审美概念时，会遇到哪些困难？
+这个 RQ 对应 formative study 。
+你需要了解初学者到底看不懂什么：是看不出笔势？看不出留白？还是无法把“气脉” 跟具体笔画
+联系起来？
+RQ2: Form-to-Aesthetic Scaffolding
+How can interactive visualization scaffold viewers’ transition from visible brushwork
+features to perceptual experiences and aesthetic concepts?
+中文：
+交互式可视化如何引导用户从可见的笔墨形式，进入感知经验和审美概念？
+这个 RQ 是论文核心。
+它直接承接：
+笔墨形式 → 感知经验 → 美学思想。
+
+=== Page 5 ===
+RQ3: Spatial and Immersive Representation
+How do spatial representations, such as 3D brushwork paths and AR overlays, affect
+users’ understanding, engagement, cognitive load, and aesthetic appreciation?
+中文：
+3D 笔势路径、AR 叠加等空间化表达方式，如何影响用户的理解、参与感、认知负荷和审美欣
+赏？
+这里可以让 3D 、AR 合理进入。
+注意：不要把 VR/AR/3D 当成卖点，而是把它们当成 支持用户理解笔墨运动和空间节奏的交互
+方式。
+RQ4: Design Tensions
+What design tensions emerge when visualizing culturally situated and interpretive
+aesthetic concepts in calligraphy?
+中文：
+当我们用可视化解释书法中具有文化性和解释性的审美概念时，会出现哪些设计张力？
+例如：
+解释 vs 留白；
+技术增强 vs 原作静观；
+专家解释 vs 用户个人感受；
+动态可视化 vs 作品本身的含蓄性；
+引导理解 vs 过度规定意义。
+这个 RQ 很适合 CHI ，因为 CHI 不只看系统效果，也重视 design implication 。
+
+=== Page 6 ===
+5. Core Conceptual Framework
+建议把原来的三层框架改成四层：
+Brushwork-to-Aesthetic Understanding
+Framework
+Formal Features → Perceptual Experience → Aesthetic Concepts → Reflective
+Articulation
+中文：
+形式特征 → 感知经验 → 审美概念 → 反思表达
+比原 proposal 多加最后一层 Reflective Articulation，这是为了更符合 CHI 。
+因为你不只是想让用户“看懂” ，还要让用户能够：
+说出来；
+指出证据；
+比较不同作品；
+形成自己的审美解释。
+框架示例
+层次 Qi / 气脉 Void / 虚实
+Formal
+Features
+笔画方向、连贯性、牵丝、行气、转折 留白、字距、行距、飞白、断连
+Perceptual
+Experience 流动、延续、节奏、生命感 呼吸、疏朗、张力、空间感
+Aesthetic
+Concepts
+气脉贯通、形断势连、气韵生动 虚实相生、计白当黑、空处有势
+
+=== Page 7 ===
+层次 Qi / 气脉 Void / 虚实
+Reflective
+Articulation
+用户能指出哪里“势连” 用户能解释空白如何参与结构
+这个表很重要。它能让 reviewer 看到你的理论贡献，而不只是系统功能。
+6. System Design: CalliLens
+6.1 Design Goals
+从 formative study 和专家访谈中，可以形成以下设计目标。
+DG1: Anchor abstract concepts in visible evidence
+系统必须把“气脉”“ 虚实”等抽象概念锚定到具体视觉证据上，例如笔画方向、粗细变化、留白区
+域、字距行距。
+DG2: Support layered viewing
+用户应能在原作、标注、动态流线、3D 解释之间自由切换，避免一开始就被系统解释压住。
+DG3: Preserve aesthetic openness
+所有可视化层都应可开关、可调透明度，并保留纯观看模式。
+DG4: Enable reflective articulation
+系统不只是展示解释，还要让用户回答、标注、比较和反思。
+DG5: Use spatial visualization only when it clarifies
+invisible processes
+3D、AR 、VR 不作为炫技，而是用于解释静态图像中难以感知的运动、节奏和生成过程。
+
+=== Page 8 ===
+7. Main Interaction Modules
+Module 1: Original Viewing Mode
+用户先看原作，不显示任何标注。
+系统先问：
+“你觉得这幅作品给你的整体感觉是什么？”
+“你认为哪里最有运动感？”
+“你觉得哪些地方最疏朗或最紧密？”
+这样做的意义是：
+先保留用户自己的直觉，再进入系统解释。
+Module 2: Qi Flow View
+这是最核心模块。
+用户打开 Qi Flow V iew 后，系统在作品上显示动态流线，表示：
+笔画方向；
+起笔、行笔、转折、收笔；
+上一笔与下一笔之间的势；
+字与字之间的行气；
+行与行之间的章法推进。
+你的 proposal 已经把 Qi Flow V iew 定义为最重要模块，用来把“气” 从抽象词转化为可观察的动
+态关系。
+系统解释示例：
+这两笔之间没有实际连线，但第一笔的收势向右下，下一笔从相近方向起势，因此形成“形
+
+=== Page 9 ===
+断而势连”。这里的气脉不是线条必须连在一起，而是运动趋势和精神气息的连续。
+用户任务：
+“请指出另一处你认为存在‘ 形断势连’ 的地方。”
+“请解释为什么这里的气脉没有断。”
+Module 3: Void-Solid View
+用户可以切换三种视图：
+View A: Solid
+只看墨迹。
+View B: Void
+弱化墨迹，突出留白、字距、行距、空隙。
+View C: Void-Solid Relation
+同时显示墨迹和空白，展示两者如何互相组织。
+你的 proposal 中也强调，虚实模式可以帮助用户发现空白不是没有内容，而是在组织笔画、调
+节节奏、形成呼吸。
+系统解释示例：
+这一处笔画较密，但右侧留出较大空白，使密处不显拥堵。虚处让实处得以呼吸，形成“虚
+实相生”。
+用户任务：
+“请找出一处你认为空白参与结构的地方。”
+“如果去掉这块留白，整幅作品的节奏会有什么变化？”
+
+=== Page 10 ===
+Module 4: 3D Brushwork Path View
+这个模块用于解释“笔画是运动过程的痕迹” 。
+系统将关键笔画转成 3D ribbon 或 tube ：
+3D 表达 对应书法意义
+路径方向 笔势
+管道粗细 提按、轻重
+透明度/ 材质 墨色浓淡
+断裂纹理 飞白
+时间轴播放 行笔过程
+弯曲程度 转折、顿挫
+局部停顿 节奏变化
+你的 proposal 已经提出可用 Three.js 把笔画路径变成 3D tube/ribbon ，用路径方向表示笔势，
+用半径表示粗细/ 压力，用透明度表示墨色浓淡，用断裂纹理表示飞白。
+但这里要注意表述：
+不要说“复原王羲之真实书写过程” 。
+要说：
+expert-informed interpretive reconstruction
+基于专家标注和图像特征的解释性重建。
+这样更严谨。
+Module 5: AR Overlay Mode
+AR 可以作为博物馆或课堂场景的扩展模块。
+
+=== Page 11 ===
+用户用 tablet 或手机对准书法作品，系统叠加：
+气脉流线；
+留白区域；
+局部解释卡片；
+3D 笔势动画；
+专家标注。
+AR 的研究意义不是“更酷” ，而是：
+它可以把解释直接贴合到作品本身，减少用户在文字说明和图像之间来回寻找对应关系的
+负担。
+研究问题可以是：
+AR overlay 是否比普通屏幕解释更能帮助用户把抽象解释和具体视觉证据对应起来？
+VR 不建议作为第一版核心。VR 可以作为 future work 或后续独立研究，因为它容易把项目带向
+沉浸式体验，而偏离“理解书法作品本身” 。
+Module 6: Reflection Panel
+这是最能体现 CHI 研究价值的模块。
+右侧面板显示：
+当前观察对象；
+形式特征；
+感知经验；
+对应美学概念；
+专家解释；
+用户反思任务；
+用户自己的笔记。
+用户完成任务后，系统给出专家解释作为对照。
+例如：
+
+=== Page 12 ===
+用户回答：
+“这两笔虽然没有连起来，但是方向是接上的。”
+系统反馈：
+“这可以被理解为‘ 形断势连’ 。你观察到的方向连续性，正是理解气脉的一种视觉依据。”
+你的 proposal 里已有“反思模式” ：用户用自己的话解释作品中的“气” ，再与专家解释对照。这个
+应该被提升为核心设计，而不是附属功能。
+8. Methodology
+Phase 1: Formative Study
+Participants
+建议招募：
+5–8 位书法专家或教师；
+12–16 位非专家用户。
+非专家用户可以是：
+没有系统学习书法的大学生；
+对中国文化感兴趣但缺乏书法训练的观众；
+博物馆普通观众；
+国际学生也可以作为一个子群体。
+Study Tasks
+让用户看 2–3 幅书法局部，完成：
+
+=== Page 13 ===
+描述整体感受；
+指出最有运动感的位置；
+指出最疏朗或最紧密的位置；
+解释他们理解的“气脉”“ 虚实”；
+比较一段普通文字解释和一段图像标注解释。
+Expert Interview Questions
+问专家：
+您如何向初学者解释“气脉” ？
+哪些笔画特征会让您觉得气脉贯通或中断？
+留白在书法中起什么作用？
+什么时候空白会形成“虚处有势” ？
+哪些地方适合可视化？
+哪些地方不应该被过度解释？
+如何判断用户是否真正理解，而不是背诵术语？
+Output
+形成：
+设计需求；
+专家标注标准；
+概念映射表；
+系统解释规则。
+Phase 2: Expert-informed Annotation
+选择：
+2–3 幅行书作品局部；
+
+=== Page 14 ===
+每幅 3–5 个关键区域。
+第一版建议只做行书，因为行书更容易展示气脉、连贯、断连、虚实、节奏。你的 proposal 中
+也建议 MVP 只做一个书体、2–3 幅作品局部、每幅 3 个关键区域。
+Annotation Items
+每个局部标注：
+关键笔画；
+气脉路径；
+留白区域；
+粗细变化；
+墨色变化；
+飞白区域；
+字距行距；
+形式描述；
+感知经验；
+美学解释。
+Example Annotation
+{
+"work_id": "calligraphy_001",
+"region_id": "r_01",
+"feature_type": "qi_flow",
+"path": [[120, 240], [150, 260], [190, 310]],
+"formal_feature": "The first stroke ends with a downward-right momentum, and the next stroke begins from a nearby directional continuation."
+"perceptual_experience": "The motion feels continuous despite the visible gap.",
+"aesthetic_concept": "qi_flow",
+"interpretation": "This helps explain xingduan-shilian: the form is broken, but the momentum continues."
+}
+
+=== Page 15 ===
+Phase 3: Prototype Development
+Technical Stack
+前端：
+React / Vue
+SVG / Canvas
+D3.js
+Three.js
+后端：
+Python
+FastAPI / Flask
+OpenCV
+scikit-image
+JSON annotation management
+图像分析：
+二值化；
+笔画分割；
+骨架提取；
+stroke width estimation；
+墨色灰度分析；
+飞白检测；
+negative space analysis；
+density map；
+layout analysis。
+注意：
+第一版不需要宣称全自动。建议写：
+CalliLens combines semi-automatic feature extraction with expert-informed annotation.
+这更可信，也更适合文化遗产类 CHI 研究。
+
+=== Page 16 ===
+9. Evaluation Design
+评价不能只用 SUS 。你的 proposal 已经指出，目标不是系统是否好用，而是用户是否更理解书
+法美学思想。
+建议采用 mixed-method evaluation 。
+9.1 Study Conditions
+设计三个条件：
+Condition Description Purpose
+C1: Text
+Explanation
+原作 + 普通文字说明 模拟传统教材/ 展签
+C2: Static
+Annotation 原作 + 静态圈注/ 箭头/ 说明 测试静态视觉标注是否足够
+C3: CalliLens
+动态气脉 + 虚实切换 + 3D 局部 +
+反思任务
+测试交互式可视化系统效果
+如果你想把 AR 放进 evaluation ，可以做第二个实验：
+Condition Description
+C1: Screen-based CalliLens
+C2: AR Overlay CalliLens
+但第一篇 proposal 不建议同时比较太多条件，否则设计复杂、样本量要求高。
+
+=== Page 17 ===
+9.2 Participants
+建议：
+24–36 位非专家用户。
+如果做 within-subjects design ，每位用户体验不同条件，但作品顺序和条件顺序需要
+counterbalancing。
+也可以采用 mixed design ：
+每位用户体验 3 种条件；
+每种条件对应不同但难度相近的作品局部；
+前后测评估概念理解；
+最后进行半结构访谈。
+9.3 Evaluation Tasks
+Task 1: Concept Explanation
+前测/ 后测：
+什么是气脉？
+什么是虚实？
+什么是形断势连？
+为什么空白也是书法结构的一部分？
+Task 2: Formal Feature Recognition
+给用户一幅新作品，让他们指出：
+哪里有气脉贯通；
+哪里有气脉中断；
+哪里体现虚实相生；
+
+=== Page 18 ===
+哪里留白重要；
+哪里有疏密、粗细、干湿对比。
+Task 3: Evidence-based Aesthetic Interpretation
+让用户回答：
+“请结合具体笔画解释这幅作品中的气脉。”
+“请结合留白区域解释这幅作品中的虚实关系。”
+重点看用户是否能够从形式证据出发，而不是只说“很好看”“ 很有力量”。
+Task 4: Transfer Task
+让用户看一幅没有系统解释的新作品，要求他们独立分析。
+如果用户能迁移所学方法，说明系统不是只教会一幅作品，而是帮助用户形成观看能力。
+Task 5: Reflection Interview
+访谈问题：
+系统让你注意到了哪些以前不会看的东西？
+动态气脉是否帮助你理解“气” ？
+虚实视图是否改变了你对空白的理解？
+3D 笔势是否帮助你理解书法是运动过程？
+有没有哪些可视化让你觉得打扰了原作？
+你是否觉得系统解释过度？
+你更喜欢先自由观看还是先看系统引导？
+
+=== Page 19 ===
+10. Measures
+Quantitative Measures
+Measure Method
+Concept understanding 前后测 + 专家评分
+Formal feature recognition 用户标注准确率
+Aesthetic articulation quality 用户文字解释专家评分
+Transfer ability 新作品分析评分
+Engagement Likert questionnaire
+Confidence “I know how to appreciate calligraphy better”
+Trust 对系统解释可信度评分
+Cognitive load NASA-TLX
+Usability SUS
+Qualitative Analysis
+对访谈和用户解释进行 thematic analysis 。
+可能的主题包括：
+用户从“看字形” 转向“看运动” ；
+用户第一次意识到空白是结构；
+动态流线帮助理解气，但也可能限制想象；
+3D 视图增强过程感，但可能离开原作；
+用户需要在自由观看和系统引导之间切换；
+专家解释需要用“可帮助理解” 而非“绝对如此” 的语言。
+
+=== Page 20 ===
+11. Expected Findings
+你可以在 proposal 中写预期发现，但不要写得像已经得到结果。可以写成 “W e expect to
+investigate”。
+可能发现包括：
+1. Novices need visual anchoring for abstract concepts.
+初学者不是不愿意理解“气脉” 和“虚实” ，而是缺少把概念连接到具体笔画和留白的视觉锚
+点。
+2. Dynamic visualization may be particularly effective for qi-flow.
+动态流线可能比静态箭头更适合解释笔势、连贯性和形断势连。
+3. Negative-space visualization may make void visible.
+留白高亮可以帮助用户理解空白不是缺失，而是组织节奏和呼吸的积极元素。
+4. 3D representation can support process awareness but may increase cognitive load.
+3D 笔势路径有助于理解书写过程，但如果太复杂，可能让用户离开原作本身。
+5. Aesthetic explanation requires ambiguity-aware design.
+系统解释不能像标准答案一样压倒用户感受，而要引导用户从证据出发形成自己的解释。
+这些 findings 很 CHI ，因为它们不只是“系统有效” ，而是关于设计文化审美系统的原则。
+12. Contributions
+建议写 4 个 contribution 。
+Contribution 1: Empirical Understanding
+揭示非专家用户如何理解、误解或无法感知书法中的气脉与虚实，以及书法专家如何把这些抽象
+概念连接到具体形式特征。
+
+=== Page 21 ===
+Contribution 2: Conceptual Framework
+提出 Brushwork-to-Aesthetic Understanding Framework：
+Formal Features → Perceptual Experience → Aesthetic Concepts → Reflective
+Articulation
+这是理论贡献。
+Contribution 3: Interactive System
+实现 CalliLens，一个支持气脉可视化、虚实切换、3D 笔势路径和反思任务的交互式书法美学
+探索系统。
+Contribution 4: Evaluation and Design
+Implications
+通过用户研究评估 CalliLens 对初学者形式识别、概念理解、审美表达和文化欣赏的影响，并总
+结面向文化审美可视化系统的设计启示。
+13. Innovation Points
+这个项目的创新点可以这样写：
+Innovation 1: From writing practice to aesthetic
+understanding
+不同于书法临摹、识别和生成系统，本项目关注非专家用户如何欣赏和理解书法。
+
+=== Page 22 ===
+Innovation 2: Making invisible aesthetics visible
+将“气脉” 和“虚实” 这种抽象、含蓄、难以言说的审美概念，转化为可观察、可交互、可反思的视
+觉体验。
+Innovation 3: Combining 2D fidelity with 3D
+process explanation
+系统既保留原作平面观看，又通过 3D 笔势路径解释笔画生成过程，避免单纯沉浸式技术脱离原
+作。
+Innovation 4: Reflection-centered interaction
+系统不只是告诉用户答案，而是让用户观察、判断、解释和对照专家解释，从而培养审美表达能
+力。
+Innovation 5: Ambiguity-aware cultural
+visualization
+系统承认书法美学具有开放性和解释性，因此可视化图层可开关、解释语言保持适度不确定，避
+免把文化审美机械化。
+14. Limitations
+proposal 中最好主动承认限制，这会让 reviewer 觉得你严谨。
+
+=== Page 23 ===
+可以写：
+第一版只关注行书和少量作品局部；
+专家标注可能带有解释偏向；
+3D 笔势是解释性重建，不是真实历史书写过程复原；
+用户研究以非专家初学者为主，不能代表专业书法学习者；
+系统目前主要支持视觉理解，未来可扩展到声音、触觉和无障碍体验；
+AR/VR 可能带来沉浸感，但也可能增加认知负荷，需要进一步研究。
+15. Revised Abstract
+可以直接用这个版本：
+Chinese calligraphy embodies aesthetic concepts such as qi-flow and void-solid interplay
+through subtle formal features, including brush movement, ink variation, rhythm, spatial
+layout, and negative space. However, novice viewers often lack the visual literacy needed
+to connect these visible features with abstract aesthetic ideas. We present CalliLens, an
+interactive and spatial visualization system that scaffolds novice viewers’ aesthetic
+understanding of Chinese calligraphy. Based on expert-informed annotations, CalliLens
+provides coordinated views including qi-flow animation, void-solid exploration, and 3D
+brushwork path visualization. Rather than teaching users how to write calligraphy, the
+system guides them to observe, interpret, and reflect on how aesthetic meaning emerges
+from calligraphic form. We propose a Brushwork-to-Aesthetic Understanding framework
+and evaluate CalliLens through a user study comparing traditional text explanation, static
+annotation, and interactive visualization. Our work contributes empirical insights into
+novice calligraphy appreciation, an interactive visualization prototype, and design
+implications for culturally situated visualization of intangible aesthetic knowledge.
+16. 最终 Proposal 结构
+正式 proposal 可以按这个结构写：
+
+=== Page 24 ===
+1. Title
+Seeing Qi and Void: CalliLens for Scaffolding Novice Viewers’ Aesthetic Understanding of
+Chinese Calligraphy
+2. Motivation and Background
+书法美学难以被初学者理解；现有系统多关注临摹、识别、生成；缺少审美理解导向的交互
+系统。
+3. Research Gap
+抽象美学概念缺少可交互的视觉脚手架。
+4. Research Questions
+RQ1 用户困难；RQ2 形式到思想；RQ3 3D/AR 空间化表达；RQ4 设计张力。
+5. Conceptual Framework
+Formal Features → Perceptual Experience → Aesthetic Concepts → Reflective
+Articulation。
+6. System Design
+CalliLens：Original V iew, Qi Flow View, Void-Solid View, 3D Brushwork View, AR Overlay,
+Reflection Panel。
+7. Methodology
+formative study + expert annotation + prototype + user evaluation。
+8. Evaluation
+Text vs Static Annotation vs CalliLens；测概念理解、形式识别、审美表达、迁移能力、认
+知负荷、信任与体验。
+9. Expected Contributions
+empirical understanding, framework, system, design implications。
+10. Limitations and Future Work
+行书局部、专家标注、3D 解释性重建、AR/VR 后续扩展。
+17. 最能打动 reviewer 的核心表达
+最后一定要强调这句话：
+The goal of CalliLens is not to automate the interpretation of calligraphy, but to
+scaffold the viewer’s own ability to see, reason, and articulate how aesthetic
+meaning emerges from brushwork.
+
+=== Page 25 ===
+中文：
+CalliLens 的目标不是自动替用户解释书法，而是为用户提供观看脚手架，帮助他们自己看见、
+推理并表达书法美感如何从笔墨形式中生成。
+这句话非常关键。
+它会让 reviewer 看到：你的项目不是技术替代审美，而是技术支持人的审美理解。
+

@@ -57,7 +57,7 @@ const modeMeta = {
   space: {
     layer: "original",
     filter: "all",
-    detail: ["3D字形模式", "把人工框选的单字墨迹提取出来，生成可旋转的三维浮雕；动态扫光只提示骨架路线，不代表真实笔顺。"],
+    detail: ["3D悬浮与气韵", "把人工框选的单字墨迹提取并悬浮于空间中，结合动态三维轨迹流动以感受书法的“势脉”与“虚实”。"],
   },
 };
 
@@ -407,30 +407,22 @@ async function loadGlyphs() {
   state.fullScrollRecords = [];
   state.selectedGlyphId = null;
   try {
+    // Always try to load curated glyphs from glyphs.json first
+    const response = await fetch(glyphDataUrl());
+    if (response.ok) {
+      const manifest = await response.json();
+      state.glyphs = manifest.glyphs || [];
+    }
+
+    // Load full scroll data separately for the panoramic 3D scroll view
     const fullScrollResponse = await fetch(fullScrollDataUrl());
     if (fullScrollResponse.ok) {
       const records = await fullScrollResponse.json();
       state.fullScrollRecords = Array.isArray(records) ? records : [];
-      state.glyphs = state.fullScrollRecords.map((record) => ({
-        id: record.id,
-        label: record.char || record.id,
-        description: `全文长卷候选：scroll_x=${record.scroll_x}, scroll_y=${record.scroll_y}, ROI=${record.width}x${record.height}`,
-        pixelBox: {
-          x: record.scroll_x,
-          y: record.scroll_y,
-          width: record.width,
-          height: record.height,
-        },
-      }));
-      state.selectedGlyphId = state.glyphs[0]?.id || null;
-      return;
     }
 
-    const response = await fetch(glyphDataUrl());
-    if (!response.ok) return;
-    const manifest = await response.json();
-    state.glyphs = manifest.glyphs || [];
-    state.selectedGlyphId = state.glyphs[0]?.id || null;
+    // Default: show full scroll if available, else first curated glyph
+    state.selectedGlyphId = state.fullScrollRecords.length ? null : (state.glyphs[0]?.id || null);
   } catch (error) {
     console.warn("Glyph manifest unavailable", error);
   }
@@ -450,7 +442,8 @@ function selectedAnnotation() {
 }
 
 function selectedGlyph() {
-  return state.glyphs.find((item) => item.id === state.selectedGlyphId) || state.glyphs[0] || null;
+  if (state.selectedGlyphId === null || state.selectedGlyphId === "all") return null;
+  return state.glyphs.find((item) => item.id === state.selectedGlyphId) || null;
 }
 
 function glyphForAnnotation(annotationId) {
@@ -575,54 +568,44 @@ function renderGlyphPanel() {
   els.glyphPanel.hidden = !active;
   if (!active) return;
 
-  if (state.fullScrollRecords.length) {
-    els.glyphPanel.hidden = true;
-    els.glyphList.replaceChildren();
-    return;
-  }
-
   const glyph = selectedGlyph();
   els.glyphList.replaceChildren();
-  if (!state.glyphs.length) {
-    els.glyphTitle.textContent = "没有可用字形";
-    els.glyphSummary.textContent = "请先运行 python scripts/extract_glyphs.py --work data/work_003 --auto-full-scroll-source data/source/Zmf_full.jpg 生成全文长卷数据。";
-    return;
-  }
 
+  els.glyphTitle.textContent = glyph ? `3D字形：${glyph.label}` : "三维悬浮字形与气韵";
+  const assetState = glyph ? state.glyphAssets[glyph.id] : null;
+  const statusText = assetState?.failed ? " 字形资源加载失败，请重新运行提取脚本。" : assetState?.loading ? " 正在载入 3D 字形资源。" : "";
+  els.glyphSummary.textContent = glyph
+    ? `${glyph.description || "从提取的墨迹与轨迹数据重建三维悬浮字形。"}${statusText}`
+    : `将字形从原作中提取并悬浮于空间中，结合动态三维轨迹以感受书法中的“气韵虚实”。`;
+
+  // 1. Add "Full Scroll" button if we have full scroll records
   if (state.fullScrollRecords.length) {
-    els.glyphTitle.textContent = `全文长卷 3D：${state.fullScrollRecords.length} 个候选`;
-    const statusText = state.space.fullScrollFailed
-      ? " 全文 3D 资源加载失败，请重新运行全卷提取脚本。"
-      : state.space.fullScrollLoading
-        ? " 正在合成全文长卷 3D 贴图。"
-        : " 已切换为全文平铺，不再是单字切换。";
-    els.glyphSummary.textContent = `从 full_scroll_3d_data.json 读取全卷坐标，把所有候选墨迹块合成为一张 3D 高度长卷。${statusText}`;
-    const note = document.createElement("p");
-    note.className = "fullScrollNote";
-    note.textContent = "画布会渲染全部候选；使用画布右下角的 + / - 放大或缩小查看局部。";
-    els.glyphList.append(note);
-    return;
-  } else {
-    els.glyphTitle.textContent = glyph ? `3D字形：${glyph.label}` : "选择一个字形";
-    const assetState = glyph ? state.glyphAssets[glyph.id] : null;
-    const statusText = assetState?.failed ? " 字形资源加载失败，请重新运行提取脚本。" : assetState?.loading ? " 正在载入 3D 字形资源。" : "";
-    els.glyphSummary.textContent = `${glyph?.description || "从人工框选区域中提取墨迹 mask、骨架和厚度图，再生成 3D 浮雕。"}${statusText}`;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "glyphButton";
+    button.classList.toggle("active", state.selectedGlyphId === null || state.selectedGlyphId === "all");
+    button.innerHTML = `<strong style="font-size:18px;line-height:1.2">整卷<br>长卷</strong><span>Full Scroll</span>`;
+    button.addEventListener("click", () => {
+      state.selectedGlyphId = null;
+      state.space.renderKey = "";
+      renderAll();
+    });
+    els.glyphList.append(button);
   }
 
-  state.glyphs.slice(0, state.fullScrollRecords.length ? 96 : state.glyphs.length).forEach((item) => {
+  // 2. Add individual curated glyph buttons (只显示手工标注的6个字)
+  state.glyphs.forEach((item) => {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "glyphButton";
     button.classList.toggle("active", item.id === state.selectedGlyphId);
-    button.innerHTML = `<strong>${item.label}</strong><span>${item.id}</span>`;
+    // Show the Chinese character prominently, with a short description
+    const shortDesc = item.description ? item.description.slice(0, 6) : item.id;
+    button.innerHTML = `<strong>${item.label}</strong><span>${shortDesc}</span>`;
+    button.title = item.description || item.label;
     button.addEventListener("click", () => selectGlyph(item.id));
     els.glyphList.append(button);
   });
-  if (state.fullScrollRecords.length > 96) {
-    const more = document.createElement("p");
-    more.textContent = `已载入 ${state.fullScrollRecords.length} 个候选，列表仅显示前 96 个；画布会渲染全部候选。`;
-    els.glyphList.append(more);
-  }
 }
 
 function selectGlyph(id) {
@@ -749,7 +732,12 @@ function setMode(mode) {
   if (nextMode === "space") {
     state.layer = "original";
     state.filter = "all";
-    if (!selectedGlyph()) state.selectedGlyphId = state.glyphs[0]?.id || null;
+    // Default to full scroll if available, else first glyph
+    if (state.fullScrollRecords.length) {
+      state.selectedGlyphId = null;
+    } else {
+      state.selectedGlyphId = state.glyphs[0]?.id || null;
+    }
   } else {
     const config = modeMeta[nextMode];
     state.layer = config.layer;
@@ -888,39 +876,45 @@ function initSpaceScene(THREE) {
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   const scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x0e0d0b, 0.012);
+  // Warm dark atmospheric background
+  scene.background = new THREE.Color(0x0d0c09);
+  scene.fog = new THREE.FogExp2(0x0d0c09, 0.018);
 
-  const camera = new THREE.PerspectiveCamera(32, width / height, 0.1, 320);
-  camera.position.set(0, -18, 44);
+  const camera = new THREE.PerspectiveCamera(28, width / height, 0.1, 320);
+  camera.position.set(0, -14, 38);
   camera.lookAt(0, 0, 0);
 
   const root = new THREE.Group();
   root.position.y = 0.08;
   scene.add(root);
 
-  scene.add(new THREE.HemisphereLight(0xfff2df, 0x2f2a22, 0.78));
-  scene.add(new THREE.AmbientLight(0xf7ead6, 0.58));
+  // Warm overhead hemisphere light (sky = warm ivory, ground = dark ink)
+  scene.add(new THREE.HemisphereLight(0xfff4e0, 0x1a1510, 1.1));
+  scene.add(new THREE.AmbientLight(0xf5e8cc, 0.35));
 
-  const key = new THREE.DirectionalLight(0xffdfad, 1.65);
-  key.position.set(-4, -6, 34);
+  // Key light from upper-left — creates dramatic side shadow on paper
+  const key = new THREE.DirectionalLight(0xffe5b0, 2.2);
+  key.position.set(-6, 8, 20);
   key.castShadow = true;
-  key.shadow.mapSize.set(2048, 2048);
+  key.shadow.mapSize.set(4096, 4096);
   key.shadow.camera.near = 0.5;
-  key.shadow.camera.far = 48;
-  key.shadow.camera.left = -8;
-  key.shadow.camera.right = 8;
-  key.shadow.camera.top = 8;
-  key.shadow.camera.bottom = -8;
-  key.shadow.bias = -0.00022;
-  key.shadow.normalBias = 0.035;
+  key.shadow.camera.far = 60;
+  key.shadow.camera.left = -12;
+  key.shadow.camera.right = 12;
+  key.shadow.camera.top = 12;
+  key.shadow.camera.bottom = -12;
+  key.shadow.bias = -0.00018;
+  key.shadow.normalBias = 0.03;
   scene.add(key);
 
-  const rim = new THREE.DirectionalLight(0xb6c3ba, 0.42);
-  rim.position.set(7, 5, 12);
+  // Cool blue-grey rim light from opposite side for depth
+  const rim = new THREE.DirectionalLight(0x9ab5c8, 0.55);
+  rim.position.set(8, -4, 10);
   scene.add(rim);
 
-  const fill = new THREE.PointLight(0xe9cfa9, 1.35, 26);
-  fill.position.set(0, 1.4, 7.2);
+  // Warm fill from below to softly illuminate ink surface
+  const fill = new THREE.PointLight(0xf0d8a0, 1.2, 32);
+  fill.position.set(0, -2, 8);
   scene.add(fill);
 
   const annotationsGroup = new THREE.Group();
@@ -1203,18 +1197,22 @@ function ensureGlyphAssets(glyph) {
   if (cached?.loading) return false;
 
   state.glyphAssets[glyph.id] = { loading: true, ready: false };
+  const jsonUrl = `../data/work_003/character_3d/character_3d_data_${glyph.id}.json`;
+  
   Promise.all([
     loadImageCanvas(glyphBase() + glyph.mask),
     loadImageCanvas(glyphBase() + glyph.height),
     glyph.skeleton ? loadImageCanvas(glyphBase() + glyph.skeleton) : Promise.resolve(null),
+    fetch(jsonUrl).then((r) => (r.ok ? r.json() : Promise.resolve(null))).catch(() => Promise.resolve(null)),
   ])
-    .then(([mask, height, skeleton]) => {
+    .then(([mask, height, skeleton, trajectory]) => {
       state.glyphAssets[glyph.id] = {
         loading: false,
         ready: true,
         mask,
         height,
         skeleton,
+        trajectory,
         texture: null,
       };
       state.space.renderKey = "";
@@ -1239,6 +1237,20 @@ function makeSmoothedGlyphCanvas(sourceCanvas, blurPx) {
   context.imageSmoothingQuality = "high";
   context.filter = `blur(${blurPx}px)`;
   context.drawImage(sourceCanvas, 0, 0);
+
+  // The mask PNG has BLACK ink on WHITE background.
+  // alphaMap in Three.js uses WHITE = opaque, BLACK = transparent.
+  // So we need to invert: ink becomes white (visible), background becomes black (cut out).
+  const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+  const data = imageData.data;
+  for (let i = 0; i < data.length; i += 4) {
+    // Invert R, G, B channels; keep alpha unchanged
+    data[i] = 255 - data[i];
+    data[i + 1] = 255 - data[i + 1];
+    data[i + 2] = 255 - data[i + 2];
+  }
+  context.putImageData(imageData, 0, 0);
+
   return { canvas, context, imageData: context.getImageData(0, 0, canvas.width, canvas.height) };
 }
 
@@ -1262,12 +1274,13 @@ function applyGlyphHeight(geometry, maskField, displacementScale, displacementBi
 
 function createGlyphMesh(THREE, glyph, assets) {
   const maskCanvas = assets.mask.canvas;
-  const maskField = makeSmoothedGlyphCanvas(maskCanvas, 1.25);
+  // Use mask as the alpha source (white = ink visible, black = transparent)
+  const maskField = makeSmoothedGlyphCanvas(maskCanvas, 1.6);
   const aspect = maskCanvas.width / Math.max(1, maskCanvas.height);
-  const planeHeight = 3.45;
-  const planeWidth = clamp(planeHeight * aspect, 1.8, 5.4);
-  const geometry = new THREE.PlaneGeometry(planeWidth, planeHeight, 512, 512);
-  applyGlyphHeight(geometry, maskField, 0.32, 0);
+  const planeHeight = 3.8;
+  const planeWidth = clamp(planeHeight * aspect, 1.8, 5.8);
+
+  const geometry = new THREE.PlaneGeometry(planeWidth, planeHeight, 1, 1);
 
   if (assets.texture) assets.texture.dispose?.();
   const texture = new THREE.CanvasTexture(maskField.canvas);
@@ -1282,61 +1295,131 @@ function createGlyphMesh(THREE, glyph, assets) {
   assets.texture = texture;
 
   const material = new THREE.MeshStandardMaterial({
-    color: 0x1a1a14,
+    // Inverted mask: white areas = ink strokes. Color tint makes them look like deep ink.
     map: texture,
+    alphaMap: texture,
     transparent: true,
-    alphaTest: 0.025,
-    roughness: 0.5,
-    metalness: 0.02,
-    bumpMap: texture,
-    bumpScale: 0.14,
-    side: THREE.FrontSide,
+    alphaTest: 0.05,
+    // Tint ink dark: the white map * dark color = rendered dark ink appearance
+    color: 0x1a1208,
+    roughness: 0.92,
+    metalness: 0.0,
+    side: THREE.DoubleSide,
   });
   const mesh = new THREE.Mesh(geometry, material);
+
+  // Ink floats above parchment
+  mesh.position.z = 0.42;
   mesh.castShadow = true;
-  mesh.receiveShadow = true;
+  mesh.receiveShadow = false;
   mesh.userData = { pulse: "glyphMesh", glyphId: glyph.id };
   return { mesh, planeWidth, planeHeight };
 }
 
 function createGlyphTrace(THREE, glyph, planeWidth, planeHeight) {
-  const points = glyph.tracePath?.length
-    ? glyph.tracePath
-    : [
-        { x: 50, y: 8 },
-        { x: 48, y: 34 },
-        { x: 55, y: 64 },
-        { x: 50, y: 92 },
-      ];
-  const vectors = points.map((point) => {
-    const x = (point.x / 100 - 0.5) * planeWidth;
-    const y = (0.5 - point.y / 100) * planeHeight;
-    return new THREE.Vector3(x, y, 0.95);
-  });
-  const curve = new THREE.CatmullRomCurve3(vectors, false, "catmullrom", 0.45);
+  const assets = state.glyphAssets[glyph.id];
+  const trajectory = assets?.trajectory;
+  const maskCanvas = assets?.mask?.canvas;
   const group = new THREE.Group();
-  group.add(
-    new THREE.Mesh(
-      new THREE.TubeGeometry(curve, 96, 0.018, 8, false),
-      new THREE.MeshBasicMaterial({
-        color: 0xf0d8a8,
+
+  if (trajectory && Array.isArray(trajectory) && trajectory.length >= 2 && maskCanvas) {
+    const strokeGroups = new Map();
+    trajectory.forEach((pt) => {
+      if (!strokeGroups.has(pt.stroke_id)) strokeGroups.set(pt.stroke_id, []);
+      strokeGroups.get(pt.stroke_id).push(pt);
+    });
+
+    const toVector3 = (pt) => {
+      // Map pixel coordinates to Plane coordinates
+      const x = (pt.x / maskCanvas.width - 0.5) * planeWidth;
+      const y = (0.5 - pt.y / maskCanvas.height) * planeHeight;
+      // Z depth based on thickness, hovering in front of the ink plane
+      const normalizedThick = pt.thickness / Math.max(1, maskCanvas.width);
+      const z = normalizedThick * 0.95 + 0.45; 
+      return new THREE.Vector3(x, y, z);
+    };
+
+    const sortedStrokes = [...strokeGroups.values()].sort((a, b) => (a[0]?.t || 0) - (b[0]?.t || 0));
+
+    // Draw individual thinned stroke tube geometry
+    sortedStrokes.forEach((strokePoints) => {
+      if (strokePoints.length < 2) return;
+      const vectors = strokePoints.map(toVector3);
+      const curve = new THREE.CatmullRomCurve3(vectors, false, "catmullrom", 0.45);
+      
+      const avgThick = strokePoints.reduce((sum, pt) => sum + pt.thickness, 0) / strokePoints.length;
+      const radius = Math.max(0.016, (avgThick / maskCanvas.width) * planeWidth * 0.08);
+
+      const tubeGeom = new THREE.TubeGeometry(curve, Math.max(16, vectors.length * 2), radius, 8, false);
+      const tubeMat = new THREE.MeshBasicMaterial({
+        color: 0xa33a2c, // Elegant red trace path to show dynamic qi flow
         transparent: true,
-        opacity: 0.32,
+        opacity: 0.38,
+        depthWrite: false,
+      });
+      group.add(new THREE.Mesh(tubeGeom, tubeMat));
+    });
+
+    // Add glowing sweep particle (bead) flowing along the thinned skeleton
+    const allVectors = [];
+    sortedStrokes.forEach((stroke) => {
+      allVectors.push(...stroke.map(toVector3));
+    });
+
+    if (allVectors.length >= 2) {
+      const beadCurve = new THREE.CatmullRomCurve3(allVectors, false, "catmullrom", 0.3);
+      const bead = new THREE.Mesh(
+        new THREE.SphereGeometry(0.08, 16, 12),
+        new THREE.MeshBasicMaterial({
+          color: 0xff4d33, // Bright red/orange glowing bead
+          transparent: true,
+          opacity: 0.95,
+          depthWrite: false,
+        })
+      );
+      bead.userData = { pulse: "glyphTrace", curve: beadCurve, speed: 0.18, phase: 0 };
+      group.add(bead);
+    }
+  } else {
+    // Fallback guide trace
+    const points = glyph.tracePath?.length
+      ? glyph.tracePath
+      : [
+          { x: 50, y: 8 },
+          { x: 48, y: 34 },
+          { x: 55, y: 64 },
+          { x: 50, y: 92 },
+        ];
+    const vectors = points.map((point) => {
+      const x = (point.x / 100 - 0.5) * planeWidth;
+      const y = (0.5 - point.y / 100) * planeHeight;
+      return new THREE.Vector3(x, y, 0.52);
+    });
+    const curve = new THREE.CatmullRomCurve3(vectors, false, "catmullrom", 0.45);
+    group.add(
+      new THREE.Mesh(
+        new THREE.TubeGeometry(curve, 96, 0.018, 8, false),
+        new THREE.MeshBasicMaterial({
+          color: 0xf0d8a8,
+          transparent: true,
+          opacity: 0.32,
+          depthWrite: false,
+        })
+      )
+    );
+    const bead = new THREE.Mesh(
+      new THREE.SphereGeometry(0.07, 18, 12),
+      new THREE.MeshBasicMaterial({
+        color: 0xfff1d6,
+        transparent: true,
+        opacity: 0.9,
         depthWrite: false,
       })
-    )
-  );
-  const bead = new THREE.Mesh(
-    new THREE.SphereGeometry(0.07, 18, 12),
-    new THREE.MeshBasicMaterial({
-      color: 0xfff1d6,
-      transparent: true,
-      opacity: 0.9,
-      depthWrite: false,
-    })
-  );
-  bead.userData = { pulse: "glyphTrace", curve, speed: 0.135, phase: 0 };
-  group.add(bead);
+    );
+    bead.userData = { pulse: "glyphTrace", curve, speed: 0.135, phase: 0 };
+    group.add(bead);
+  }
+
   return group;
 }
 
@@ -1462,31 +1545,60 @@ function ensureFullScrollAsset(THREE) {
   return false;
 }
 
-function createFullScrollMesh(THREE, asset) {
-  const planeHeight = 4.8;
-  const planeWidth = planeHeight * (asset.scrollSize.width / asset.scrollSize.height);
-  const geometry = new THREE.PlaneGeometry(planeWidth, planeHeight, 2048, 256);
-  const material = new THREE.MeshStandardMaterial({
+// ── Two-layer 3D: paper at z=0, ink floating above at z=0.38 ─────────────
+// When rotated, the gap between layers clearly shows depth.
+function createFullScrollScene(THREE, records, asset) {
+  const scrollSize = asset.scrollSize;
+  const planeHeight = 4.6;
+  const planeWidth = planeHeight * (scrollSize.width / scrollSize.height);
+  const group = new THREE.Group();
+
+  // ── Layer 1: Full scroll image on paper (z = 0) ───────────────────────
+  // This is the actual readable calligraphy on parchment background.
+  const paperGeo = new THREE.PlaneGeometry(planeWidth, planeHeight, 1, 1);
+  const paperMat = new THREE.MeshStandardMaterial({
     map: asset.colorTexture,
-    displacementMap: asset.heightTexture,
-    displacementScale: 0.26,
-    displacementBias: 0.006,
-    bumpMap: asset.heightTexture,
-    bumpScale: 0.018,
-    roughness: 0.82,
-    metalness: 0.01,
-    color: 0xffffff,
-    emissive: 0x241f17,
-    emissiveIntensity: 0.08,
+    roughness: 0.88,
+    metalness: 0.0,
     side: THREE.FrontSide,
   });
-  const mesh = new THREE.Mesh(geometry, material);
-  mesh.castShadow = false;
-  mesh.receiveShadow = false;
-  mesh.userData = { pulse: "fullScroll" };
+  const paperMesh = new THREE.Mesh(paperGeo, paperMat);
+  paperMesh.position.z = 0;
+  paperMesh.receiveShadow = true;
+  group.add(paperMesh);
+
+  // ── Layer 2: Ink-only floating layer (z = 0.38) ───────────────────────
+  // Same texture but with height map as alpha — only the dark ink regions show.
+  // This creates a clear "ink hovering above paper" effect visible on rotation.
+  const inkGeo = new THREE.PlaneGeometry(planeWidth, planeHeight, 1, 1);
+  const inkMat = new THREE.MeshStandardMaterial({
+    // No map — pure jet black ink color, not diluted by texture colors
+    alphaMap: asset.heightTexture,
+    transparent: true,
+    alphaTest: 0.08,
+    opacity: 0.82,
+    color: 0x000000,   // Pure black ink
+    roughness: 0.95,
+    metalness: 0.0,
+    side: THREE.FrontSide,
+  });
+  const inkMesh = new THREE.Mesh(inkGeo, inkMat);
+  inkMesh.position.z = 0.24;   // Float softly above the paper
+  inkMesh.castShadow = true;
+  inkMesh.receiveShadow = false;
+  inkMesh.userData = {
+    pulse: "floatChar",
+    baseZ: 0.24,
+    phase: 0,
+  };
+  group.add(inkMesh);
+
+  group.userData = { pulse: "fullScroll" };
   state.space.fullScrollPlane = { width: planeWidth, height: planeHeight };
-  return { mesh, planeWidth, planeHeight };
+  return { mesh: group, planeWidth, planeHeight };
 }
+
+
 
 function fullScrollViewSize() {
   const camera = state.space.camera;
@@ -1567,7 +1679,11 @@ function setFullScrollPanFromSlider(value) {
 function updateSpaceSceneContent() {
   if (!state.space.THREE || !state.data) return;
   const THREE = state.space.THREE;
-  if (state.fullScrollRecords.length) {
+  
+  const glyph = selectedGlyph();
+
+  // 1. Render Full Scroll if no specific glyph is selected
+  if (!glyph && state.fullScrollRecords.length) {
     const asset = state.space.fullScrollAsset;
     const key = `${activeWorkId}:${state.mode}:full-scroll:${state.fullScrollRecords.length}:${asset?.ready ? "ready" : "loading"}`;
     if (key === state.space.renderKey) return;
@@ -1577,26 +1693,17 @@ function updateSpaceSceneContent() {
     if (!ensureFullScrollAsset(THREE)) return;
 
     const stage = new THREE.Group();
-    const { mesh, planeWidth, planeHeight } = createFullScrollMesh(THREE, state.space.fullScrollAsset);
-    const plate = new THREE.Mesh(
-      new THREE.PlaneGeometry(planeWidth + 0.46, planeHeight + 0.46, 1, 1),
-      new THREE.MeshStandardMaterial({
-        color: 0xe8dcc8,
-        transparent: true,
-        opacity: 0.92,
-        roughness: 0.82,
-        metalness: 0,
-        side: THREE.DoubleSide,
-      })
-    );
-    plate.position.z = -0.12;
-    plate.receiveShadow = false;
-    stage.add(plate, mesh);
+    // Use the new per-character floating 3D scene
+    const { mesh: scrollGroup } = createFullScrollScene(THREE, state.fullScrollRecords, state.space.fullScrollAsset);
+    stage.add(scrollGroup);
     state.space.annotationsGroup.add(stage);
+    state.space.annotationsGroup.rotation.x = -0.12;
+    state.space.annotationsGroup.rotation.y = 0.18;
+    state.space.annotationsGroup.rotation.z = 0.015;
     return;
   }
 
-  const glyph = selectedGlyph();
+  // 2. Render Single Glyph detailed view if selected
   const asset = glyph ? state.glyphAssets[glyph.id] : null;
   const key = `${activeWorkId}:${state.mode}:glyph:${glyph?.id || "none"}:${asset?.ready ? "ready" : "loading"}`;
   if (key === state.space.renderKey) return;
@@ -1611,24 +1718,28 @@ function updateSpaceSceneContent() {
 
   const stage = new THREE.Group();
   const { mesh, planeWidth, planeHeight } = createGlyphMesh(THREE, glyph, assets);
+  
+  // Clean parchment background paper
   const plate = new THREE.Mesh(
-    new THREE.PlaneGeometry(planeWidth + 0.52, planeHeight + 0.52, 1, 1),
+    new THREE.PlaneGeometry(planeWidth + 0.6, planeHeight + 0.6, 1, 1),
     new THREE.MeshStandardMaterial({
-      color: 0xe8dcc8,
-      transparent: true,
-      opacity: 0.92,
-      roughness: 0.78,
+      color: 0xddd0b0,
+      roughness: 0.88,
       metalness: 0,
       side: THREE.DoubleSide,
     })
   );
-  plate.position.z = -0.18;
+  plate.position.z = 0;
   plate.receiveShadow = true;
-  stage.add(plate, mesh);
+  
+  // Dynamic qi-flow trace hovering above the ink plane
+  const trace = createGlyphTrace(THREE, glyph, planeWidth, planeHeight);
+  
+  stage.add(plate, mesh, trace);
   state.space.annotationsGroup.add(stage);
-  state.space.annotationsGroup.rotation.x = -0.1;
-  state.space.annotationsGroup.rotation.y = 0.16;
-  state.space.annotationsGroup.rotation.z = 0.025;
+  state.space.annotationsGroup.rotation.x = -0.08;
+  state.space.annotationsGroup.rotation.y = 0.14;
+  state.space.annotationsGroup.rotation.z = 0.018;
 }
 
 function animateSpaceScene() {
@@ -1674,6 +1785,19 @@ function animateSpaceScene() {
           const glow = 0.78 + Math.sin(t * Math.PI * 2) * 0.2;
           object.scale.setScalar(glow);
           if (object.material) object.material.opacity = 0.62 + glow * 0.28;
+        }
+        // Whole scroll group: gentle hovering float
+        if (pulse === "fullScroll") {
+          const floatY = Math.sin(time * 0.38) * 0.028;
+          const floatZ = Math.cos(time * 0.55) * 0.012;
+          object.position.y = floatY;
+          object.position.z = floatZ;
+        }
+        // Individual character: each floats at its own phase, like breathing
+        if (pulse === "floatChar") {
+          const ph = object.userData.phase || 0;
+          const bob = Math.sin(time * 0.72 + ph) * 0.018;
+          object.position.z = (object.userData.baseZ || 0.2) + bob;
         }
       });
     }

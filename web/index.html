@@ -130,7 +130,7 @@
           <button class="modeButton" data-mode="void" type="button">留白</button>
           <button class="modeButton" data-mode="relation" type="button">虚实</button>
           <button class="modeButton" data-mode="ink" type="button">笔墨</button>
-          <button class="modeButton" data-mode="space" type="button">全文3D</button>
+          <button class="modeButton" data-mode="space" type="button">3D悬浮</button>
         </div>
 
         <div class="canvasShell" aria-label="作品查看器，点击图像可生成局部证据探针">
@@ -148,7 +148,7 @@
             <button id="spaceZoomOut" type="button" title="缩小" aria-label="缩小">-</button>
             <button id="spaceZoomIn" type="button" title="放大" aria-label="放大">+</button>
           </div>
-          <div id="spaceLabel" class="spaceLabel" hidden>全文3D：候选墨迹块平铺为长卷浮雕</div>
+          <div id="spaceLabel" class="spaceLabel" hidden>3D空间悬浮层：点击下方卡片可切换整卷与单字特写</div>
           <div id="imageFallback" class="fallback" hidden>
             请确认当前作品文件夹中存在 <code>annotation.json</code> 和对应图像文件。
           </div>
@@ -156,9 +156,9 @@
 
         <section id="glyphPanel" class="glyphPanel" hidden aria-label="三维字形选择">
           <div>
-            <p class="eyebrow">OpenCV 字形提取</p>
+            <p class="eyebrow">3D 悬浮字形与气韵</p>
             <h2 id="glyphTitle">选择一个字形</h2>
-            <p id="glyphSummary">从人工框选区域中提取墨迹 mask、骨架和厚度图，再生成 3D 浮雕。</p>
+            <p id="glyphSummary">从人工框选区域中提取墨迹，悬浮于空间中，并呈现动态三维轨迹。</p>
           </div>
           <div id="glyphList" class="glyphList" aria-label="可查看的三维字形"></div>
         </section>

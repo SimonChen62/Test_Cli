@@ -1,0 +1,713 @@
+[
+  {
+    "stroke_id": 1,
+    "point_index": 0,
+    "x": 28,
+    "y": 0,
+    "z": -0.32,
+    "t": 0.0,
+    "thickness": 2.0
+  },
+  {
+    "stroke_id": 1,
+    "point_index": 1,
+    "x": 29,
+    "y": 0,
+    "z": -0.64,
+    "t": 0.012821,
+    "thickness": 4.0
+  },
+  {
+    "stroke_id": 1,
+    "point_index": 2,
+    "x": 30,
+    "y": 0,
+    "z": -0.96,
+    "t": 0.025641,
+    "thickness": 6.0
+  },
+  {
+    "stroke_id": 1,
+    "point_index": 3,
+    "x": 31,
+    "y": 0,
+    "z": -1.28,
+    "t": 0.038462,
+    "thickness": 8.0
+  },
+  {
+    "stroke_id": 1,
+    "point_index": 4,
+    "x": 32,
+    "y": 0,
+    "z": -1.6,
+    "t": 0.051282,
+    "thickness": 10.0
+  },
+  {
+    "stroke_id": 1,
+    "point_index": 5,
+    "x": 33,
+    "y": 0,
+    "z": -1.92,
+    "t": 0.064103,
+    "thickness": 12.0
+  },
+  {
+    "stroke_id": 1,
+    "point_index": 6,
+    "x": 34,
+    "y": 0,
+    "z": -2.24,
+    "t": 0.076923,
+    "thickness": 14.0
+  },
+  {
+    "stroke_id": 1,
+    "point_index": 7,
+    "x": 35,
+    "y": 0,
+    "z": -2.56,
+    "t": 0.089744,
+    "thickness": 16.0
+  },
+  {
+    "stroke_id": 1,
+    "point_index": 8,
+    "x": 36,
+    "y": 0,
+    "z": -2.88,
+    "t": 0.102564,
+    "thickness": 18.0
+  },
+  {
+    "stroke_id": 2,
+    "point_index": 0,
+    "x": 48,
+    "y": 0,
+    "z": -0.32,
+    "t": 0.115385,
+    "thickness": 2.0
+  },
+  {
+    "stroke_id": 2,
+    "point_index": 1,
+    "x": 47,
+    "y": 0,
+    "z": -0.64,
+    "t": 0.128205,
+    "thickness": 4.0
+  },
+  {
+    "stroke_id": 2,
+    "point_index": 2,
+    "x": 46,
+    "y": 0,
+    "z": -0.896,
+    "t": 0.141026,
+    "thickness": 5.6
+  },
+  {
+    "stroke_id": 2,
+    "point_index": 3,
+    "x": 45,
+    "y": 0,
+    "z": -1.151,
+    "t": 0.153846,
+    "thickness": 7.1938
+  },
+  {
+    "stroke_id": 2,
+    "point_index": 4,
+    "x": 44,
+    "y": 0,
+    "z": -1.406,
+    "t": 0.166667,
+    "thickness": 8.7876
+  },
+  {
+    "stroke_id": 2,
+    "point_index": 5,
+    "x": 43,
+    "y": 0,
+    "z": -1.726,
+    "t": 0.179487,
+    "thickness": 10.7876
+  },
+  {
+    "stroke_id": 2,
+    "point_index": 6,
+    "x": 42,
+    "y": 0,
+    "z": -2.046,
+    "t": 0.192308,
+    "thickness": 12.7876
+  },
+  {
+    "stroke_id": 2,
+    "point_index": 7,
+    "x": 41,
+    "y": 0,
+    "z": -2.366,
+    "t": 0.205128,
+    "thickness": 14.7876
+  },
+  {
+    "stroke_id": 2,
+    "point_index": 8,
+    "x": 40,
+    "y": 0,
+    "z": -2.686,
+    "t": 0.217949,
+    "thickness": 16.7876
+  },
+  {
+    "stroke_id": 2,
+    "point_index": 9,
+    "x": 39,
+    "y": 0,
+    "z": -3.006,
+    "t": 0.230769,
+    "thickness": 18.7876
+  },
+  {
+    "stroke_id": 2,
+    "point_index": 10,
+    "x": 38,
+    "y": 0,
+    "z": -3.326,
+    "t": 0.24359,
+    "thickness": 20.7876
+  },
+  {
+    "stroke_id": 3,
+    "point_index": 0,
+    "x": 37,
+    "y": 1,
+    "z": -3.2,
+    "t": 0.25641,
+    "thickness": 20.0
+  },
+  {
+    "stroke_id": 3,
+    "point_index": 1,
+    "x": 37,
+    "y": 2,
+    "z": -3.263,
+    "t": 0.269231,
+    "thickness": 20.3938
+  },
+  {
+    "stroke_id": 3,
+    "point_index": 2,
+    "x": 37,
+    "y": 3,
+    "z": -3.326,
+    "t": 0.282051,
+    "thickness": 20.7876
+  },
+  {
+    "stroke_id": 3,
+    "point_index": 3,
+    "x": 37,
+    "y": 4,
+    "z": -3.389,
+    "t": 0.294872,
+    "thickness": 21.1814
+  },
+  {
+    "stroke_id": 3,
+    "point_index": 4,
+    "x": 37,
+    "y": 5,
+    "z": -3.452,
+    "t": 0.307692,
+    "thickness": 21.5752
+  },
+  {
+    "stroke_id": 3,
+    "point_index": 5,
+    "x": 37,
+    "y": 6,
+    "z": -3.515,
+    "t": 0.320513,
+    "thickness": 21.969
+  },
+  {
+    "stroke_id": 3,
+    "point_index": 6,
+    "x": 37,
+    "y": 7,
+    "z": -3.708,
+    "t": 0.333333,
+    "thickness": 23.1752
+  },
+  {
+    "stroke_id": 3,
+    "point_index": 7,
+    "x": 36,
+    "y": 8,
+    "z": -3.646,
+    "t": 0.346154,
+    "thickness": 22.7876
+  },
+  {
+    "stroke_id": 3,
+    "point_index": 8,
+    "x": 36,
+    "y": 9,
+    "z": -3.772,
+    "t": 0.358974,
+    "thickness": 23.5752
+  },
+  {
+    "stroke_id": 3,
+    "point_index": 9,
+    "x": 35,
+    "y": 10,
+    "z": -3.389,
+    "t": 0.371795,
+    "thickness": 21.1814
+  },
+  {
+    "stroke_id": 4,
+    "point_index": 0,
+    "x": 21,
+    "y": 6,
+    "z": -0.703,
+    "t": 0.384615,
+    "thickness": 4.3938
+  },
+  {
+    "stroke_id": 4,
+    "point_index": 1,
+    "x": 22,
+    "y": 6,
+    "z": -0.896,
+    "t": 0.397436,
+    "thickness": 5.6
+  },
+  {
+    "stroke_id": 4,
+    "point_index": 2,
+    "x": 23,
+    "y": 6,
+    "z": -0.96,
+    "t": 0.410256,
+    "thickness": 6.0
+  },
+  {
+    "stroke_id": 4,
+    "point_index": 3,
+    "x": 24,
+    "y": 6,
+    "z": -0.96,
+    "t": 0.423077,
+    "thickness": 6.0
+  },
+  {
+    "stroke_id": 4,
+    "point_index": 4,
+    "x": 25,
+    "y": 6,
+    "z": -1.023,
+    "t": 0.435897,
+    "thickness": 6.3938
+  },
+  {
+    "stroke_id": 4,
+    "point_index": 5,
+    "x": 26,
+    "y": 6,
+    "z": -1.151,
+    "t": 0.448718,
+    "thickness": 7.1938
+  },
+  {
+    "stroke_id": 4,
+    "point_index": 6,
+    "x": 27,
+    "y": 6,
+    "z": -1.344,
+    "t": 0.461538,
+    "thickness": 8.4
+  },
+  {
+    "stroke_id": 4,
+    "point_index": 7,
+    "x": 28,
+    "y": 6,
+    "z": -1.599,
+    "t": 0.474359,
+    "thickness": 9.9938
+  },
+  {
+    "stroke_id": 4,
+    "point_index": 8,
+    "x": 29,
+    "y": 7,
+    "z": -1.726,
+    "t": 0.487179,
+    "thickness": 10.7876
+  },
+  {
+    "stroke_id": 4,
+    "point_index": 9,
+    "x": 30,
+    "y": 7,
+    "z": -2.046,
+    "t": 0.5,
+    "thickness": 12.7876
+  },
+  {
+    "stroke_id": 4,
+    "point_index": 10,
+    "x": 31,
+    "y": 7,
+    "z": -2.302,
+    "t": 0.512821,
+    "thickness": 14.3876
+  },
+  {
+    "stroke_id": 4,
+    "point_index": 11,
+    "x": 32,
+    "y": 8,
+    "z": -2.623,
+    "t": 0.525641,
+    "thickness": 16.3938
+  },
+  {
+    "stroke_id": 4,
+    "point_index": 12,
+    "x": 33,
+    "y": 9,
+    "z": -2.812,
+    "t": 0.538462,
+    "thickness": 17.5752
+  },
+  {
+    "stroke_id": 4,
+    "point_index": 13,
+    "x": 34,
+    "y": 10,
+    "z": -3.069,
+    "t": 0.551282,
+    "thickness": 19.1814
+  },
+  {
+    "stroke_id": 5,
+    "point_index": 0,
+    "x": 35,
+    "y": 11,
+    "z": -3.326,
+    "t": 0.564103,
+    "thickness": 20.7876
+  },
+  {
+    "stroke_id": 5,
+    "point_index": 1,
+    "x": 36,
+    "y": 12,
+    "z": -3.453,
+    "t": 0.576923,
+    "thickness": 21.5814
+  },
+  {
+    "stroke_id": 5,
+    "point_index": 2,
+    "x": 36,
+    "y": 13,
+    "z": -3.26,
+    "t": 0.589744,
+    "thickness": 20.3752
+  },
+  {
+    "stroke_id": 5,
+    "point_index": 3,
+    "x": 37,
+    "y": 14,
+    "z": -2.812,
+    "t": 0.602564,
+    "thickness": 17.5752
+  },
+  {
+    "stroke_id": 5,
+    "point_index": 4,
+    "x": 37,
+    "y": 15,
+    "z": -2.749,
+    "t": 0.615385,
+    "thickness": 17.1814
+  },
+  {
+    "stroke_id": 5,
+    "point_index": 5,
+    "x": 37,
+    "y": 16,
+    "z": -2.686,
+    "t": 0.628205,
+    "thickness": 16.7876
+  },
+  {
+    "stroke_id": 5,
+    "point_index": 6,
+    "x": 37,
+    "y": 17,
+    "z": -2.623,
+    "t": 0.641026,
+    "thickness": 16.3938
+  },
+  {
+    "stroke_id": 5,
+    "point_index": 7,
+    "x": 37,
+    "y": 18,
+    "z": -2.56,
+    "t": 0.653846,
+    "thickness": 16.0
+  },
+  {
+    "stroke_id": 5,
+    "point_index": 8,
+    "x": 37,
+    "y": 19,
+    "z": -2.56,
+    "t": 0.666667,
+    "thickness": 16.0
+  },
+  {
+    "stroke_id": 5,
+    "point_index": 9,
+    "x": 37,
+    "y": 20,
+    "z": -2.56,
+    "t": 0.679487,
+    "thickness": 16.0
+  },
+  {
+    "stroke_id": 5,
+    "point_index": 10,
+    "x": 37,
+    "y": 21,
+    "z": -2.56,
+    "t": 0.692308,
+    "thickness": 16.0
+  },
+  {
+    "stroke_id": 5,
+    "point_index": 11,
+    "x": 37,
+    "y": 22,
+    "z": -2.56,
+    "t": 0.705128,
+    "thickness": 16.0
+  },
+  {
+    "stroke_id": 5,
+    "point_index": 12,
+    "x": 37,
+    "y": 23,
+    "z": -2.56,
+    "t": 0.717949,
+    "thickness": 16.0
+  },
+  {
+    "stroke_id": 6,
+    "point_index": 0,
+    "x": 49,
+    "y": 30,
+    "z": -0.96,
+    "t": 0.730769,
+    "thickness": 6.0
+  },
+  {
+    "stroke_id": 6,
+    "point_index": 1,
+    "x": 48,
+    "y": 29,
+    "z": -0.96,
+    "t": 0.74359,
+    "thickness": 6.0
+  },
+  {
+    "stroke_id": 6,
+    "point_index": 2,
+    "x": 47,
+    "y": 29,
+    "z": -0.96,
+    "t": 0.75641,
+    "thickness": 6.0
+  },
+  {
+    "stroke_id": 6,
+    "point_index": 3,
+    "x": 46,
+    "y": 29,
+    "z": -0.96,
+    "t": 0.769231,
+    "thickness": 6.0
+  },
+  {
+    "stroke_id": 6,
+    "point_index": 4,
+    "x": 45,
+    "y": 29,
+    "z": -0.96,
+    "t": 0.782051,
+    "thickness": 6.0
+  },
+  {
+    "stroke_id": 6,
+    "point_index": 5,
+    "x": 44,
+    "y": 29,
+    "z": -0.96,
+    "t": 0.794872,
+    "thickness": 6.0
+  },
+  {
+    "stroke_id": 6,
+    "point_index": 6,
+    "x": 43,
+    "y": 29,
+    "z": -0.96,
+    "t": 0.807692,
+    "thickness": 6.0
+  },
+  {
+    "stroke_id": 6,
+    "point_index": 7,
+    "x": 42,
+    "y": 28,
+    "z": -1.28,
+    "t": 0.820513,
+    "thickness": 8.0
+  },
+  {
+    "stroke_id": 6,
+    "point_index": 8,
+    "x": 41,
+    "y": 27,
+    "z": -1.6,
+    "t": 0.833333,
+    "thickness": 10.0
+  },
+  {
+    "stroke_id": 6,
+    "point_index": 9,
+    "x": 40,
+    "y": 26,
+    "z": -1.92,
+    "t": 0.846154,
+    "thickness": 12.0
+  },
+  {
+    "stroke_id": 6,
+    "point_index": 10,
+    "x": 39,
+    "y": 26,
+    "z": -1.92,
+    "t": 0.858974,
+    "thickness": 12.0
+  },
+  {
+    "stroke_id": 6,
+    "point_index": 11,
+    "x": 38,
+    "y": 25,
+    "z": -2.303,
+    "t": 0.871795,
+    "thickness": 14.3938
+  },
+  {
+    "stroke_id": 6,
+    "point_index": 12,
+    "x": 37,
+    "y": 24,
+    "z": -2.56,
+    "t": 0.884615,
+    "thickness": 16.0
+  },
+  {
+    "stroke_id": 7,
+    "point_index": 0,
+    "x": 26,
+    "y": 33,
+    "z": -0.64,
+    "t": 0.897436,
+    "thickness": 4.0
+  },
+  {
+    "stroke_id": 7,
+    "point_index": 1,
+    "x": 27,
+    "y": 33,
+    "z": -0.703,
+    "t": 0.910256,
+    "thickness": 4.3938
+  },
+  {
+    "stroke_id": 7,
+    "point_index": 2,
+    "x": 28,
+    "y": 33,
+    "z": -0.64,
+    "t": 0.923077,
+    "thickness": 4.0
+  },
+  {
+    "stroke_id": 7,
+    "point_index": 3,
+    "x": 29,
+    "y": 32,
+    "z": -0.896,
+    "t": 0.935897,
+    "thickness": 5.6
+  },
+  {
+    "stroke_id": 8,
+    "point_index": 0,
+    "x": 36,
+    "y": 44,
+    "z": -0.896,
+    "t": 0.948718,
+    "thickness": 5.6
+  },
+  {
+    "stroke_id": 8,
+    "point_index": 1,
+    "x": 37,
+    "y": 45,
+    "z": -0.96,
+    "t": 0.961538,
+    "thickness": 6.0
+  },
+  {
+    "stroke_id": 8,
+    "point_index": 2,
+    "x": 37,
+    "y": 46,
+    "z": -0.96,
+    "t": 0.974359,
+    "thickness": 6.0
+  },
+  {
+    "stroke_id": 8,
+    "point_index": 3,
+    "x": 37,
+    "y": 47,
+    "z": -0.96,
+    "t": 0.987179,
+    "thickness": 6.0
+  },
+  {
+    "stroke_id": 8,
+    "point_index": 4,
+    "x": 37,
+    "y": 48,
+    "z": -0.96,
+    "t": 1.0,
+    "thickness": 6.0
+  }
+]
