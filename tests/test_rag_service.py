@@ -13,10 +13,16 @@ class RagServiceTest(unittest.TestCase):
         self.assertEqual(result["sources"][0]["title"], "赵孟頫是谁")
 
     def test_filters_to_default_work_and_global_chunks(self):
-        chunks = rag_service.search("光福重建塔记是什么？", "work_003")
+        chunks = rag_service.search("《光福重建塔记》是什么？", "work_003")
 
         self.assertTrue(chunks)
         self.assertTrue(all(chunk.work_id in {"work_003", "global"} for chunk in chunks))
+
+    def test_unrelated_question_does_not_fallback_to_default_work(self):
+        result = rag_service.answer("完全不存在的问题 xyz", "work_003")
+
+        self.assertIn("当前资料不足", result["answer"])
+        self.assertEqual(result["sources"], [])
 
 
 class WorkServiceTest(unittest.TestCase):

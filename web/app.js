@@ -57,7 +57,7 @@ const modeMeta = {
   space: {
     layer: "original",
     filter: "all",
-    detail: ["3D悬浮与气韵", "把人工框选的单字墨迹提取并悬浮于空间中，结合动态三维轨迹流动以感受书法的“势脉”与“虚实”。"],
+    detail: ["整卷 3D 悬浮墨迹", "把 OpenCV 提取的墨迹深浅转为 Three.js 高度图：重墨位置更高，飞白和细线更低；这不是笔顺恢复，也不是书法水平评分。"],
   },
 };
 
@@ -568,44 +568,31 @@ function renderGlyphPanel() {
   els.glyphPanel.hidden = !active;
   if (!active) return;
 
-  const glyph = selectedGlyph();
+  state.selectedGlyphId = state.fullScrollRecords.length ? null : state.selectedGlyphId;
   els.glyphList.replaceChildren();
 
-  els.glyphTitle.textContent = glyph ? `3D字形：${glyph.label}` : "三维悬浮字形与气韵";
-  const assetState = glyph ? state.glyphAssets[glyph.id] : null;
-  const statusText = assetState?.failed ? " 字形资源加载失败，请重新运行提取脚本。" : assetState?.loading ? " 正在载入 3D 字形资源。" : "";
-  els.glyphSummary.textContent = glyph
-    ? `${glyph.description || "从提取的墨迹与轨迹数据重建三维悬浮字形。"}${statusText}`
-    : `将字形从原作中提取并悬浮于空间中，结合动态三维轨迹以感受书法中的“气韵虚实”。`;
-
-  // 1. Add "Full Scroll" button if we have full scroll records
-  if (state.fullScrollRecords.length) {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "glyphButton";
-    button.classList.toggle("active", state.selectedGlyphId === null || state.selectedGlyphId === "all");
-    button.innerHTML = `<strong style="font-size:18px;line-height:1.2">整卷<br>长卷</strong><span>Full Scroll</span>`;
-    button.addEventListener("click", () => {
-      state.selectedGlyphId = null;
-      state.space.renderKey = "";
-      renderAll();
-    });
-    els.glyphList.append(button);
+  els.glyphTitle.textContent = "整卷 3D 静态观察";
+  if (state.space.fullScrollFailed) {
+    els.glyphSummary.textContent = "整卷 3D 数据加载失败，请检查 full_scroll_3d_data.json 和 full_scroll_glyphs 目录。";
+  } else if (state.space.fullScrollLoading) {
+    els.glyphSummary.textContent = "正在载入整卷墨迹高度图，请稍等。";
+  } else {
+    els.glyphSummary.textContent =
+      "当前展示整卷悬浮墨迹。系统只把可见墨迹深浅转换为空间高度，不恢复真实笔顺，也不自动评价书法水平。";
   }
 
-  // 2. Add individual curated glyph buttons (只显示手工标注的6个字)
-  state.glyphs.forEach((item) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "glyphButton";
-    button.classList.toggle("active", item.id === state.selectedGlyphId);
-    // Show the Chinese character prominently, with a short description
-    const shortDesc = item.description ? item.description.slice(0, 6) : item.id;
-    button.innerHTML = `<strong>${item.label}</strong><span>${shortDesc}</span>`;
-    button.title = item.description || item.label;
-    button.addEventListener("click", () => selectGlyph(item.id));
-    els.glyphList.append(button);
-  });
+  if (state.fullScrollRecords.length) {
+    const note = document.createElement("div");
+    note.className = "fullScrollNote";
+    note.innerHTML = `<strong>已读取 ${state.fullScrollRecords.length} 个墨迹区域</strong><span>放大、水平滑动并拖拽旋转，可观察重墨、细线和飞白的高度差。</span>`;
+    els.glyphList.append(note);
+    return;
+  }
+
+  const note = document.createElement("div");
+  note.className = "fullScrollNote";
+  note.textContent = "当前作品尚未生成整卷 3D 数据，可重新运行图像处理流程生成 full_scroll_3d_data.json。";
+  els.glyphList.append(note);
 }
 
 function selectGlyph(id) {
@@ -720,8 +707,6 @@ function selectItem(id) {
   state.selectedId = id;
   const item = selectedAnnotation();
   if (item) state.layer = typeMeta[item.type]?.recommendedLayer || "original";
-  const glyph = item ? glyphForAnnotation(item.id) : null;
-  if (glyph) state.selectedGlyphId = glyph.id;
   renderAll();
 }
 
@@ -888,13 +873,12 @@ function initSpaceScene(THREE) {
   root.position.y = 0.08;
   scene.add(root);
 
-  // Warm overhead hemisphere light (sky = warm ivory, ground = dark ink)
-  scene.add(new THREE.HemisphereLight(0xfff4e0, 0x1a1510, 1.1));
-  scene.add(new THREE.AmbientLight(0xf5e8cc, 0.35));
+  // Soft front-friendly lighting keeps the scroll readable while side views still show depth.
+  scene.add(new THREE.HemisphereLight(0xfff4e0, 0x1a1510, 1.25));
+  scene.add(new THREE.AmbientLight(0xf5e8cc, 0.58));
 
-  // Key light from upper-left — creates dramatic side shadow on paper
-  const key = new THREE.DirectionalLight(0xffe5b0, 2.2);
-  key.position.set(-6, 8, 20);
+  const key = new THREE.DirectionalLight(0xffe5b0, 1.35);
+  key.position.set(-4, 5, 18);
   key.castShadow = true;
   key.shadow.mapSize.set(4096, 4096);
   key.shadow.camera.near = 0.5;
@@ -908,12 +892,12 @@ function initSpaceScene(THREE) {
   scene.add(key);
 
   // Cool blue-grey rim light from opposite side for depth
-  const rim = new THREE.DirectionalLight(0x9ab5c8, 0.55);
+  const rim = new THREE.DirectionalLight(0x9ab5c8, 0.72);
   rim.position.set(8, -4, 10);
   scene.add(rim);
 
   // Warm fill from below to softly illuminate ink surface
-  const fill = new THREE.PointLight(0xf0d8a0, 1.2, 32);
+  const fill = new THREE.PointLight(0xf0d8a0, 1.35, 32);
   fill.position.set(0, -2, 8);
   scene.add(fill);
 
@@ -1545,16 +1529,14 @@ function ensureFullScrollAsset(THREE) {
   return false;
 }
 
-// ── Two-layer 3D: paper at z=0, ink floating above at z=0.38 ─────────────
-// When rotated, the gap between layers clearly shows depth.
+// Two-layer 3D: paper stays flat, ink floats and uses the height map for Z depth.
 function createFullScrollScene(THREE, records, asset) {
   const scrollSize = asset.scrollSize;
   const planeHeight = 4.6;
   const planeWidth = planeHeight * (scrollSize.width / scrollSize.height);
   const group = new THREE.Group();
 
-  // ── Layer 1: Full scroll image on paper (z = 0) ───────────────────────
-  // This is the actual readable calligraphy on parchment background.
+  // Layer 1: readable scroll image on paper.
   const paperGeo = new THREE.PlaneGeometry(planeWidth, planeHeight, 1, 1);
   const paperMat = new THREE.MeshStandardMaterial({
     map: asset.colorTexture,
@@ -1567,28 +1549,31 @@ function createFullScrollScene(THREE, records, asset) {
   paperMesh.receiveShadow = true;
   group.add(paperMesh);
 
-  // ── Layer 2: Ink-only floating layer (z = 0.38) ───────────────────────
-  // Same texture but with height map as alpha — only the dark ink regions show.
-  // This creates a clear "ink hovering above paper" effect visible on rotation.
-  const inkGeo = new THREE.PlaneGeometry(planeWidth, planeHeight, 1, 1);
+  // Layer 2: ink-only floating layer. The height texture displaces vertices:
+  // heavy ink rises more, while flying white and thin strokes remain shallow.
+  const inkGeo = new THREE.PlaneGeometry(planeWidth, planeHeight, 720, 88);
   const inkMat = new THREE.MeshStandardMaterial({
-    // No map — pure jet black ink color, not diluted by texture colors
     alphaMap: asset.heightTexture,
+    displacementMap: asset.heightTexture,
+    displacementScale: 0.18,
+    displacementBias: 0.018,
+    bumpMap: asset.heightTexture,
+    bumpScale: 0.045,
     transparent: true,
-    alphaTest: 0.08,
-    opacity: 0.82,
-    color: 0x000000,   // Pure black ink
-    roughness: 0.95,
+    alphaTest: 0.055,
+    opacity: 0.86,
+    color: 0x050403,
+    roughness: 0.92,
     metalness: 0.0,
     side: THREE.FrontSide,
   });
   const inkMesh = new THREE.Mesh(inkGeo, inkMat);
-  inkMesh.position.z = 0.24;   // Float softly above the paper
-  inkMesh.castShadow = true;
+  inkMesh.position.z = 0.16;
+  inkMesh.castShadow = false;
   inkMesh.receiveShadow = false;
   inkMesh.userData = {
     pulse: "floatChar",
-    baseZ: 0.24,
+    baseZ: 0.16,
     phase: 0,
   };
   group.add(inkMesh);

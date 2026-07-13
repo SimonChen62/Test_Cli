@@ -1518,11 +1518,24 @@ button:disabled {
 }
 
 .fullScrollNote {
-  grid-column: 1 / -1;
+  flex: 1 1 100%;
   padding: 12px 14px;
   border: 1px solid rgba(232, 218, 191, 0.16);
   border-radius: 7px;
   background: rgba(255, 249, 236, 0.06);
+  color: rgba(255, 248, 236, 0.82);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.fullScrollNote strong,
+.fullScrollNote span {
+  display: block;
+}
+
+.fullScrollNote span {
+  margin-top: 3px;
+  color: rgba(255, 248, 236, 0.62);
 }
 
 .spaceZoomControls {

@@ -148,19 +148,19 @@
             <button id="spaceZoomOut" type="button" title="缩小" aria-label="缩小">-</button>
             <button id="spaceZoomIn" type="button" title="放大" aria-label="放大">+</button>
           </div>
-          <div id="spaceLabel" class="spaceLabel" hidden>3D空间悬浮层：点击下方卡片可切换整卷与单字特写</div>
+          <div id="spaceLabel" class="spaceLabel" hidden>整卷悬浮墨迹：拖拽旋转视角，用滑条水平移动，放大后查看局部厚薄。</div>
           <div id="imageFallback" class="fallback" hidden>
             请确认当前作品文件夹中存在 <code>annotation.json</code> 和对应图像文件。
           </div>
         </div>
 
-        <section id="glyphPanel" class="glyphPanel" hidden aria-label="三维字形选择">
+        <section id="glyphPanel" class="glyphPanel" hidden aria-label="整卷悬浮墨迹说明">
           <div>
-            <p class="eyebrow">3D 悬浮字形与气韵</p>
-            <h2 id="glyphTitle">选择一个字形</h2>
-            <p id="glyphSummary">从人工框选区域中提取墨迹，悬浮于空间中，并呈现动态三维轨迹。</p>
+            <p class="eyebrow">3D 悬浮墨迹</p>
+            <h2 id="glyphTitle">整卷 3D 静态观察</h2>
+            <p id="glyphSummary">OpenCV 提取墨迹 mask 与 height map，Three.js 将墨色深浅转为悬浮高度；重墨更高，飞白和细线更低。</p>
           </div>
-          <div id="glyphList" class="glyphList" aria-label="可查看的三维字形"></div>
+          <div id="glyphList" class="glyphList" aria-label="整卷 3D 数据状态"></div>
         </section>
       </section>
 

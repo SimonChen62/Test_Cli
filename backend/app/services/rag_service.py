@@ -98,6 +98,16 @@ def _terms(value: str) -> set[str]:
     return words
 
 
+def _technical_overlap_bonus(question: str, haystack: str) -> float:
+    question_lower = question.lower()
+    haystack_lower = haystack.lower()
+    bonus = 0.0
+    for term in ("opencv", "three", "three.js", "rag", "api", "key", "webxr", "inkverse"):
+        if term in question_lower and term in haystack_lower:
+            bonus += 5.0
+    return bonus
+
+
 def search(question: str, work_id: str = "work_003", limit: int = 5) -> list[Chunk]:
     query_terms = _terms(question)
     scored: list[tuple[float, Chunk]] = []
@@ -110,20 +120,25 @@ def search(question: str, work_id: str = "work_003", limit: int = 5) -> list[Chu
         score = 0.0
         score += len(query_terms & title_terms) * 3.0
         score += len(query_terms & text_terms)
+        score += _technical_overlap_bonus(question, haystack)
         for tag in chunk.tags:
             if tag and tag.lower() in question.lower():
                 score += 4.0
+        relevance_score = score
         if chunk.work_id == work_id:
             score += 0.6
         normalized_question = re.sub(r"\s+", "", question)
         normalized_title = re.sub(r"\s+", "", chunk.title)
         if normalized_title and normalized_title in normalized_question:
             score += 12.0
+            relevance_score += 12.0
         if "谁" in question and "赵孟頫" in question and "赵孟頫" in chunk.title:
             score += 8.0
+            relevance_score += 8.0
         if "什么" in question and "光福重建塔记" in question and "光福重建塔记" in chunk.title:
             score += 8.0
-        if score > 0:
+            relevance_score += 8.0
+        if relevance_score >= 2.0:
             scored.append((score, chunk))
     scored.sort(key=lambda item: item[0], reverse=True)
     return [chunk for _, chunk in scored[:limit]]
@@ -133,7 +148,7 @@ def answer(question: str, work_id: str = "work_003", use_llm: bool = False) -> d
     chunks = search(question, work_id=work_id)
     if not chunks:
         return {
-            "answer": "当前本地资料库中没有找到足够依据。请补充作品说明、背景资料或术语解释后再提问。",
+            "answer": "当前资料不足，无法给出有依据的回答。请补充作品说明、背景资料或术语解释后再提问。",
             "sources": [],
             "mode": "local_rag",
         }
