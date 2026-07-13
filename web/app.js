@@ -1365,56 +1365,6 @@ function makeSpaceCanvasTexture(THREE, canvas, color = false) {
   return texture;
 }
 
-async function buildFullScrollAssetFromLayerImages(THREE, scrollSize, atlasWidth, atlasHeight) {
-  const [mask, height] = await Promise.all([
-    loadImageCanvas(`${imageBase()}mask.png`),
-    loadImageCanvas(`${imageBase()}height.png`),
-  ]);
-
-  const colorCanvas = document.createElement("canvas");
-  colorCanvas.width = atlasWidth;
-  colorCanvas.height = atlasHeight;
-  const colorContext = colorCanvas.getContext("2d");
-  colorContext.fillStyle = "#ead8b3";
-  colorContext.fillRect(0, 0, atlasWidth, atlasHeight);
-  colorContext.globalAlpha = 0.2;
-  colorContext.fillStyle = "#fff5d6";
-  for (let y = 0; y < atlasHeight; y += 7) colorContext.fillRect(0, y, atlasWidth, 1);
-  colorContext.globalAlpha = 1;
-
-  const inkLayer = document.createElement("canvas");
-  inkLayer.width = atlasWidth;
-  inkLayer.height = atlasHeight;
-  const inkContext = inkLayer.getContext("2d");
-  inkContext.imageSmoothingEnabled = true;
-  inkContext.imageSmoothingQuality = "high";
-  inkContext.drawImage(mask.canvas, 0, 0, atlasWidth, atlasHeight);
-  colorContext.drawImage(inkLayer, 0, 0);
-
-  const heightCanvas = document.createElement("canvas");
-  heightCanvas.width = atlasWidth;
-  heightCanvas.height = atlasHeight;
-  const heightContext = heightCanvas.getContext("2d");
-  heightContext.fillStyle = "#000";
-  heightContext.fillRect(0, 0, atlasWidth, atlasHeight);
-  heightContext.imageSmoothingEnabled = true;
-  heightContext.imageSmoothingQuality = "high";
-  heightContext.filter = "contrast(175%) brightness(118%)";
-  heightContext.drawImage(height.canvas, 0, 0, atlasWidth, atlasHeight);
-  heightContext.filter = "none";
-  heightContext.globalCompositeOperation = "destination-in";
-  heightContext.drawImage(mask.canvas, 0, 0, atlasWidth, atlasHeight);
-  heightContext.globalCompositeOperation = "source-over";
-
-  return {
-    colorTexture: makeSpaceCanvasTexture(THREE, colorCanvas, true),
-    heightTexture: makeSpaceCanvasTexture(THREE, heightCanvas, false),
-    scrollSize,
-    atlasSize: { width: atlasWidth, height: atlasHeight },
-    source: "layer-images",
-  };
-}
-
 async function buildFullScrollAsset(THREE) {
   const records = state.fullScrollRecords;
   const rendererLimit = state.space.renderer?.capabilities?.maxTextureSize || 4096;
@@ -1422,12 +1372,6 @@ async function buildFullScrollAsset(THREE) {
   const atlasWidth = Math.min(8192, Math.max(2048, rendererLimit));
   const atlasScale = atlasWidth / scrollSize.width;
   const atlasHeight = Math.max(256, Math.round(scrollSize.height * atlasScale));
-
-  try {
-    return await buildFullScrollAssetFromLayerImages(THREE, scrollSize, atlasWidth, atlasHeight);
-  } catch (error) {
-    console.warn("Full-scroll layer images unavailable, falling back to glyph atlas", error);
-  }
 
   const colorCanvas = document.createElement("canvas");
   colorCanvas.width = atlasWidth;
@@ -1464,11 +1408,21 @@ async function buildFullScrollAsset(THREE) {
         heightPatch.width = width;
         heightPatch.height = itemHeight;
         const patchContext = heightPatch.getContext("2d");
-        patchContext.filter = "contrast(185%) brightness(118%)";
+        patchContext.imageSmoothingEnabled = true;
+        patchContext.imageSmoothingQuality = "high";
+        patchContext.fillStyle = "#000";
+        patchContext.fillRect(0, 0, width, itemHeight);
+        patchContext.filter = "blur(1.4px) contrast(150%) brightness(114%)";
         patchContext.drawImage(height.canvas, 0, 0, width, itemHeight);
+        patchContext.filter = "contrast(170%) brightness(112%)";
+        patchContext.globalAlpha = 0.68;
+        patchContext.drawImage(height.canvas, 0, 0, width, itemHeight);
+        patchContext.globalAlpha = 1;
         patchContext.filter = "none";
         patchContext.globalCompositeOperation = "destination-in";
+        patchContext.filter = "blur(0.8px)";
         patchContext.drawImage(mask.canvas, 0, 0, width, itemHeight);
+        patchContext.filter = "none";
         patchContext.globalCompositeOperation = "source-over";
         heightContext.drawImage(heightPatch, x, y);
       })
@@ -1515,11 +1469,11 @@ function createFullScrollMesh(THREE, asset) {
   const material = new THREE.MeshStandardMaterial({
     map: asset.colorTexture,
     displacementMap: asset.heightTexture,
-    displacementScale: 0.32,
+    displacementScale: 0.42,
     displacementBias: 0,
     bumpMap: asset.heightTexture,
-    bumpScale: 0.08,
-    roughness: 0.66,
+    bumpScale: 0.045,
+    roughness: 0.74,
     metalness: 0.01,
     color: 0xffffff,
     emissive: 0x241f17,
