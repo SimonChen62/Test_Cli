@@ -1412,15 +1412,15 @@ async function buildFullScrollAsset(THREE) {
         patchContext.imageSmoothingQuality = "high";
         patchContext.fillStyle = "#000";
         patchContext.fillRect(0, 0, width, itemHeight);
-        patchContext.filter = "blur(1.4px) contrast(150%) brightness(114%)";
+        patchContext.filter = "blur(3.2px) contrast(112%) brightness(106%)";
         patchContext.drawImage(height.canvas, 0, 0, width, itemHeight);
-        patchContext.filter = "contrast(170%) brightness(112%)";
-        patchContext.globalAlpha = 0.68;
+        patchContext.filter = "blur(1.1px) contrast(132%) brightness(108%)";
+        patchContext.globalAlpha = 0.34;
         patchContext.drawImage(height.canvas, 0, 0, width, itemHeight);
         patchContext.globalAlpha = 1;
         patchContext.filter = "none";
         patchContext.globalCompositeOperation = "destination-in";
-        patchContext.filter = "blur(0.8px)";
+        patchContext.filter = "blur(1.8px)";
         patchContext.drawImage(mask.canvas, 0, 0, width, itemHeight);
         patchContext.filter = "none";
         patchContext.globalCompositeOperation = "source-over";
@@ -1469,11 +1469,11 @@ function createFullScrollMesh(THREE, asset) {
   const material = new THREE.MeshStandardMaterial({
     map: asset.colorTexture,
     displacementMap: asset.heightTexture,
-    displacementScale: 0.42,
-    displacementBias: 0,
+    displacementScale: 0.26,
+    displacementBias: 0.006,
     bumpMap: asset.heightTexture,
-    bumpScale: 0.045,
-    roughness: 0.74,
+    bumpScale: 0.018,
+    roughness: 0.82,
     metalness: 0.01,
     color: 0xffffff,
     emissive: 0x241f17,
