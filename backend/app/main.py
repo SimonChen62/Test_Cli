@@ -25,6 +25,9 @@ app.add_middleware(
 app.mount("/data", StaticFiles(directory=str(DATA_DIR)), name="data")
 
 
+ADMIN_PASSWORD = "callilens-admin"
+
+
 @app.get("/api/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
@@ -70,6 +73,13 @@ def ask(payload: AskRequest) -> dict[str, object]:
 @app.get("/api/admin/llm-config")
 def llm_config_status() -> dict[str, object]:
     return config_service.llm_status()
+
+
+@app.post("/api/admin/login")
+def admin_login(password: str = Form(...)) -> dict[str, object]:
+    if password != ADMIN_PASSWORD:
+        raise HTTPException(status_code=401, detail="管理员口令不正确")
+    return {"ok": True, "role": "admin"}
 
 
 @app.post("/api/admin/llm-config")

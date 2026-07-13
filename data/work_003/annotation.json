@@ -1,8 +1,8 @@
 {
   "workId": "work_003",
-  "title": "赵孟頫《行书光福重建塔记卷》右段题名与正文局部",
-  "style": "行书（亦常称行楷）",
-  "source": "作品信息依据上海博物馆；当前展示图片的直接来源与授权仍需项目组核实",
+  "title": "赵孟頫《光福重建塔记》",
+  "style": "元代行书",
+  "source": "作品事实以上海博物馆馆藏资料为主；图像和 3D 数据为项目演示素材。",
   "images": {
     "original": "original.png",
     "binary": "binary.png",
@@ -11,91 +11,82 @@
     "inkDensity": "ink_density.png",
     "voidCandidates": "void_candidates.png"
   },
-  "guideText": "这一个局部位于作品右侧，既能看到正文纵列，也能看到题名和印章。请先观察原图中正文小字的密集排列，再注意右侧题名区域和红色印章带来的视觉变化。在气脉模式中，可以观察一列字之间上下承接的观看路线。即使每个字之间并没有真实连接，笔画方向和字距仍然会让视线形成连续移动。在虚实模式中，请注意正文列间的窄空白，以及正文和右侧题名区域之间更明显的空白过渡。空白不是单纯背景，它参与了画面的疏密、停顿和节奏。在笔墨模式中，可以观察右侧较大的题名字和正文小字之间的轻重差异。这里的可视化只提示粗细和墨色线索，并不代表系统检测到了真实书写力道。",
+  "guideText": "先看原作整体，再进入图层和悬浮 3D。系统只把可见墨迹、留白、粗细和墨色变化作为观察线索，不自动评价书法水平，也不恢复真实笔顺。",
   "annotations": [
     {
       "id": "qi_1",
       "type": "qi_flow",
-      "label": "气脉连贯",
-      "evidenceLayers": [
-        "original",
-        "skeleton"
-      ],
+      "label": "行气承接",
+      "evidenceLayers": ["original", "skeleton"],
       "path": "M 72.2 70 C 72.0 76, 72.1 82, 72.6 88 C 72.9 91, 73.1 94, 73.3 97",
-      "formal": "右往左数第十二列底部“宋”“至”附近，上一字的收笔方向向左带出，下一字又从相近位置向右起笔，形成方向上的承接。",
-      "perception": "观看时会觉得上下两个字之间更连贯自然，像是上一处笔势把下一处带出来。",
-      "aesthetic": "这可以帮助理解气脉中的连贯性：气脉不一定来自真实连笔，也可以由方向承接和藕断丝连的墨迹趋势体现。"
+      "formal": "这一带上下字之间虽然没有完全连笔，但收笔方向和下一字起笔位置相互靠近，形成可追踪的视觉路线。",
+      "perception": "观看时会感觉笔势没有突然中断，而是从上一处带到下一处。",
+      "aesthetic": "这可以帮助理解行书中的连贯感。这里说的是视觉承接，不是系统识别出真实笔顺。",
+      "reflection": {
+        "concept": "气脉",
+        "prompt": "你能不能指出一处看起来有上下承接的地方？",
+        "expertFeedback": "可以先描述方向和位置，再说它如何让视线继续移动。"
+      }
     },
     {
       "id": "qi_2",
       "type": "qi_flow",
       "label": "形断势连",
-      "evidenceLayers": [
-        "original",
-        "skeleton",
-        "binary"
-      ],
+      "evidenceLayers": ["original", "skeleton", "binary"],
       "path": "M 67.4 14 C 68.0 26, 67.6 38, 66.9 50 C 66.6 58, 66.2 64, 65.8 70",
-      "formal": "右往左数第九列“震”“旦”“之”“来”附近，几处笔画之间有断开，但收笔方向和下一处起笔位置比较接近，形成可追踪的视觉路线。",
-      "perception": "观看时会感觉笔势没有完全停住，而是从上一处继续带到下一处。",
-      "aesthetic": "这帮助理解形断势连：墨迹没有真实连接，但视觉上的运动趋势仍然延续。"
+      "formal": "局部笔画之间有断开，但方向、距离和上下关系仍然让视线可以继续连接。",
+      "perception": "观众会感到字与字之间并不是孤立摆放，而是有节奏地向下推进。",
+      "aesthetic": "这适合解释“形断势连”：墨迹不一定相连，视觉上的运动趋势仍然存在。",
+      "reflection": {
+        "concept": "形断势连",
+        "prompt": "找一处墨迹断开但视线仍能接上的位置。",
+        "expertFeedback": "注意不要说系统恢复了笔顺，只说它提示了可见的视觉路线。"
+      }
     },
     {
       "id": "void_1",
       "type": "void_solid",
       "label": "疏密平衡",
-      "evidenceLayers": [
-        "original",
-        "binary",
-        "voidCandidates"
-      ],
-      "box": {
-        "x": 81.2,
-        "y": 10,
-        "width": 1.8,
-        "height": 72
-      },
-      "formal": "右侧题名区和正文之间出现较明显的空白过渡，旁边又有红色印章和较疏的文字。",
-      "perception": "这块空白让右侧边界不显得拥挤，也让正文和题名区形成分隔。",
-      "aesthetic": "这说明空白参与了章法组织，帮助形成正文密集与题名疏朗之间的虚实对比。"
+      "evidenceLayers": ["original", "binary", "voidCandidates"],
+      "box": { "x": 81.2, "y": 10, "width": 1.8, "height": 72 },
+      "formal": "题名区和正文之间有较明显的空白过渡，形成疏密对照。",
+      "perception": "这块空白让画面不拥挤，也帮助区分正文与题名区域。",
+      "aesthetic": "留白不是单纯背景，它参与了章法组织和阅读节奏。",
+      "reflection": {
+        "concept": "虚实",
+        "prompt": "这块留白让你感觉画面更松还是更紧？",
+        "expertFeedback": "虚实可以从墨迹和空白的相互关系来讲。"
+      }
     },
     {
       "id": "void_2",
       "type": "void_solid",
       "label": "字间呼吸",
-      "evidenceLayers": [
-        "original",
-        "binary",
-        "voidCandidates"
-      ],
-      "box": {
-        "x": 17.7,
-        "y": 84.0,
-        "width": 1.8,
-        "height": 12.17
-      },
-      "formal": "两个字之间以点状笔画形成分隔，点画周围与上下字之间留出细小空白。",
-      "perception": "观看时，这个点像一次短暂停顿，让上下文字不完全挤在一起，产生轻微的呼吸感。",
-      "aesthetic": "这可以帮助理解虚实关系：空白不只来自大片留白，也来自点画与字间空隙的配合，调节行气和阅读节奏。"
+      "evidenceLayers": ["original", "binary", "voidCandidates"],
+      "box": { "x": 17.7, "y": 84.0, "width": 1.8, "height": 12.17 },
+      "formal": "局部字间保留了细小空隙，点画与上下字之间没有完全挤在一起。",
+      "perception": "观看时会出现短暂停顿，像一次轻微呼吸。",
+      "aesthetic": "小范围留白同样可以调节节奏，不只有大片空白才参与章法。",
+      "reflection": {
+        "concept": "留白",
+        "prompt": "找一处字间小空隙，说说它如何影响节奏。",
+        "expertFeedback": "可以把空白理解为阅读节奏中的停顿。"
+      }
     },
     {
       "id": "ink_1",
       "type": "brush_ink",
-      "label": "笔墨浓",
-      "evidenceLayers": [
-        "original",
-        "strokeWidth",
-        "inkDensity"
-      ],
-      "box": {
-        "x": 96.3,
-        "y": 0.0,
-        "width": 1.67,
-        "height": 60.48
-      },
-      "formal": "右侧题名字体较大，部分笔画在粗细和墨色上比正文更醒目。",
-      "perception": "观看时题名区域会先吸引注意，形成和正文小字不同的视觉重量。",
-      "aesthetic": "这可以作为笔墨轻重线索，说明粗细、浓淡和字形大小会共同影响画面的节奏，但不能写成真实力道检测。"
+      "label": "墨色轻重",
+      "evidenceLayers": ["original", "strokeWidth", "inkDensity"],
+      "box": { "x": 96.3, "y": 0.0, "width": 1.67, "height": 60.48 },
+      "formal": "局部字形较大，笔画粗细和墨色变化比正文小字更醒目。",
+      "perception": "观众会先注意到视觉重量更强的位置，再回到正文细密部分。",
+      "aesthetic": "粗细、浓淡和字形大小共同影响画面节奏，但不能直接等同于真实用力大小。",
+      "reflection": {
+        "concept": "笔墨",
+        "prompt": "这里的墨色轻重给你什么感觉？",
+        "expertFeedback": "悬浮 3D 只是把可见墨迹深浅转成高度，不是检测真实书写力道。"
+      }
     }
   ]
 }

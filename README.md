@@ -46,6 +46,18 @@ http://localhost:5173/web/
 http://localhost:8000/docs
 ```
 
+新手后端使用路线见：
+
+```text
+docs/BACKEND_USAGE_GUIDE.md
+```
+
+管理员后台入口在首页“上传个性化书法作品”，演示口令：
+
+```text
+callilens-admin
+```
+
 ## AI 配置
 
 默认不需要付费 API。问答会使用本地 RAG 检索和模板回答。
