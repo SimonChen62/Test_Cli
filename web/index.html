@@ -3,272 +3,140 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>CalliLens</title>
-    <link rel="stylesheet" href="./styles.css?v=20" />
+    <title>CalliLens | 书法数字导览</title>
+    <link rel="stylesheet" href="./styles.css?v=30" />
   </head>
   <body>
-    <section id="entryScreen" class="entryScreen" aria-label="CalliLens 入口">
-      <div class="entryCompact" aria-hidden="true">
-        <span>CalliLens</span>
-        <small>书法观察式导览</small>
+    <header class="appHeader">
+      <div>
+        <p class="eyebrow">CalliLens</p>
+        <h1>赵孟頫《光福重建塔记》数字导览</h1>
       </div>
-      <div class="entrySticky">
-        <p class="entrySubtitle">书法观察式导览</p>
-        <h1>CalliLens</h1>
-      </div>
+      <nav class="topNav" aria-label="主要功能">
+        <button type="button" data-view="gallery" class="navButton active">作品</button>
+        <button type="button" data-view="ask" class="navButton">问答</button>
+        <button type="button" data-view="admin" class="navButton">管理员上传</button>
+      </nav>
+    </header>
 
-      <div class="entryReveal" aria-label="选择使用方式">
-        <button id="uploadEntryButton" class="entryActionButton" type="button">
-          <span>上传个性化书法作品</span>
-          <small>V2 入口：上传图片、生成辅助图层、人工确认观察点。</small>
-        </button>
-        <button id="storedWorksButton" class="entryActionButton primaryEntryAction" type="button">
-          <span>网页已存库</span>
-          <small>进入当前样例作品，开始分层观察与反思任务。</small>
-        </button>
-      </div>
-
-      <section id="storedWorksPanel" class="entryPanel libraryPanel" hidden>
-        <div class="entryPanelHeader">
+    <main class="workspace">
+      <section class="viewerPanel" aria-label="作品展示">
+        <div class="viewerToolbar">
           <div>
-            <p class="eyebrow">网页已存库</p>
-            <h2>选择作品</h2>
+            <p id="workMeta" class="eyebrow">元代 · 行书 · 上海博物馆</p>
+            <h2 id="workTitle">赵孟頫《光福重建塔记》</h2>
           </div>
-          <button id="backHomeFromLibraryButton" class="secondaryButton" type="button">返回首页</button>
+          <div class="modeTabs" aria-label="展示模式">
+            <button type="button" id="imageModeButton" class="modeButton active">原图</button>
+            <button type="button" id="threeModeButton" class="modeButton">悬浮 3D</button>
+          </div>
         </div>
-        <div id="storedWorksList" class="storedWorksList" aria-label="已存作品列表"></div>
+
+        <div class="stage" id="stage">
+          <img id="workImage" class="workImage" alt="赵孟頫《光福重建塔记》作品图" />
+          <canvas id="threeCanvas" class="threeCanvas" hidden></canvas>
+          <div id="stageStatus" class="stageStatus" hidden></div>
+        </div>
+
+        <div id="threeControls" class="threeControls" hidden aria-label="3D 控制">
+          <button type="button" id="zoomOutButton" title="缩小">-</button>
+          <button type="button" id="zoomInButton" title="放大">+</button>
+          <label class="panControl">
+            <span>水平移动</span>
+            <input id="panSlider" type="range" min="-100" max="100" value="0" />
+          </label>
+          <button type="button" id="frontButton">正面</button>
+          <button type="button" id="sideButton">侧面</button>
+          <button type="button" id="resetButton">重置</button>
+        </div>
       </section>
 
-      <section id="uploadPanel" class="entryPanel uploadPanel" hidden>
-        <div class="entryPanelHeader">
-          <div>
-            <p class="eyebrow">V2 预留</p>
-            <h2>个性化上传暂不开放</h2>
-          </div>
-          <button id="backHomeFromUploadButton" class="secondaryButton" type="button">返回首页</button>
-        </div>
-        <p>本轮答辩版先做单作品导览。后续再加入上传、图层生成和人工校正流程，避免把还不稳定的自动分析误说成审美判断。</p>
-        <div class="uploadSteps">
-          <span>上传图片</span>
-          <span>生成证据图层</span>
-          <span>人工确认观察点</span>
-          <span>进入导览</span>
-        </div>
-        <button id="browseFromUploadButton" class="secondaryButton" type="button">先看网页已存库</button>
-      </section>
-    </section>
-
-    <main class="app" hidden>
-      <section class="viewer">
-        <header class="topbar">
-          <div>
-            <p class="eyebrow">CalliLens</p>
-            <h1 id="workTitle">单作品书法导览</h1>
-          </div>
-          <div class="topActions">
-            <button id="backToLibraryButton" class="secondaryButton" type="button">返回作品库</button>
-            <button id="returnFirstLookButton" class="secondaryButton returnFirstLookButton" type="button">回到第一印象</button>
-            <button id="clearButton" class="iconButton" type="button" title="清除高亮" aria-label="清除高亮">×</button>
-          </div>
-        </header>
-
-        <div class="evidenceBar" aria-label="图层切换">
-          <span>图层</span>
-          <button class="modeButton active" data-mode="original" type="button">原作</button>
-          <button class="modeButton" data-mode="qi" type="button">气脉</button>
-          <button class="modeButton" data-mode="solid" type="button">墨迹</button>
-          <button class="modeButton" data-mode="void" type="button">留白</button>
-          <button class="modeButton" data-mode="relation" type="button">虚实</button>
-          <button class="modeButton" data-mode="ink" type="button">笔墨</button>
-          <button class="modeButton" data-mode="space" type="button">全文3D</button>
-        </div>
-
-        <div class="canvasShell" aria-label="作品查看器，点击图像可生成局部证据探针">
-          <img id="workImage" alt="书法作品或辅助分析图" />
-          <svg id="overlay" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="当前观察点高亮"></svg>
-          <canvas id="spaceCanvas" class="spaceCanvas" hidden></canvas>
-          <div id="spaceZoomControls" class="spaceZoomControls" hidden aria-label="3D 缩放控制">
-            <label class="spacePanControl" title="水平移动">
-              <span>水平</span>
-              <input id="spacePanX" type="range" min="-100" max="100" value="0" aria-label="水平移动" />
-            </label>
-            <button id="spaceRotateLeft" type="button" title="左侧视角" aria-label="左侧视角">左</button>
-            <button id="spaceViewReset" type="button" title="回到正面" aria-label="回到正面">正</button>
-            <button id="spaceRotateRight" type="button" title="右侧视角" aria-label="右侧视角">右</button>
-            <button id="spaceZoomOut" type="button" title="缩小" aria-label="缩小">-</button>
-            <button id="spaceZoomIn" type="button" title="放大" aria-label="放大">+</button>
-          </div>
-          <div id="spaceLabel" class="spaceLabel" hidden>全文3D：候选墨迹块平铺为长卷浮雕</div>
-          <div id="imageFallback" class="fallback" hidden>
-            请确认当前作品文件夹中存在 <code>annotation.json</code> 和对应图像文件。
-          </div>
-        </div>
-
-        <section id="glyphPanel" class="glyphPanel" hidden aria-label="三维字形选择">
-          <div>
-            <p class="eyebrow">OpenCV 字形提取</p>
-            <h2 id="glyphTitle">选择一个字形</h2>
-            <p id="glyphSummary">从人工框选区域中提取墨迹 mask、骨架和厚度图，再生成 3D 浮雕。</p>
-          </div>
-          <div id="glyphList" class="glyphList" aria-label="可查看的三维字形"></div>
+      <aside class="infoPanel" aria-label="导览信息">
+        <section class="card" data-panel="gallery">
+          <p class="eyebrow">作品说明</p>
+          <h2>悬浮墨迹，而不是书法评分</h2>
+          <p id="workDescription">
+            本系统把可见墨迹深浅转换为 3D 高度，用于辅助观察墨迹厚薄、飞白和长卷节奏，不恢复真实笔顺，也不判断书法水平。
+          </p>
+          <dl class="factList">
+            <div><dt>作者</dt><dd id="factArtist">赵孟頫</dd></div>
+            <div><dt>年代</dt><dd id="factDate">至治元年（1321）</dd></div>
+            <div><dt>书体</dt><dd id="factScript">行书</dd></div>
+            <div><dt>馆藏</dt><dd id="factMuseum">上海博物馆</dd></div>
+          </dl>
+          <p class="sourceLine">
+            主要事实源：
+            <a id="sourceLink" href="https://www.shanghaimuseum.net/mu/frontend/pg/m/article/id/CI00000601" target="_blank" rel="noreferrer">上海博物馆</a>
+          </p>
         </section>
-      </section>
 
-      <aside class="guidePanel" aria-label="观察工作流">
-        <article id="originalPrompt" class="workflowBlock originalPrompt" aria-label="第一印象">
-          <p class="workflowStep">第一印象</p>
-          <h2>先用自己的话看原作</h2>
-          <form id="firstLookForm" class="firstLookForm">
-            <label class="questionField">
-              <span>整体感觉是什么？</span>
-              <textarea id="firstOverall" rows="3" placeholder="例如：安静、流动、紧密、有停顿感……"></textarea>
+        <section class="card askPanel" data-panel="ask" hidden>
+          <p class="eyebrow">本地 RAG</p>
+          <h2>有来源的作品问答</h2>
+          <div class="questionGrid" id="questionGrid">
+            <button type="button">赵孟頫是谁？</button>
+            <button type="button">《光福重建塔记》是什么？</button>
+            <button type="button">为什么要做悬浮 3D？</button>
+            <button type="button">什么是飞白？</button>
+            <button type="button">为什么需要 RAG？</button>
+            <button type="button">没有 API key 能不能运行？</button>
+          </div>
+          <label class="askBox">
+            <span>输入问题</span>
+            <textarea id="questionInput" rows="4" placeholder="例如：这个 3D 是怎么实现的？"></textarea>
+          </label>
+          <label class="toggleLine">
+            <input id="useLlmInput" type="checkbox" />
+            <span>使用管理员配置的 AI 润色答案</span>
+          </label>
+          <button id="askButton" class="primaryButton" type="button">检索并回答</button>
+          <div id="answerBox" class="answerBox" hidden></div>
+          <div id="sourceBox" class="sourceBox" hidden></div>
+        </section>
+
+        <section class="card adminPanel" data-panel="admin" hidden>
+          <p class="eyebrow">管理员上传</p>
+          <h2>上传作品并加入知识库</h2>
+          <section class="llmConfig">
+            <h3>AI 接入配置</h3>
+            <p id="llmStatus">正在读取配置...</p>
+            <form id="llmForm" class="uploadForm">
+              <label>
+                <span>提供商</span>
+                <select name="provider">
+                  <option value="openrouter">OpenRouter 免费路由</option>
+                  <option value="gemini">Gemini API</option>
+                  <option value="custom">自定义 OpenAI 兼容接口</option>
+                </select>
+              </label>
+              <label><span>API key</span><input name="api_key" type="password" placeholder="只保存在本机 .env.local" /></label>
+              <label><span>模型</span><input name="model" placeholder="默认 openrouter/free 或 gemini-2.5-flash" /></label>
+              <label><span>接口地址</span><input name="base_url" placeholder="通常不用填" /></label>
+              <button class="primaryButton" type="submit">保存 AI 配置</button>
+            </form>
+          </section>
+          <form id="uploadForm" class="uploadForm">
+            <label>
+              <span>作品图片</span>
+              <input name="image" type="file" accept="image/*" required />
             </label>
-            <label class="questionField">
-              <span>哪里最有运动感？</span>
-              <textarea id="firstMotion" rows="3" placeholder="先凭直觉描述位置，不需要专业术语。"></textarea>
-            </label>
-            <label class="questionField">
-              <span>哪里最疏朗或最紧密？</span>
-              <textarea id="firstDensity" rows="3" placeholder="可以说某一列、某个字附近、题名旁边等。"></textarea>
-            </label>
-            <p id="firstLookError" class="formError" hidden>请先写完三个问题，再进入导览。</p>
-            <button class="primaryButton" type="submit">进入观察</button>
+            <label><span>作品名称</span><input name="title" required placeholder="例如：某某行书卷" /></label>
+            <label><span>作者</span><input name="artist" placeholder="作者姓名" /></label>
+            <label><span>朝代</span><input name="dynasty" placeholder="例如：元代" /></label>
+            <label><span>创作时间</span><input name="date" placeholder="例如：至治元年（1321）" /></label>
+            <label><span>书体</span><input name="script_type" placeholder="例如：行书" /></label>
+            <label><span>馆藏地</span><input name="museum" placeholder="例如：上海博物馆" /></label>
+            <label><span>作品简介</span><textarea name="description" rows="3" required></textarea></label>
+            <label><span>历史背景</span><textarea name="background" rows="3"></textarea></label>
+            <label><span>资料来源 URL</span><input name="source_url" type="url" placeholder="https://..." /></label>
+            <label><span>关键词</span><input name="tags" placeholder="用英文逗号分隔，例如：行书,长卷" /></label>
+            <button class="primaryButton" type="submit">上传并处理</button>
           </form>
-        </article>
-
-        <section id="firstResponseSummary" class="workflowBlock firstResponseSummary" aria-label="第一印象回答">
-          <div class="summaryHeader">
-            <div>
-              <p class="workflowStep">第一印象</p>
-              <h2>你的原始判断</h2>
-            </div>
-            <button id="editFirstLookButton" class="secondaryButton" type="button">修改</button>
-          </div>
-          <dl>
-            <dt>整体感觉</dt>
-            <dd>
-              <span id="summaryOverall" class="summaryRead">尚未填写</span>
-              <textarea id="summaryOverallInput" class="summaryEditField" rows="3"></textarea>
-            </dd>
-            <dt>运动感</dt>
-            <dd>
-              <span id="summaryMotion" class="summaryRead">尚未填写</span>
-              <textarea id="summaryMotionInput" class="summaryEditField" rows="3"></textarea>
-            </dd>
-            <dt>疏朗或紧密</dt>
-            <dd>
-              <span id="summaryDensity" class="summaryRead">尚未填写</span>
-              <textarea id="summaryDensityInput" class="summaryEditField" rows="3"></textarea>
-            </dd>
-          </dl>
-          <p id="summaryEditError" class="formError" hidden>请先写完三个问题，再保存。</p>
+          <div id="uploadResult" class="uploadResult" hidden></div>
         </section>
-
-        <section class="workflowBlock observationBlock">
-          <div class="sectionHeader">
-            <div>
-              <p class="workflowStep">观察点</p>
-              <h2>人工导览卡</h2>
-            </div>
-          </div>
-          <div class="filterTabs" aria-label="观察类型筛选">
-            <button class="filterButton active" data-filter="all" type="button">全部</button>
-            <button class="filterButton" data-filter="qi_flow" type="button">气脉</button>
-            <button class="filterButton" data-filter="void_solid" type="button">虚实</button>
-            <button class="filterButton" data-filter="brush_ink" type="button">笔墨</button>
-          </div>
-          <div id="guideList" class="guideList" aria-label="观察点列表"></div>
-        </section>
-
-        <article class="workflowBlock detailPanel" aria-live="polite">
-          <p class="workflowStep">形式证据</p>
-          <p id="detailType" class="eyebrow">请选择观察点</p>
-          <h3 id="annotationTitle">先看原作整体</h3>
-          <dl>
-            <dt>看哪里</dt>
-            <dd id="whereText">从观察卡选择一项，作品上会出现对应虚线圈。</dd>
-            <dt>形式证据</dt>
-            <dd id="formalText">这里说明画面上客观能看到什么。</dd>
-            <dt>观看感受</dt>
-            <dd id="perceptionText">这里说明普通观众可能产生的观看感受。</dd>
-            <dt>审美解释</dt>
-            <dd id="aestheticText">这里说明它如何帮助理解气脉、虚实或笔墨节奏。</dd>
-          </dl>
-          <div class="stepButtons">
-            <button id="prevButton" type="button">上一个</button>
-            <button id="nextButton" type="button">下一个</button>
-          </div>
-        </article>
-
-        <article class="workflowBlock probePanel" aria-live="polite">
-          <p class="workflowStep">局部探针</p>
-          <h3 id="probeTitle">点击图像任意位置</h3>
-          <p id="probeSummary" class="probeSummary">按书法竖列取样，只给出候选线索。</p>
-          <div class="metricGrid" aria-label="局部证据指标">
-            <div>
-              <span>墨迹</span>
-              <strong id="inkMetric">--</strong>
-            </div>
-            <div>
-              <span>留白</span>
-              <strong id="voidMetric">--</strong>
-            </div>
-            <div>
-              <span>粗细变化</span>
-              <strong id="strokeMetric">--</strong>
-            </div>
-            <div>
-              <span>墨色变化</span>
-              <strong id="densityMetric">--</strong>
-            </div>
-          </div>
-          <p id="probeCandidate" class="candidateText">尚未选择局部。</p>
-        </article>
-
-        <article class="workflowBlock reflectionPanel">
-          <p class="workflowStep">我的反思</p>
-          <div id="reflectionPrompt" class="reflectionPrompt" hidden>
-            <span class="reflectionConceptTag" id="reflectionConcept"></span>
-            <p id="reflectionPromptText"></p>
-          </div>
-
-          <div class="taskList" aria-label="反思任务列表">
-            <button class="taskButton active" type="button" data-task="motion">哪里最有运动感？</button>
-            <button class="taskButton" type="button" data-task="space">哪块空白参与结构？</button>
-            <button class="taskButton" type="button" data-task="evidence">如何用证据解释？</button>
-          </div>
-
-          <textarea id="reflectionInput" rows="4" placeholder="先选择一个观察点，再用自己的话回答。"></textarea>
-
-          <div class="reflectionChips" aria-label="快速插入观察句">
-            <button class="reflectionChip" type="button" data-text="我看到上下笔画之间有方向承接，像是运动没有完全停住。">方向承接</button>
-            <button class="reflectionChip" type="button" data-text="我看到密集墨迹旁边留出空白，让画面有呼吸感。">留白呼吸</button>
-            <button class="reflectionChip" type="button" data-text="我看到这里粗细或墨色变化明显，可以作为笔墨轻重线索。">粗细变化</button>
-          </div>
-
-          <div class="reflectionActions">
-            <button id="reflectionSubmitButton" class="primaryButton reflectionSubmitButton" type="button">提交反思</button>
-            <button id="reflectionEditButton" class="secondaryButton reflectionEditButton" type="button" hidden>重新编辑</button>
-          </div>
-
-          <div id="expertFeedbackPanel" class="expertFeedbackPanel" hidden>
-            <div class="feedbackDivider">
-              <span>专家视角对照</span>
-            </div>
-            <div class="feedbackUserAnswer">
-              <p class="feedbackLabel">你的理解</p>
-              <blockquote id="feedbackUserText"></blockquote>
-            </div>
-            <div class="feedbackExpert">
-              <p class="feedbackLabel">专家解释</p>
-              <p id="feedbackExpertText"></p>
-            </div>
-            <p class="feedbackNote">系统只提供观察候选，不代表唯一正确答案；你的感受同样有价值。</p>
-          </div>
-        </article>
       </aside>
     </main>
 
-    <script src="./app.js?v=12"></script>
+    <script type="module" src="./app.js?v=30"></script>
   </body>
 </html>

@@ -1,0 +1,31 @@
+import unittest
+
+from backend.app.services import rag_service, work_service
+
+
+class RagServiceTest(unittest.TestCase):
+    def test_answers_default_work_question_with_sources(self):
+        result = rag_service.answer("赵孟頫是谁？", "work_003")
+
+        self.assertEqual(result["mode"], "local_rag")
+        self.assertIn("赵孟頫", result["answer"])
+        self.assertTrue(result["sources"])
+        self.assertEqual(result["sources"][0]["title"], "赵孟頫是谁")
+
+    def test_filters_to_default_work_and_global_chunks(self):
+        chunks = rag_service.search("光福重建塔记是什么？", "work_003")
+
+        self.assertTrue(chunks)
+        self.assertTrue(all(chunk.work_id in {"work_003", "global"} for chunk in chunks))
+
+
+class WorkServiceTest(unittest.TestCase):
+    def test_loads_default_work(self):
+        work = work_service.get_work("work_003")
+
+        self.assertIsNotNone(work)
+        self.assertEqual(work["title"], "赵孟頫《光福重建塔记》")
+
+
+if __name__ == "__main__":
+    unittest.main()

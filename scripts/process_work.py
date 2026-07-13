@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 
 import cv2
@@ -13,6 +14,9 @@ IMAGE_FILES = {
     "stroke_width": "stroke_width.png",
     "ink_density": "ink_density.png",
     "void_candidates": "void_candidates.png",
+    "mask": "mask.png",
+    "height": "height.png",
+    "thumbnail": "thumbnail.png",
 }
 
 
@@ -83,6 +87,29 @@ def make_ink_density(gray: np.ndarray, ink_mask: np.ndarray) -> np.ndarray:
     return density
 
 
+def make_mask_rgba(ink_mask: np.ndarray) -> np.ndarray:
+    h, w = ink_mask.shape
+    rgba = np.zeros((h, w, 4), dtype=np.uint8)
+    rgba[..., 0] = 24
+    rgba[..., 1] = 22
+    rgba[..., 2] = 19
+    rgba[..., 3] = ink_mask
+    return rgba
+
+
+def make_height_map(gray: np.ndarray, ink_mask: np.ndarray) -> np.ndarray:
+    darkness = cv2.bitwise_and(255 - gray, 255 - gray, mask=ink_mask)
+    height = cv2.GaussianBlur(darkness, (5, 5), 0)
+    return cv2.normalize(height, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+
+
+def make_thumbnail(image: np.ndarray, width: int = 1200) -> np.ndarray:
+    h, w = image.shape[:2]
+    target_w = min(width, w)
+    target_h = max(1, int(h * target_w / w))
+    return cv2.resize(image, (target_w, target_h), interpolation=cv2.INTER_AREA)
+
+
 def make_void_candidates(image: np.ndarray, ink_mask: np.ndarray) -> np.ndarray:
     h, w = ink_mask.shape
     overlay = image.copy()
@@ -135,11 +162,42 @@ def process_work(work_dir: Path) -> None:
         "stroke_width": make_stroke_width(ink_mask),
         "ink_density": make_ink_density(gray, ink_mask),
         "void_candidates": make_void_candidates(image.copy(), ink_mask),
+        "mask": make_mask_rgba(ink_mask),
+        "height": make_height_map(gray, ink_mask),
+        "thumbnail": make_thumbnail(image),
     }
 
     for key, filename in IMAGE_FILES.items():
         write_image(work_dir / filename, outputs[key])
         print(f"Wrote {work_dir / filename}")
+
+    h, w = ink_mask.shape
+    floating = {
+        "type": "floating_scroll",
+        "scroll_size": {"width": w, "height": h},
+        "paper_texture": "original.png",
+        "mask": "mask.png",
+        "height": "height.png",
+        "displacement": {"scale": 0.42, "bias": 0.08},
+        "note": "墨迹深浅转换为悬浮高度；不代表真实笔顺或书法水平判断。",
+    }
+    (work_dir / "floating_3d_data.json").write_text(
+        json.dumps(floating, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    report = {
+        "width": w,
+        "height": h,
+        "ink_pixels": int(cv2.countNonZero(ink_mask)),
+        "ink_ratio": round(int(cv2.countNonZero(ink_mask)) / float(w * h), 4),
+        "outputs": list(IMAGE_FILES.values()) + ["floating_3d_data.json"],
+    }
+    (work_dir / "processing-report.json").write_text(
+        json.dumps(report, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    print(f"Wrote {work_dir / 'floating_3d_data.json'}")
+    print(f"Wrote {work_dir / 'processing-report.json'}")
 
 
 def main() -> None:

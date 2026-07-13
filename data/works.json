@@ -3,21 +3,18 @@
   "works": [
     {
       "id": "work_003",
-      "title": "赵孟頫《行书光福重建塔记卷》右段题名与正文局部",
-      "style": "行书",
-      "description": "包含正文、题名与印章的右侧局部，适合观察气脉、虚实和笔墨节奏。",
+      "title": "赵孟頫《光福重建塔记》",
+      "artist": "赵孟頫",
+      "dynasty": "元代",
+      "date": "至治元年（1321）",
+      "script_type": "行书",
+      "museum": "上海博物馆",
+      "description": "元代赵孟頫晚年行书长卷，当前项目以此作为悬浮 3D 墨迹展示和本地 RAG 导览的默认作品。",
       "thumbnail": "original.png",
       "status": "ready",
-      "primary": true
-    },
-    {
-      "id": "work_001",
-      "title": "书法局部样例 work_001",
-      "style": "待确认",
-      "description": "早期局部样例，保留为数据结构和多作品入口测试。",
-      "thumbnail": "original.png",
-      "status": "draft",
-      "primary": false
+      "source": "上海博物馆馆藏资料；项目内图像数据",
+      "source_url": "https://www.shanghaimuseum.net/mu/frontend/pg/m/article/id/CI00000601",
+      "tags": ["赵孟頫", "光福重建塔记", "元代", "行书", "赵体"]
     }
   ]
 }

@@ -1,0 +1,15 @@
+{
+  "type": "floating_scroll",
+  "scroll_size": {
+    "width": 2800,
+    "height": 613
+  },
+  "paper_texture": "original.png",
+  "mask": "mask.png",
+  "height": "height.png",
+  "displacement": {
+    "scale": 0.42,
+    "bias": 0.08
+  },
+  "note": "墨迹深浅转换为悬浮高度；不代表真实笔顺或书法水平判断。"
+}

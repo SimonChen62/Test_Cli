@@ -1,0 +1,17 @@
+{
+  "width": 2800,
+  "height": 613,
+  "ink_pixels": 271361,
+  "ink_ratio": 0.1581,
+  "outputs": [
+    "binary.png",
+    "skeleton.png",
+    "stroke_width.png",
+    "ink_density.png",
+    "void_candidates.png",
+    "mask.png",
+    "height.png",
+    "thumbnail.png",
+    "floating_3d_data.json"
+  ]
+}
