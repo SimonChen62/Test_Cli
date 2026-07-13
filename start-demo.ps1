@@ -2,7 +2,7 @@ $ErrorActionPreference = "Stop"
 
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $apiPort = 8000
-$webPort = 5173
+$webPort = 5190
 
 $apiExisting = Get-NetTCPConnection -LocalPort $apiPort -State Listen -ErrorAction SilentlyContinue
 if (-not $apiExisting) {

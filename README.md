@@ -31,13 +31,13 @@ python -m pip install -r requirements.txt
 
 ```powershell
 python -m uvicorn backend.app.main:app --reload --port 8000
-python -m http.server 5173
+python -m http.server 5190
 ```
 
 打开：
 
 ```text
-http://localhost:5173/web/
+http://127.0.0.1:5190/web/
 ```
 
 后端接口文档：

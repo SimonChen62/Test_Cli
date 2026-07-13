@@ -24,7 +24,7 @@ python -m pip install -r requirements.txt
 它会启动两个东西：
 
 - 后端 API：http://localhost:8000
-- 前端网页：http://localhost:5173/web/
+- 前端网页：http://127.0.0.1:5190/web/
 
 浏览器会自动打开前端。
 
@@ -43,13 +43,13 @@ python -m uvicorn backend.app.main:app --reload --port 8000
 
 ```powershell
 cd D:\技术学习\CalliLens
-python -m http.server 5173
+python -m http.server 5190
 ```
 
 然后打开：
 
 ```text
-http://localhost:5173/web/
+http://127.0.0.1:5190/web/
 ```
 
 ## 4. 怎么确认后端是好的
@@ -81,7 +81,7 @@ GET /api/health
 打开前端：
 
 ```text
-http://localhost:5173/web/
+http://127.0.0.1:5190/web/
 ```
 
 点击首页的：
@@ -178,4 +178,3 @@ python -m uvicorn backend.app.main:app --reload --port 8000
 
 - 不影响本地 RAG。
 - 先不要管 AI，答辩时可以说 API 是可选增强。
-
