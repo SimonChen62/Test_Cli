@@ -1365,6 +1365,56 @@ function makeSpaceCanvasTexture(THREE, canvas, color = false) {
   return texture;
 }
 
+async function buildFullScrollAssetFromLayerImages(THREE, scrollSize, atlasWidth, atlasHeight) {
+  const [mask, height] = await Promise.all([
+    loadImageCanvas(`${imageBase()}mask.png`),
+    loadImageCanvas(`${imageBase()}height.png`),
+  ]);
+
+  const colorCanvas = document.createElement("canvas");
+  colorCanvas.width = atlasWidth;
+  colorCanvas.height = atlasHeight;
+  const colorContext = colorCanvas.getContext("2d");
+  colorContext.fillStyle = "#ead8b3";
+  colorContext.fillRect(0, 0, atlasWidth, atlasHeight);
+  colorContext.globalAlpha = 0.2;
+  colorContext.fillStyle = "#fff5d6";
+  for (let y = 0; y < atlasHeight; y += 7) colorContext.fillRect(0, y, atlasWidth, 1);
+  colorContext.globalAlpha = 1;
+
+  const inkLayer = document.createElement("canvas");
+  inkLayer.width = atlasWidth;
+  inkLayer.height = atlasHeight;
+  const inkContext = inkLayer.getContext("2d");
+  inkContext.imageSmoothingEnabled = true;
+  inkContext.imageSmoothingQuality = "high";
+  inkContext.drawImage(mask.canvas, 0, 0, atlasWidth, atlasHeight);
+  colorContext.drawImage(inkLayer, 0, 0);
+
+  const heightCanvas = document.createElement("canvas");
+  heightCanvas.width = atlasWidth;
+  heightCanvas.height = atlasHeight;
+  const heightContext = heightCanvas.getContext("2d");
+  heightContext.fillStyle = "#000";
+  heightContext.fillRect(0, 0, atlasWidth, atlasHeight);
+  heightContext.imageSmoothingEnabled = true;
+  heightContext.imageSmoothingQuality = "high";
+  heightContext.filter = "contrast(175%) brightness(118%)";
+  heightContext.drawImage(height.canvas, 0, 0, atlasWidth, atlasHeight);
+  heightContext.filter = "none";
+  heightContext.globalCompositeOperation = "destination-in";
+  heightContext.drawImage(mask.canvas, 0, 0, atlasWidth, atlasHeight);
+  heightContext.globalCompositeOperation = "source-over";
+
+  return {
+    colorTexture: makeSpaceCanvasTexture(THREE, colorCanvas, true),
+    heightTexture: makeSpaceCanvasTexture(THREE, heightCanvas, false),
+    scrollSize,
+    atlasSize: { width: atlasWidth, height: atlasHeight },
+    source: "layer-images",
+  };
+}
+
 async function buildFullScrollAsset(THREE) {
   const records = state.fullScrollRecords;
   const rendererLimit = state.space.renderer?.capabilities?.maxTextureSize || 4096;
@@ -1372,6 +1422,12 @@ async function buildFullScrollAsset(THREE) {
   const atlasWidth = Math.min(8192, Math.max(2048, rendererLimit));
   const atlasScale = atlasWidth / scrollSize.width;
   const atlasHeight = Math.max(256, Math.round(scrollSize.height * atlasScale));
+
+  try {
+    return await buildFullScrollAssetFromLayerImages(THREE, scrollSize, atlasWidth, atlasHeight);
+  } catch (error) {
+    console.warn("Full-scroll layer images unavailable, falling back to glyph atlas", error);
+  }
 
   const colorCanvas = document.createElement("canvas");
   colorCanvas.width = atlasWidth;
