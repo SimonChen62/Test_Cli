@@ -1481,61 +1481,48 @@ button:disabled {
   }
 }
 
-/* V1.7 glyph extraction panel — compact horizontal bar below canvas */
+/* V1.7 glyph extraction panel */
 .glyphPanel {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 12px;
-  padding: 12px 14px;
+  display: grid;
+  grid-template-columns: minmax(220px, 0.9fr) minmax(0, 1.4fr);
+  gap: 14px;
+  align-items: center;
+  margin-top: 14px;
+  padding: 14px;
   border: 1px solid rgba(232, 218, 191, 0.18);
   border-radius: 8px;
   background:
-    linear-gradient(180deg, rgba(255, 249, 236, 0.07), rgba(255, 249, 236, 0.03)),
-    rgba(10, 9, 7, 0.88);
+    linear-gradient(180deg, rgba(255, 249, 236, 0.08), rgba(255, 249, 236, 0.035)),
+    rgba(12, 11, 9, 0.86);
   color: #fff8ec;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.24);
 }
 
 .glyphPanel h2 {
-  margin: 2px 0 4px;
-  font-size: 16px;
-  line-height: 1.2;
+  margin: 3px 0 6px;
+  font-size: 20px;
+  line-height: 1.15;
 }
 
 .glyphPanel p {
   margin: 0;
-  color: rgba(255, 248, 236, 0.6);
-  font-size: 12px;
-  line-height: 1.55;
+  color: rgba(255, 248, 236, 0.72);
+  font-size: 13px;
+  line-height: 1.6;
 }
 
 .glyphList {
-  display: flex;
-  flex-wrap: nowrap;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 8px;
-  overflow-x: auto;
-  padding-bottom: 2px;
 }
 
 .fullScrollNote {
-  flex: 1 1 100%;
+  grid-column: 1 / -1;
   padding: 12px 14px;
   border: 1px solid rgba(232, 218, 191, 0.16);
   border-radius: 7px;
   background: rgba(255, 249, 236, 0.06);
-  color: rgba(255, 248, 236, 0.82);
-  font-size: 13px;
-  line-height: 1.55;
-}
-
-.fullScrollNote strong,
-.fullScrollNote span {
-  display: block;
-}
-
-.fullScrollNote span {
-  margin-top: 3px;
-  color: rgba(255, 248, 236, 0.62);
 }
 
 .spaceZoomControls {
@@ -1594,39 +1581,32 @@ button:disabled {
 }
 
 .glyphButton {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  min-width: 64px;
-  min-height: 72px;
-  flex-shrink: 0;
-  padding: 8px 10px;
+  display: grid;
+  gap: 2px;
+  min-height: 62px;
+  padding: 8px 6px;
   border: 1px solid rgba(232, 218, 191, 0.18);
-  border-radius: 8px;
-  background: rgba(255, 249, 236, 0.07);
+  border-radius: 7px;
+  background: rgba(255, 249, 236, 0.08);
   color: #fff8ec;
   cursor: pointer;
-  transition: background 0.18s, border-color 0.18s;
 }
 
 .glyphButton strong {
   font-family: "KaiTi", "STKaiti", "Microsoft YaHei", serif;
-  font-size: 28px;
-  font-weight: 700;
+  font-size: 24px;
+  font-weight: 600;
   line-height: 1;
 }
 
 .glyphButton span {
-  color: rgba(255, 248, 236, 0.5);
-  font-size: 10px;
-  letter-spacing: 0.02em;
+  color: rgba(255, 248, 236, 0.56);
+  font-size: 11px;
 }
 
 .glyphButton:hover,
 .glyphButton.active {
-  border-color: rgba(198, 89, 67, 0.9);
+  border-color: rgba(198, 89, 67, 0.78);
   background: rgba(163, 58, 44, 0.72);
 }
 
