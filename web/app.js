@@ -1,8 +1,5 @@
-const params = new URLSearchParams(window.location.search);
-let activeWorkId = params.get("work") || "";
-const initialSelectId = params.get("select");
-const initialProbe = params.get("probe");
-const initialView = params.get("view");
+const initialRoute = readRoute();
+let activeWorkId = initialRoute.workId || "";
 const WORKS_URL = "../data/works.json";
 const AUTH_TOKEN_KEY = "callilens-auth-token";
 const API_BASE =
@@ -133,6 +130,7 @@ const state = {
     fullRotationX: 0,
     fullRotationY: 0,
     renderKey: "",
+    pendingProbe: "",
     running: false,
     targetRotationX: -0.26,
     targetRotationY: 0.22,
@@ -291,13 +289,63 @@ function reflectionsStorageKey() {
   return `callilens-reflections:${activeWorkId || "work_003"}`;
 }
 
+function readRoute() {
+  const routeParams = new URLSearchParams(window.location.search);
+  return {
+    view: routeParams.get("view") || "",
+    workId: routeParams.get("work") || "",
+    selectId: routeParams.get("select") || "",
+    probe: routeParams.get("probe") || "",
+  };
+}
+
+function writeEntryRoute(screen, options = {}) {
+  const nextUrl = new URL(window.location.href);
+  nextUrl.searchParams.delete("work");
+  nextUrl.searchParams.delete("select");
+  nextUrl.searchParams.delete("probe");
+  if (screen === "home") {
+    nextUrl.searchParams.delete("view");
+  } else {
+    nextUrl.searchParams.set("view", screen);
+  }
+  if (nextUrl.href === window.location.href) return;
+  const method = options.replaceUrl ? "replaceState" : "pushState";
+  window.history[method]({ screen }, "", nextUrl);
+}
+
+function writeDemoRoute(workId, options = {}) {
+  const nextUrl = new URL(window.location.href);
+  nextUrl.searchParams.set("work", workId);
+  nextUrl.searchParams.set("view", "demo");
+  nextUrl.searchParams.delete("select");
+  nextUrl.searchParams.delete("probe");
+  if (nextUrl.href === window.location.href) return;
+  const method = options.replaceUrl ? "replaceState" : "pushState";
+  window.history[method]({ screen: "demo", workId }, "", nextUrl);
+}
+
 async function boot() {
   try {
     await loadCurrentUser();
     await loadWorksIndex();
-    const shouldOpenDemo = initialView === "demo" || Boolean(params.get("work")) || Boolean(initialSelectId) || Boolean(initialProbe);
+    const route = readRoute();
+    const shouldOpenDemo = route.view === "demo" || Boolean(route.workId) || Boolean(route.selectId) || Boolean(route.probe);
     if (shouldOpenDemo) {
-      await openWork(activeWorkId || state.worksIndex?.defaultWorkId || "work_003", { updateUrl: false });
+      await openWork(route.workId || activeWorkId || state.worksIndex?.defaultWorkId || "work_003", {
+        updateUrl: false,
+        selectId: route.selectId,
+        probe: route.probe,
+      });
+      return;
+    }
+    if (route.view === "library" || route.view === "upload") {
+      setScreen(route.view, { updateUrl: false });
+      if (route.view === "upload") setAdminLoggedIn(localStorage.getItem("callilens-admin-logged-in") === "true");
+      requestAnimationFrame(() => {
+        const target = route.view === "library" ? els.storedWorksPanel : els.uploadPanel;
+        target?.scrollIntoView({ block: "start" });
+      });
       return;
     }
     renderEntry();
@@ -326,12 +374,7 @@ function setScreen(screen, options = {}) {
   state.screen = screen;
   renderEntry();
   if (options.updateUrl !== false && screen !== "demo") {
-    const nextUrl = new URL(window.location.href);
-    nextUrl.searchParams.delete("work");
-    nextUrl.searchParams.delete("view");
-    nextUrl.searchParams.delete("select");
-    nextUrl.searchParams.delete("probe");
-    window.history.pushState({}, "", nextUrl);
+    writeEntryRoute(screen, options);
   }
 }
 
@@ -383,6 +426,8 @@ function renderWorkCards() {
 
 async function openWork(workId, options = {}) {
   activeWorkId = workId;
+  const routeSelectId = options.selectId || "";
+  state.space.pendingProbe = options.probe || "";
   state.screen = "demo";
   state.layer = "original";
   state.mode = "original";
@@ -416,12 +461,7 @@ async function openWork(workId, options = {}) {
   startWorkSession();
 
   if (options.updateUrl !== false) {
-    const nextUrl = new URL(window.location.href);
-    nextUrl.searchParams.set("work", activeWorkId);
-    nextUrl.searchParams.set("view", "demo");
-    nextUrl.searchParams.delete("select");
-    nextUrl.searchParams.delete("probe");
-    window.history.pushState({}, "", nextUrl);
+    writeDemoRoute(activeWorkId, options);
   }
 
   const response = activeWorkId === "work_003" ? await fetch(dataUrl()) : null;
@@ -430,9 +470,9 @@ async function openWork(workId, options = {}) {
   } else {
     state.data = await loadGeneratedWorkData(workId);
   }
-  if (initialSelectId && state.data.annotations?.some((item) => item.id === initialSelectId)) {
-    state.selectedId = initialSelectId;
-    const item = state.data.annotations.find((entry) => entry.id === initialSelectId);
+  if (routeSelectId && state.data.annotations?.some((item) => item.id === routeSelectId)) {
+    state.selectedId = routeSelectId;
+    const item = state.data.annotations.find((entry) => entry.id === routeSelectId);
     state.filter = item.type;
   }
   const workMeta = currentWorkMeta();
@@ -2017,13 +2057,14 @@ function handleImageClick(event) {
 }
 
 function applyInitialProbe() {
-  if (!initialProbe || !els.image.naturalWidth || !els.image.naturalHeight) return;
-  const [x, y] = initialProbe.split(",").map(Number);
+  if (!state.space.pendingProbe || !els.image.naturalWidth || !els.image.naturalHeight) return;
+  const [x, y] = state.space.pendingProbe.split(",").map(Number);
   if (!Number.isFinite(x) || !Number.isFinite(y)) return;
   const percentX = clamp(x, 0, 100);
   const percentY = clamp(y, 0, 100);
   const pixelX = Math.round((percentX / 100) * els.image.naturalWidth);
   const pixelY = Math.round((percentY / 100) * els.image.naturalHeight);
+  state.space.pendingProbe = "";
   state.probe = analyzeProbe(pixelX, pixelY, percentX, percentY);
   renderOverlay();
   renderProbePanel();
@@ -2410,6 +2451,36 @@ function returnHome() {
 function returnToLibrary() {
   setScreen("library");
   requestAnimationFrame(() => els.storedWorksPanel.scrollIntoView({ behavior: "smooth", block: "start" }));
+}
+
+async function handleBrowserRouteChange() {
+  const route = readRoute();
+  try {
+    if (route.view === "demo" || route.workId || route.selectId || route.probe) {
+      await openWork(route.workId || state.worksIndex?.defaultWorkId || "work_003", {
+        updateUrl: false,
+        selectId: route.selectId,
+        probe: route.probe,
+      });
+      return;
+    }
+    if (route.view === "library") {
+      setScreen("library", { updateUrl: false });
+      requestAnimationFrame(() => els.storedWorksPanel?.scrollIntoView({ block: "start" }));
+      return;
+    }
+    if (route.view === "upload") {
+      setScreen("upload", { updateUrl: false });
+      setAdminLoggedIn(localStorage.getItem("callilens-admin-logged-in") === "true");
+      requestAnimationFrame(() => els.uploadPanel?.scrollIntoView({ block: "start" }));
+      return;
+    }
+    setScreen("home", { updateUrl: false });
+    window.scrollTo({ top: 0 });
+  } catch (error) {
+    console.error(error);
+    showEmptyDetail("页面切换失败", error.message);
+  }
 }
 
 function authHeaders() {
@@ -3198,5 +3269,6 @@ els.reflectionInput.addEventListener("input", () => {
 });
 window.addEventListener("resize", handleViewportResize);
 window.addEventListener("scroll", handleEntryScroll, { passive: true });
+window.addEventListener("popstate", handleBrowserRouteChange);
 
 boot();
