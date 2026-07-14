@@ -2453,7 +2453,15 @@ async function submitUserAuth(mode) {
   const username = els.userUsername.value.trim();
   const password = els.userPassword.value;
   if (!username || !password) {
-    renderUserStatus("请先填写用户名和密码。");
+    renderUserStatus("请填写用户名和密码：用户名3-32位，密码至少6位。");
+    return;
+  }
+  if (username.length < 3 || username.length > 32) {
+    renderUserStatus("用户名长度需要在3-32位之间。");
+    return;
+  }
+  if (password.length < 6) {
+    renderUserStatus("密码至少需要6位。");
     return;
   }
   renderUserStatus(mode === "register" ? "正在注册..." : "正在登录...");
@@ -2463,7 +2471,15 @@ async function submitUserAuth(mode) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password }),
     });
-    const payload = await response.json();
+    let payload = {};
+    try {
+      payload = await response.json();
+    } catch (parseError) {
+      payload = {};
+    }
+    if (response.status === 405) {
+      throw new Error("当前后端没有启用用户接口。请确认后端已切到 codex/user-reflections-db 分支并重启，或 Render 已部署该分支/main合并后的版本。");
+    }
     if (!response.ok) throw new Error(payload.detail || `HTTP ${response.status}`);
     state.authToken = payload.token;
     state.user = payload.user;

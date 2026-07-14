@@ -25,8 +25,8 @@
             <p id="userStatusText">未登录：反思只保存在本机。</p>
           </div>
           <form id="userAuthForm" class="userAuthForm">
-            <input id="userUsername" name="username" autocomplete="username" placeholder="用户名" />
-            <input id="userPassword" name="password" type="password" autocomplete="current-password" placeholder="密码" />
+            <input id="userUsername" name="username" autocomplete="username" minlength="3" maxlength="32" placeholder="用户名（3-32位）" />
+            <input id="userPassword" name="password" type="password" autocomplete="current-password" minlength="6" placeholder="密码（至少6位）" />
             <div class="userAuthActions">
               <button id="userLoginButton" class="secondaryButton" type="submit">登录</button>
               <button id="userRegisterButton" class="secondaryButton" type="button">注册</button>
@@ -431,6 +431,6 @@
       </aside>
     </main>
 
-    <script src="./app.js?v=53"></script>
+    <script src="./app.js?v=54"></script>
   </body>
 </html>
