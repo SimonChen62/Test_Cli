@@ -2680,15 +2680,14 @@ function appendUserRecord(title, text, meta = "") {
 function renderMyRecords(payload) {
   if (!els.userRecordsList) return;
   els.userRecordsList.replaceChildren();
-  const sessions = payload.sessions || [];
   const firstLooks = payload.first_looks || [];
   const reflections = payload.reflections || [];
-  const total = sessions.length + firstLooks.length + reflections.length;
+  const total = firstLooks.length + reflections.length;
   if (els.userRecordsMeta) {
-    els.userRecordsMeta.textContent = `用户 ${payload.user?.username || state.user?.username || "-"}，共读取到 ${total} 条近期记录。`;
+    els.userRecordsMeta.textContent = `用户 ${payload.user?.username || state.user?.username || "-"}，共读取到 ${total} 条第一印象和反思。`;
   }
   if (!total) {
-    appendUserRecord("暂无记录", "进入作品后提交第一印象或反思，这里会显示你的记录。");
+    appendUserRecord("暂无记录", "提交第一印象或反思后，这里会显示你的记录。");
     return;
   }
   firstLooks.slice(0, 5).forEach((record) => {
@@ -2704,9 +2703,6 @@ function renderMyRecords(payload) {
       record.content || "（未填写）",
       `${record.annotation_id || "free_reflection"} · ${formatRecordTime(record.created_at)}`,
     );
-  });
-  sessions.slice(0, 5).forEach((record) => {
-    appendUserRecord("进入作品", workTitleForRecord(record.work_id), formatRecordTime(record.started_at));
   });
 }
 
