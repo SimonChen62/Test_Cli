@@ -112,6 +112,98 @@ textarea:focus-visible,
   font-size: 12px;
 }
 
+.userBadgeButton {
+  position: fixed;
+  top: 18px;
+  right: 22px;
+  z-index: 35;
+  display: grid;
+  gap: 2px;
+  min-width: 156px;
+  border: 1px solid rgba(232, 218, 191, 0.32);
+  border-radius: 8px;
+  background: rgba(18, 16, 12, 0.72);
+  color: var(--paper);
+  cursor: pointer;
+  padding: 9px 12px;
+  text-align: left;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(14px);
+}
+
+.userBadgeButton span {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.userBadgeButton small {
+  color: rgba(244, 239, 228, 0.68);
+  font-size: 11px;
+}
+
+.userRecordsPanel {
+  position: fixed;
+  top: 78px;
+  right: 22px;
+  z-index: 36;
+  width: min(380px, calc(100vw - 32px));
+  max-height: calc(100vh - 104px);
+  overflow: auto;
+  border: 1px solid rgba(232, 218, 191, 0.28);
+  border-radius: 8px;
+  background: rgba(34, 31, 25, 0.96);
+  color: var(--paper);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(18px);
+  padding: 14px;
+}
+
+.userRecordsHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.userRecordsHeader strong {
+  display: block;
+  font-size: 17px;
+}
+
+.userRecordsHeader p {
+  margin: 4px 0 0;
+  color: rgba(244, 239, 228, 0.68);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.userRecordsList {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.userRecordItem {
+  border: 1px solid rgba(232, 218, 191, 0.18);
+  border-radius: 8px;
+  background: rgba(255, 249, 236, 0.08);
+  padding: 10px;
+}
+
+.userRecordItem strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 13px;
+}
+
+.userRecordItem p {
+  margin: 0;
+  color: rgba(244, 239, 228, 0.72);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .entryScreen.scrolled .entryCompact {
   transform: translateY(0);
 }
@@ -188,6 +280,10 @@ textarea:focus-visible,
   padding-top: 2vh;
 }
 
+.entryReveal.authenticated {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .entryUserCard {
   border: 1px solid rgba(232, 218, 191, 0.28);
   border-radius: 8px;
@@ -208,6 +304,12 @@ textarea:focus-visible,
   color: rgba(244, 239, 228, 0.74);
   font-size: 13px;
   line-height: 1.45;
+}
+
+.entryUserCard .userStatusText {
+  min-height: 18px;
+  margin-bottom: 10px;
+  color: rgba(244, 239, 228, 0.82);
 }
 
 .userAuthForm {
@@ -233,6 +335,11 @@ textarea:focus-visible,
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.userAuthActions .active {
+  border-color: rgba(198, 89, 67, 0.72);
+  background: rgba(198, 89, 67, 0.16);
 }
 
 .entryActionButton {

@@ -60,6 +60,13 @@ class UserServiceTest(unittest.TestCase):
         self.assertEqual(len(records["first_looks"]), 1)
         self.assertEqual(len(records["reflections"]), 1)
 
+        mine = user_service.my_records(token)
+        self.assertEqual(mine["user"]["username"], "student01")
+        self.assertEqual(len(mine["sessions"]), 1)
+        self.assertEqual(len(mine["first_looks"]), 1)
+        self.assertEqual(len(mine["reflections"]), 1)
+        self.assertEqual(mine["reflections"][0]["content"], "我看到上下笔画之间有方向承接。")
+
     def test_rejects_bad_login(self):
         user_service.register("student02", "secret123")
 

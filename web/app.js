@@ -147,12 +147,17 @@ const state = {
   ragUseAi: false,
   authToken: localStorage.getItem(AUTH_TOKEN_KEY) || "",
   user: null,
+  authMode: "login",
+  userRecordsOpen: false,
 };
 
 const els = {
   entryScreen: document.querySelector("#entryScreen"),
+  entryReveal: document.querySelector(".entryReveal"),
+  entryUserCard: document.querySelector("#entryUserCard"),
   uploadEntry: document.querySelector("#uploadEntryButton"),
   storedWorks: document.querySelector("#storedWorksButton"),
+  storedWorksHint: document.querySelector("#storedWorksHint"),
   backHomeFromLibrary: document.querySelector("#backHomeFromLibraryButton"),
   storedWorksPanel: document.querySelector("#storedWorksPanel"),
   storedWorksList: document.querySelector("#storedWorksList"),
@@ -160,11 +165,22 @@ const els = {
   backHomeFromUpload: document.querySelector("#backHomeFromUploadButton"),
   browseFromUpload: document.querySelector("#browseFromUploadButton"),
   userAuthForm: document.querySelector("#userAuthForm"),
+  userAuthTitle: document.querySelector("#userAuthTitle"),
+  userAuthSubtitle: document.querySelector("#userAuthSubtitle"),
   userUsername: document.querySelector("#userUsername"),
   userPassword: document.querySelector("#userPassword"),
   userStatusText: document.querySelector("#userStatusText"),
+  userLogin: document.querySelector("#userLoginButton"),
   userRegister: document.querySelector("#userRegisterButton"),
   userLogout: document.querySelector("#userLogoutButton"),
+  userBadge: document.querySelector("#userBadgeButton"),
+  userBadgeName: document.querySelector("#userBadgeName"),
+  userBadgeId: document.querySelector("#userBadgeId"),
+  userRecordsPanel: document.querySelector("#userRecordsPanel"),
+  userRecordsClose: document.querySelector("#userRecordsCloseButton"),
+  userRecordsList: document.querySelector("#userRecordsList"),
+  userRecordsMeta: document.querySelector("#userRecordsMeta"),
+  userLogoutPanel: document.querySelector("#userLogoutPanelButton"),
   adminLoginForm: document.querySelector("#adminLoginForm"),
   adminPassword: document.querySelector("#adminPassword"),
   adminLoginError: document.querySelector("#adminLoginError"),
@@ -331,6 +347,12 @@ async function boot() {
     await loadWorksIndex();
     const route = readRoute();
     const shouldOpenDemo = route.view === "demo" || Boolean(route.workId) || Boolean(route.selectId) || Boolean(route.probe);
+    if (!state.user && (shouldOpenDemo || route.view === "library")) {
+      setAuthMode("login", "请先登录后再进入书画库。");
+      setScreen("home", { updateUrl: false });
+      writeEntryRoute("home", { replaceUrl: true });
+      return;
+    }
     if (shouldOpenDemo) {
       await openWork(route.workId || activeWorkId || state.worksIndex?.defaultWorkId || "work_003", {
         updateUrl: false,
@@ -383,10 +405,16 @@ function renderEntry() {
   document.body.dataset.screen = state.screen;
   els.entryScreen.dataset.screen = state.screen;
   els.entryScreen.classList.toggle("scrolled", state.screen === "home" && window.scrollY > 12);
+  els.entryReveal?.classList.toggle("authenticated", Boolean(state.user));
   els.entryScreen.hidden = state.screen === "demo";
   els.app.hidden = state.screen !== "demo";
   els.storedWorksPanel.hidden = state.screen !== "library";
   els.uploadPanel.hidden = state.screen !== "upload";
+  if (els.storedWorksHint) {
+    els.storedWorksHint.textContent = state.user
+      ? "进入当前样例作品，开始分层观察与反思任务。"
+      : "请先登录；登录后可进入作品库并同步观察记录。";
+  }
 }
 
 function renderWorkCards() {
@@ -2448,14 +2476,29 @@ function returnHome() {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-function returnToLibrary() {
+function requestLibraryAccess() {
+  if (!state.user) {
+    setAuthMode("login", "请先登录后再进入书画库。");
+    setScreen("home");
+    requestAnimationFrame(() => els.entryUserCard?.scrollIntoView({ behavior: "smooth", block: "center" }));
+    return;
+  }
   setScreen("library");
-  requestAnimationFrame(() => els.storedWorksPanel.scrollIntoView({ behavior: "smooth", block: "start" }));
+  requestAnimationFrame(() => els.storedWorksPanel?.scrollIntoView({ behavior: "smooth", block: "start" }));
+}
+
+function returnToLibrary() {
+  requestLibraryAccess();
 }
 
 async function handleBrowserRouteChange() {
   const route = readRoute();
   try {
+    if (!state.user && (route.view === "demo" || route.workId || route.selectId || route.probe || route.view === "library")) {
+      setAuthMode("login", "请先登录后再进入书画库。");
+      setScreen("home", { updateUrl: false });
+      return;
+    }
     if (route.view === "demo" || route.workId || route.selectId || route.probe) {
       await openWork(route.workId || state.worksIndex?.defaultWorkId || "work_003", {
         updateUrl: false,
@@ -2487,6 +2530,20 @@ function authHeaders() {
   return state.authToken ? { Authorization: `Bearer ${state.authToken}` } : {};
 }
 
+function setAuthMode(mode = "login", message = "") {
+  state.authMode = mode === "register" ? "register" : "login";
+  if (els.userAuthTitle) els.userAuthTitle.textContent = state.authMode === "register" ? "请注册" : "请登录";
+  if (els.userAuthSubtitle) {
+    els.userAuthSubtitle.textContent =
+      state.authMode === "register"
+        ? "注册后会自动登录，并进入书画库开始保存观察记录。"
+        : "登录后可进入书画库，并把第一印象与反思同步到数据库。";
+  }
+  if (els.userLogin) els.userLogin.classList.toggle("active", state.authMode === "login");
+  if (els.userRegister) els.userRegister.classList.toggle("active", state.authMode === "register");
+  if (message) renderUserStatus(message);
+}
+
 function renderUserStatus(message = "") {
   if (!els.userStatusText) return;
   if (message) {
@@ -2494,11 +2551,21 @@ function renderUserStatus(message = "") {
   } else if (state.user) {
     els.userStatusText.textContent = `已登录：${state.user.username}，反思会同步到数据库。`;
   } else {
-    els.userStatusText.textContent = "未登录：反思只保存在本机。";
+    els.userStatusText.textContent = "未登录：请先登录或注册。";
   }
+  if (els.entryUserCard) els.entryUserCard.hidden = Boolean(state.user);
+  if (els.userAuthForm) els.userAuthForm.hidden = Boolean(state.user);
   if (els.userLogout) els.userLogout.hidden = !state.user;
   if (els.userUsername) els.userUsername.disabled = Boolean(state.user);
   if (els.userPassword) els.userPassword.disabled = Boolean(state.user);
+  if (els.userBadge) els.userBadge.hidden = !state.user;
+  if (els.userBadgeName) els.userBadgeName.textContent = state.user ? `已登录：${state.user.username}` : "未登录";
+  if (els.userBadgeId) els.userBadgeId.textContent = state.user ? `ID ${state.user.id}` : "ID -";
+  if (!state.user) {
+    state.userRecordsOpen = false;
+    if (els.userRecordsPanel) els.userRecordsPanel.hidden = true;
+  }
+  renderEntry();
 }
 
 async function loadCurrentUser() {
@@ -2520,6 +2587,7 @@ async function loadCurrentUser() {
 }
 
 async function submitUserAuth(mode) {
+  setAuthMode(mode);
   if (!els.userUsername || !els.userPassword) return;
   const username = els.userUsername.value.trim();
   const password = els.userPassword.value;
@@ -2557,7 +2625,8 @@ async function submitUserAuth(mode) {
     localStorage.setItem(AUTH_TOKEN_KEY, state.authToken);
     els.userPassword.value = "";
     renderUserStatus();
-    startWorkSession();
+    setScreen("library");
+    requestAnimationFrame(() => els.storedWorksPanel?.scrollIntoView({ behavior: "smooth", block: "start" }));
   } catch (error) {
     renderUserStatus(`${mode === "register" ? "注册" : "登录"}失败：${error.message}`);
   }
@@ -2566,6 +2635,7 @@ async function submitUserAuth(mode) {
 function logoutUser() {
   state.authToken = "";
   state.user = null;
+  state.userRecordsOpen = false;
   localStorage.removeItem(AUTH_TOKEN_KEY);
   if (els.userUsername) els.userUsername.disabled = false;
   if (els.userPassword) {
@@ -2573,6 +2643,86 @@ function logoutUser() {
     els.userPassword.value = "";
   }
   renderUserStatus();
+  setAuthMode("login");
+  setScreen("home");
+}
+
+function formatRecordTime(value) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("zh-CN", { hour12: false });
+}
+
+function workTitleForRecord(workId) {
+  const work = (state.worksIndex?.works || []).find((item) => item.id === workId);
+  return work?.title || workId || "未知作品";
+}
+
+function appendUserRecord(title, text, meta = "") {
+  if (!els.userRecordsList) return;
+  const item = document.createElement("article");
+  item.className = "userRecordItem";
+  const heading = document.createElement("strong");
+  heading.textContent = title;
+  const body = document.createElement("p");
+  body.textContent = text;
+  item.append(heading, body);
+  if (meta) {
+    const small = document.createElement("p");
+    small.textContent = meta;
+    item.append(small);
+  }
+  els.userRecordsList.append(item);
+}
+
+function renderMyRecords(payload) {
+  if (!els.userRecordsList) return;
+  els.userRecordsList.replaceChildren();
+  const sessions = payload.sessions || [];
+  const firstLooks = payload.first_looks || [];
+  const reflections = payload.reflections || [];
+  const total = sessions.length + firstLooks.length + reflections.length;
+  if (els.userRecordsMeta) {
+    els.userRecordsMeta.textContent = `用户 ${payload.user?.username || state.user?.username || "-"}，共读取到 ${total} 条近期记录。`;
+  }
+  if (!total) {
+    appendUserRecord("暂无记录", "进入作品后提交第一印象或反思，这里会显示你的记录。");
+    return;
+  }
+  firstLooks.slice(0, 5).forEach((record) => {
+    appendUserRecord(
+      `第一印象 · ${workTitleForRecord(record.work_id)}`,
+      `整体：${record.overall || "未填写"}；运动感：${record.motion || "未填写"}；疏密：${record.density || "未填写"}`,
+      formatRecordTime(record.updated_at || record.created_at),
+    );
+  });
+  reflections.slice(0, 8).forEach((record) => {
+    appendUserRecord(
+      `我的反思 · ${workTitleForRecord(record.work_id)}`,
+      record.content || "（未填写）",
+      `${record.annotation_id || "free_reflection"} · ${formatRecordTime(record.created_at)}`,
+    );
+  });
+  sessions.slice(0, 5).forEach((record) => {
+    appendUserRecord("进入作品", workTitleForRecord(record.work_id), formatRecordTime(record.started_at));
+  });
+}
+
+async function toggleUserRecords() {
+  if (!state.user || !els.userRecordsPanel) return;
+  state.userRecordsOpen = !state.userRecordsOpen;
+  els.userRecordsPanel.hidden = !state.userRecordsOpen;
+  if (!state.userRecordsOpen) return;
+  if (els.userRecordsList) els.userRecordsList.textContent = "正在读取你的记录...";
+  try {
+    const response = await fetch(`${API_BASE}/api/me/records`, { headers: authHeaders(), cache: "no-store" });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.detail || `HTTP ${response.status}`);
+    renderMyRecords(payload);
+  } catch (error) {
+    if (els.userRecordsList) els.userRecordsList.textContent = `记录读取失败：${error.message}`;
+  }
 }
 
 async function startWorkSession() {
@@ -3161,8 +3311,7 @@ els.spaceViewReset?.addEventListener("click", (event) => {
 });
 
 els.storedWorks.addEventListener("click", () => {
-  setScreen("library");
-  requestAnimationFrame(() => els.storedWorksPanel.scrollIntoView({ behavior: "smooth", block: "start" }));
+  requestLibraryAccess();
 });
 
 els.backHomeFromLibrary.addEventListener("click", returnHome);
@@ -3181,6 +3330,12 @@ els.userAuthForm?.addEventListener("submit", (event) => {
 });
 els.userRegister?.addEventListener("click", () => submitUserAuth("register"));
 els.userLogout?.addEventListener("click", logoutUser);
+els.userBadge?.addEventListener("click", toggleUserRecords);
+els.userRecordsClose?.addEventListener("click", () => {
+  state.userRecordsOpen = false;
+  if (els.userRecordsPanel) els.userRecordsPanel.hidden = true;
+});
+els.userLogoutPanel?.addEventListener("click", logoutUser);
 
 els.adminLoginForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -3221,8 +3376,7 @@ els.adminLogout?.addEventListener("click", () => {
 });
 
 els.browseFromUpload.addEventListener("click", () => {
-  setScreen("library");
-  requestAnimationFrame(() => els.storedWorksPanel.scrollIntoView({ behavior: "smooth", block: "start" }));
+  requestLibraryAccess();
 });
 
 els.firstLookForm.addEventListener("submit", handleFirstLookSubmit);

@@ -96,6 +96,14 @@ def current_user(authorization: str | None = Header(None)) -> dict[str, object]:
     return {"authenticated": bool(user), "user": user}
 
 
+@app.get("/api/me/records")
+def current_user_records(authorization: str | None = Header(None)) -> dict[str, object]:
+    try:
+        return user_service.my_records(bearer_token(authorization))
+    except ValueError as exc:
+        raise auth_error(exc) from exc
+
+
 @app.post("/api/sessions/start")
 def start_user_session(
     payload: SessionStartPayload,

@@ -1,6 +1,6 @@
 # CalliLens 用户数据库使用说明
 
-当前分支新增的是轻量用户记录系统，不是复杂账号平台。
+当前版本新增的是轻量用户记录系统，不是复杂账号平台。
 
 ## 存什么
 
@@ -27,13 +27,13 @@ http://127.0.0.1:5190/web/
 
 操作路线：
 
-1. 首页左侧“用户记录”区域输入用户名和密码。
-2. 第一次使用点“注册”。
-3. 之后使用同一账号点“登录”。
+1. 首页输入用户名和密码。
+2. 第一次使用点“注册”，之后使用同一账号点“登录”。
+3. 登录成功后会自动进入书画库。
 4. 进入作品并填写“第一印象”。
 5. 提交反思。
-6. 进入管理员后台，口令 `callilens-admin`。
-7. 点击“用户记录”，查看账号、进入作品、第一印象和反思。
+6. 回到首页后，右上角“已登录”按钮可以查看自己的近期记录。
+7. 管理员后台口令 `callilens-admin`，其中“用户记录”可以查看全站记录。
 
 本地数据库文件会自动创建在：
 
@@ -55,12 +55,15 @@ DATABASE_URL
 
 如果没有 `DATABASE_URL`，后端会退回 SQLite。Render 免费 Web Service 的运行时文件不适合长期保存，所以线上长期使用建议配置 PostgreSQL。
 
+当前 `render.yaml` 已包含 `callilens-db` PostgreSQL Blueprint。如果 Render 使用 Blueprint 部署，会自动把数据库连接写入 `DATABASE_URL`。如果你是在 Render 控制台手动建服务，需要在服务的 Environment 里手动添加 `DATABASE_URL`。
+
 ## API
 
 ```text
 POST /api/auth/register
 POST /api/auth/login
 GET  /api/auth/me
+GET  /api/me/records
 POST /api/sessions/start
 POST /api/first-look
 POST /api/reflections

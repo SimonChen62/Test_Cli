@@ -280,3 +280,55 @@ def admin_records(limit: int = 80) -> dict[str, Any]:
         "first_looks": first_looks,
         "reflections": reflections,
     }
+
+
+def my_records(token: str | None, limit: int = 40) -> dict[str, Any]:
+    user = require_user(token)
+    init_db()
+    limit = max(1, min(limit, 100))
+    with db_service.connect() as connection:
+        sessions = [
+            db_service.row_to_dict(row)
+            for row in connection.execute(
+                f"""
+                SELECT id, work_id, started_at
+                FROM work_sessions
+                WHERE user_id = {db_service.placeholders(1)}
+                ORDER BY started_at DESC
+                LIMIT {db_service.placeholders(1)}
+                """,
+                (user["id"], limit),
+            ).fetchall()
+        ]
+        first_looks = [
+            db_service.row_to_dict(row)
+            for row in connection.execute(
+                f"""
+                SELECT id, work_id, overall, motion, density, created_at, updated_at
+                FROM first_looks
+                WHERE user_id = {db_service.placeholders(1)}
+                ORDER BY updated_at DESC
+                LIMIT {db_service.placeholders(1)}
+                """,
+                (user["id"], limit),
+            ).fetchall()
+        ]
+        reflections = [
+            db_service.row_to_dict(row)
+            for row in connection.execute(
+                f"""
+                SELECT id, work_id, annotation_id, reflection_type, content, created_at
+                FROM reflections
+                WHERE user_id = {db_service.placeholders(1)}
+                ORDER BY created_at DESC
+                LIMIT {db_service.placeholders(1)}
+                """,
+                (user["id"], limit),
+            ).fetchall()
+        ]
+    return {
+        "user": user,
+        "sessions": sessions,
+        "first_looks": first_looks,
+        "reflections": reflections,
+    }

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>CalliLens</title>
     <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="./styles.css?v=40" />
+    <link rel="stylesheet" href="./styles.css?v=41" />
   </head>
   <body>
     <section id="entryScreen" class="entryScreen" aria-label="CalliLens 入口">
@@ -13,16 +13,32 @@
         <span>CalliLens</span>
         <small>书法观察式导览</small>
       </div>
+      <button id="userBadgeButton" class="userBadgeButton" type="button" hidden>
+        <span id="userBadgeName">已登录</span>
+        <small id="userBadgeId">ID -</small>
+      </button>
+      <aside id="userRecordsPanel" class="userRecordsPanel" hidden>
+        <div class="userRecordsHeader">
+          <div>
+            <strong>我的观察记录</strong>
+            <p id="userRecordsMeta">登录后显示你的书画观察与反思。</p>
+          </div>
+          <button id="userRecordsCloseButton" class="secondaryButton" type="button">关闭</button>
+        </div>
+        <div id="userRecordsList" class="userRecordsList"></div>
+        <button id="userLogoutPanelButton" class="secondaryButton" type="button">退出登录</button>
+      </aside>
       <div class="entrySticky">
         <p class="entrySubtitle">书法观察式导览</p>
         <h1>CalliLens</h1>
       </div>
 
       <div class="entryReveal" aria-label="选择使用方式">
-        <section class="entryUserCard" aria-label="用户账号">
+        <section id="entryUserCard" class="entryUserCard" aria-label="用户账号">
           <div>
-            <strong>用户记录</strong>
-            <p id="userStatusText">未登录：反思只保存在本机。</p>
+            <strong id="userAuthTitle">请登录</strong>
+            <p id="userAuthSubtitle">登录后可进入书画库，并把第一印象与反思同步到数据库。</p>
+            <p id="userStatusText" class="userStatusText">未登录：请先登录或注册。</p>
           </div>
           <form id="userAuthForm" class="userAuthForm">
             <input id="userUsername" name="username" autocomplete="username" minlength="3" maxlength="32" placeholder="用户名（3-32位）" />
@@ -40,7 +56,7 @@
         </button>
         <button id="storedWorksButton" class="entryActionButton primaryEntryAction" type="button">
           <span>网页已存库</span>
-          <small>进入当前样例作品，开始分层观察与反思任务。</small>
+          <small id="storedWorksHint">登录后进入当前样例作品，开始分层观察与反思任务。</small>
         </button>
       </div>
 
@@ -431,6 +447,6 @@
       </aside>
     </main>
 
-    <script src="./app.js?v=55"></script>
+    <script src="./app.js?v=56"></script>
   </body>
 </html>
