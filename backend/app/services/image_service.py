@@ -31,11 +31,49 @@ def _ink_mask_and_height(image: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.
     mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations=1)
     mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=1)
 
-    darkness = 255 - gray
-    height = cv2.bitwise_and(darkness, darkness, mask=mask)
-    height = cv2.GaussianBlur(height, (5, 5), 0)
-    height = cv2.normalize(height, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+    height = _make_relief_height(gray, mask)
     return gray, mask, height
+
+
+def _normalize_ink_values(values: np.ndarray) -> np.ndarray:
+    if values.size == 0:
+        return values.astype(np.float32)
+    low, high = np.percentile(values, [2, 98])
+    if high <= low:
+        low, high = float(values.min()), float(values.max())
+    if high <= low:
+        return np.zeros_like(values, dtype=np.float32)
+    return np.clip((values.astype(np.float32) - low) / (high - low), 0.0, 1.0)
+
+
+def _make_relief_height(gray: np.ndarray, mask: np.ndarray) -> np.ndarray:
+    ink = mask > 0
+    if not np.any(ink):
+        return np.zeros_like(gray, dtype=np.uint8)
+
+    darkness = (255 - gray).astype(np.float32)
+    ink_strength = np.zeros_like(darkness, dtype=np.float32)
+    ink_strength[ink] = _normalize_ink_values(darkness[ink])
+    ink_strength = cv2.GaussianBlur(ink_strength, (0, 0), 1.35)
+
+    distance = cv2.distanceTransform(mask, cv2.DIST_L2, 5)
+    distance_values = distance[ink]
+    max_distance = float(np.percentile(distance_values, 99)) if distance_values.size else 0.0
+    if max_distance <= 0:
+        max_distance = float(distance.max())
+    dome = np.clip(distance / max(max_distance, 1.0), 0.0, 1.0)
+    dome = np.power(dome, 0.62)
+    dome = cv2.GaussianBlur(dome, (0, 0), 1.15)
+
+    soft_edge = cv2.GaussianBlur(mask.astype(np.float32) / 255.0, (0, 0), 2.4)
+    relief = (0.46 * ink_strength + 0.54 * dome) * (0.42 + 0.58 * dome) * soft_edge
+    relief[~ink] = 0.0
+    relief = cv2.GaussianBlur(relief, (0, 0), 2.2)
+    relief = np.clip(relief, 0.0, 1.0)
+    cap = float(np.percentile(relief[ink], 99.4))
+    if cap > 0:
+        relief = np.clip(relief / cap, 0.0, 1.0)
+    return np.round(relief * 225).astype(np.uint8)
 
 
 def process_work_dir(work_dir: Path) -> dict[str, object]:

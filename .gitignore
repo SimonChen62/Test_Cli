@@ -1,4 +1,4 @@
-﻿__pycache__/
+__pycache__/
 .venv/
 *.pyc
 .env
@@ -12,6 +12,10 @@ data/source/
 data/work_001/candidates/
 data/work_001/*_full.png
 data/work_001/preview_layers.png
+
+# Exclude uploaded work directories (work_004 and above)
+data/work_00[4-9]/
+data/work_[0-9][0-9][0-9]/
 logs/
 .sync-git/
 # Environment and secrets

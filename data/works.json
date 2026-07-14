@@ -14,7 +14,31 @@
       "status": "ready",
       "source": "上海博物馆馆藏资料；项目内图像数据",
       "source_url": "https://www.shanghaimuseum.net/mu/frontend/pg/m/article/id/CI00000601",
-      "tags": ["赵孟頫", "光福重建塔记", "元代", "行书", "赵体"]
+      "tags": [
+        "赵孟頫",
+        "光福重建塔记",
+        "元代",
+        "行书",
+        "赵体"
+      ]
+    },
+    {
+      "id": "work_001",
+      "title": "光福重建塔记第二部分",
+      "artist": "赵孟頫",
+      "dynasty": "",
+      "date": "元",
+      "script_type": "行书",
+      "museum": "上海博物馆",
+      "description": "阐述佛塔功德, 记录施主, 工匠等建造过程",
+      "thumbnail": "thumbnail.png",
+      "status": "ready",
+      "source": "管理员上传",
+      "source_url": "",
+      "tags": [
+        "行书",
+        "长卷"
+      ]
     }
   ]
 }

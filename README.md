@@ -53,6 +53,8 @@ http://localhost:8000/docs
 
 ```text
 docs/BACKEND_USAGE_GUIDE.md
+docs/RAG_BACKEND_BEGINNER_GUIDE.md
+docs/BACKEND_TESTING_STEP_BY_STEP.md
 ```
 
 课堂演示和答辩材料：
