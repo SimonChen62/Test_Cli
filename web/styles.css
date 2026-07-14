@@ -846,7 +846,10 @@ h3 {
 .app[data-intro-complete="false"] .observationBlock,
 .app[data-intro-complete="false"] .detailPanel,
 .app[data-intro-complete="false"] .probePanel,
+.app[data-intro-complete="false"] .ragPanel,
 .app[data-intro-complete="false"] .reflectionPanel,
+.app[data-intro-complete="false"] .glyphPanel,
+.app[data-intro-complete="false"] .inkverseLitePanel,
 .app[data-intro-complete="false"] #clearButton {
   display: none;
 }

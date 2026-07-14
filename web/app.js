@@ -149,8 +149,6 @@ const state = {
   ragUseAi: false,
 };
 
-state.introComplete = firstLookComplete(state.firstLook);
-
 const els = {
   entryScreen: document.querySelector("#entryScreen"),
   uploadEntry: document.querySelector("#uploadEntryButton"),
@@ -398,7 +396,7 @@ async function openWork(workId, options = {}) {
   state.inkverseLite.active = false;
   state.inkverseLite.step = "original";
   state.firstLook = readFirstLook();
-  state.introComplete = firstLookComplete(state.firstLook);
+  state.introComplete = false;
   state.editingFirstLook = false;
   state.reflections = readReflections();
   renderEntry();
