@@ -1,0 +1,28 @@
+{
+  "chunks": [
+    {
+      "id": "work_001_intro",
+      "work_id": "work_001",
+      "title": "光福重建塔记第二部分作品说明",
+      "text": "阐述佛塔功德, 记录施主, 工匠等建造过程",
+      "source": "管理员上传资料",
+      "source_url": "",
+      "tags": [
+        "行书",
+        "长卷"
+      ]
+    },
+    {
+      "id": "work_001_background",
+      "work_id": "work_001",
+      "title": "光福重建塔记第二部分背景资料",
+      "text": "元代大德年古塔倾颓, 后募资重建",
+      "source": "管理员上传资料",
+      "source_url": "",
+      "tags": [
+        "行书",
+        "长卷"
+      ]
+    }
+  ]
+}

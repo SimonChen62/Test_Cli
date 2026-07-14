@@ -57,28 +57,28 @@ def _base_annotations(boxes: list[dict[str, float]]) -> list[dict[str, Any]]:
         {
             "id": "ai_brush_1",
             "type": "brush_ink",
-            "label": "AI候选：重墨与转折",
-            "formal": "系统根据墨迹高度图找到一处墨色较重、视觉重量较集中的区域。",
-            "perception": "这里可以作为观察墨色厚薄和转折停顿的候选位置。",
-            "aesthetic": "这是 AI/算法候选导览，不等同于专家判断；管理员需要结合原图确认后再作为正式导览。",
+            "label": "AI候选：重墨区域",
+            "formal": "系统根据墨迹高度图找到一处墨色较重、视觉重量较集中的候选区域。",
+            "perception": "这里可以用来观察重墨、转折或停顿感，但仍需要对照原图复核。",
+            "aesthetic": "这是 AI/算法候选导览，不等同于专家判断；管理员确认前不能作为正式导览。",
             "concept": "墨色",
         },
         {
-            "id": "ai_qi_1",
-            "type": "qi_flow",
-            "label": "AI候选：走势承接",
-            "formal": "系统根据墨迹分布推测这里可能适合观察上下或左右的视觉承接。",
-            "perception": "观众可以顺着该区域观察笔势是否形成连续的观看路径。",
-            "aesthetic": "这里只能称为候选观察点，不能说系统自动识别了真实气脉或笔顺。",
-            "concept": "走势",
+            "id": "ai_light_1",
+            "type": "brush_ink",
+            "label": "AI候选：细线与飞白",
+            "formal": "系统根据墨迹高度和局部明暗变化找到一处较细、较轻或可能存在飞白的候选区域。",
+            "perception": "这里可以用来观察轻重变化、干湿变化或笔画边缘的细节。",
+            "aesthetic": "AI 只提示可观察的图像线索，不判断真实用笔力度，也不恢复笔顺。",
+            "concept": "飞白",
         },
         {
             "id": "ai_void_1",
             "type": "void_solid",
             "label": "AI候选：留白关系",
             "formal": "系统根据墨迹稀疏和周边结构给出一处可观察留白关系的候选区域。",
-            "perception": "这里适合观察空白如何影响停顿、疏密和观看节奏。",
-            "aesthetic": "留白解释仍需要人工判断；AI 只提供可复核的候选入口。",
+            "perception": "这里适合观察疏密、行距、字距或视觉停顿。",
+            "aesthetic": "留白解释仍需要人工判断；AI 只提供可复核的候选入口，不自动评价章法水平。",
             "concept": "留白",
         },
     ]
@@ -113,11 +113,11 @@ def create_ai_guide_draft(work_dir: Path, work: dict[str, Any], report: dict[str
         f"墨迹占比：{report.get('ink_ratio')}"
     )
     fallback = (
-        "这是上传作品的 AI 候选导览草稿。系统根据作品资料和 OpenCV 墨迹高度图生成候选观察点；"
+        "这是上传作品的 AI 候选导览草稿。系统只根据作品资料、OpenCV 墨迹高度图和候选区域生成重墨、细线/飞白、留白等观察入口；"
         "这些内容需要管理员确认后才能作为正式导览。"
     )
     summary, provider = llm_service.enhance_answer(
-        "请为这件书法作品生成一段简短的候选导览说明，强调需要人工确认。",
+        "请为这件书法作品生成一段简短的候选导览说明。只讲可观察的重墨、细线/飞白、留白和整体风格，不要声称识别气脉、笔顺、真伪或书法水平；强调需要人工确认。",
         context,
         fallback,
     )
@@ -126,7 +126,7 @@ def create_ai_guide_draft(work_dir: Path, work: dict[str, Any], report: dict[str
         "provider": provider,
         "title": f"{title} AI候选导览草稿",
         "guideText": summary,
-        "warning": "AI/算法候选导览，仅用于辅助管理员初筛；不代表专家判断，不自动识别真实笔顺、气脉或书法水平。",
+        "warning": "AI/算法候选导览，仅用于辅助管理员初筛；不代表专家判断，不自动识别真实笔顺、气脉、真伪或书法水平。",
         "annotations": annotations,
     }
     (work_dir / "ai-guide-draft.json").write_text(

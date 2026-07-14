@@ -9,3 +9,12 @@ services:
         value: 3.12.1
       - key: CALLILENS_LLM_ENABLED
         value: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: callilens-db
+          property: connectionString
+
+databases:
+  - name: callilens-db
+    databaseName: callilens
+    user: callilens

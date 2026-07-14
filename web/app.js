@@ -1,9 +1,7 @@
-const params = new URLSearchParams(window.location.search);
-let activeWorkId = params.get("work") || "";
-const initialSelectId = params.get("select");
-const initialProbe = params.get("probe");
-const initialView = params.get("view");
+const initialRoute = readRoute();
+let activeWorkId = initialRoute.workId || "";
 const WORKS_URL = "../data/works.json";
+const AUTH_TOKEN_KEY = "callilens-auth-token";
 const API_BASE =
   window.CALLILENS_API_BASE ||
   (["127.0.0.1", "localhost"].includes(window.location.hostname) && window.location.port && window.location.port !== "8000"
@@ -132,6 +130,7 @@ const state = {
     fullRotationX: 0,
     fullRotationY: 0,
     renderKey: "",
+    pendingProbe: "",
     running: false,
     targetRotationX: -0.26,
     targetRotationY: 0.22,
@@ -146,18 +145,42 @@ const state = {
     step: "original",
   },
   ragUseAi: false,
+  authToken: localStorage.getItem(AUTH_TOKEN_KEY) || "",
+  user: null,
+  authMode: "login",
+  userRecordsOpen: false,
 };
 
 const els = {
   entryScreen: document.querySelector("#entryScreen"),
+  entryReveal: document.querySelector(".entryReveal"),
+  entryUserCard: document.querySelector("#entryUserCard"),
   uploadEntry: document.querySelector("#uploadEntryButton"),
   storedWorks: document.querySelector("#storedWorksButton"),
+  storedWorksHint: document.querySelector("#storedWorksHint"),
   backHomeFromLibrary: document.querySelector("#backHomeFromLibraryButton"),
   storedWorksPanel: document.querySelector("#storedWorksPanel"),
   storedWorksList: document.querySelector("#storedWorksList"),
   uploadPanel: document.querySelector("#uploadPanel"),
   backHomeFromUpload: document.querySelector("#backHomeFromUploadButton"),
   browseFromUpload: document.querySelector("#browseFromUploadButton"),
+  userAuthForm: document.querySelector("#userAuthForm"),
+  userAuthTitle: document.querySelector("#userAuthTitle"),
+  userAuthSubtitle: document.querySelector("#userAuthSubtitle"),
+  userUsername: document.querySelector("#userUsername"),
+  userPassword: document.querySelector("#userPassword"),
+  userStatusText: document.querySelector("#userStatusText"),
+  userLogin: document.querySelector("#userLoginButton"),
+  userRegister: document.querySelector("#userRegisterButton"),
+  userLogout: document.querySelector("#userLogoutButton"),
+  userBadge: document.querySelector("#userBadgeButton"),
+  userBadgeName: document.querySelector("#userBadgeName"),
+  userBadgeId: document.querySelector("#userBadgeId"),
+  userRecordsPanel: document.querySelector("#userRecordsPanel"),
+  userRecordsClose: document.querySelector("#userRecordsCloseButton"),
+  userRecordsList: document.querySelector("#userRecordsList"),
+  userRecordsMeta: document.querySelector("#userRecordsMeta"),
+  userLogoutPanel: document.querySelector("#userLogoutPanelButton"),
   adminLoginForm: document.querySelector("#adminLoginForm"),
   adminPassword: document.querySelector("#adminPassword"),
   adminLoginError: document.querySelector("#adminLoginError"),
@@ -167,6 +190,8 @@ const els = {
   adminLogout: document.querySelector("#adminLogoutButton"),
   adminRefreshWorks: document.querySelector("#adminRefreshWorksButton"),
   adminWorksList: document.querySelector("#adminWorksList"),
+  adminRefreshRecords: document.querySelector("#adminRefreshRecordsButton"),
+  adminRecordsList: document.querySelector("#adminRecordsList"),
   llmForm: document.querySelector("#llmForm"),
   llmStatus: document.querySelector("#llmStatus"),
   llmTest: document.querySelector("#llmTestButton"),
@@ -199,6 +224,8 @@ const els = {
   inkverseLiteText: document.querySelector("#inkverseLiteText"),
   inkverseLiteSteps: document.querySelector("#inkverseLitePanel .inkverseLiteSteps"),
   inkverseReflectionTags: document.querySelector("#inkverseLitePanel .inkverseReflectionTags"),
+  guidePanelTitle: document.querySelector("#guidePanelTitle"),
+  guidePanelNote: document.querySelector("#guidePanelNote"),
   guideList: document.querySelector("#guideList"),
   detailType: document.querySelector("#detailType"),
   annotationTitle: document.querySelector("#annotationTitle"),
@@ -278,12 +305,69 @@ function reflectionsStorageKey() {
   return `callilens-reflections:${activeWorkId || "work_003"}`;
 }
 
+function readRoute() {
+  const routeParams = new URLSearchParams(window.location.search);
+  return {
+    view: routeParams.get("view") || "",
+    workId: routeParams.get("work") || "",
+    selectId: routeParams.get("select") || "",
+    probe: routeParams.get("probe") || "",
+  };
+}
+
+function writeEntryRoute(screen, options = {}) {
+  const nextUrl = new URL(window.location.href);
+  nextUrl.searchParams.delete("work");
+  nextUrl.searchParams.delete("select");
+  nextUrl.searchParams.delete("probe");
+  if (screen === "home") {
+    nextUrl.searchParams.delete("view");
+  } else {
+    nextUrl.searchParams.set("view", screen);
+  }
+  if (nextUrl.href === window.location.href) return;
+  const method = options.replaceUrl ? "replaceState" : "pushState";
+  window.history[method]({ screen }, "", nextUrl);
+}
+
+function writeDemoRoute(workId, options = {}) {
+  const nextUrl = new URL(window.location.href);
+  nextUrl.searchParams.set("work", workId);
+  nextUrl.searchParams.set("view", "demo");
+  nextUrl.searchParams.delete("select");
+  nextUrl.searchParams.delete("probe");
+  if (nextUrl.href === window.location.href) return;
+  const method = options.replaceUrl ? "replaceState" : "pushState";
+  window.history[method]({ screen: "demo", workId }, "", nextUrl);
+}
+
 async function boot() {
   try {
+    await loadCurrentUser();
     await loadWorksIndex();
-    const shouldOpenDemo = initialView === "demo" || Boolean(params.get("work")) || Boolean(initialSelectId) || Boolean(initialProbe);
+    const route = readRoute();
+    const shouldOpenDemo = route.view === "demo" || Boolean(route.workId) || Boolean(route.selectId) || Boolean(route.probe);
+    if (!state.user && (shouldOpenDemo || route.view === "library")) {
+      setAuthMode("login", "请先登录后再进入书画库。");
+      setScreen("home", { updateUrl: false });
+      writeEntryRoute("home", { replaceUrl: true });
+      return;
+    }
     if (shouldOpenDemo) {
-      await openWork(activeWorkId || state.worksIndex?.defaultWorkId || "work_003", { updateUrl: false });
+      await openWork(route.workId || activeWorkId || state.worksIndex?.defaultWorkId || "work_003", {
+        updateUrl: false,
+        selectId: route.selectId,
+        probe: route.probe,
+      });
+      return;
+    }
+    if (route.view === "library" || route.view === "upload") {
+      setScreen(route.view, { updateUrl: false });
+      if (route.view === "upload") setAdminLoggedIn(localStorage.getItem("callilens-admin-logged-in") === "true");
+      requestAnimationFrame(() => {
+        const target = route.view === "library" ? els.storedWorksPanel : els.uploadPanel;
+        target?.scrollIntoView({ block: "start" });
+      });
       return;
     }
     renderEntry();
@@ -312,12 +396,7 @@ function setScreen(screen, options = {}) {
   state.screen = screen;
   renderEntry();
   if (options.updateUrl !== false && screen !== "demo") {
-    const nextUrl = new URL(window.location.href);
-    nextUrl.searchParams.delete("work");
-    nextUrl.searchParams.delete("view");
-    nextUrl.searchParams.delete("select");
-    nextUrl.searchParams.delete("probe");
-    window.history.pushState({}, "", nextUrl);
+    writeEntryRoute(screen, options);
   }
 }
 
@@ -326,10 +405,17 @@ function renderEntry() {
   document.body.dataset.screen = state.screen;
   els.entryScreen.dataset.screen = state.screen;
   els.entryScreen.classList.toggle("scrolled", state.screen === "home" && window.scrollY > 12);
+  els.entryReveal?.classList.toggle("authenticated", Boolean(state.user));
   els.entryScreen.hidden = state.screen === "demo";
   els.app.hidden = state.screen !== "demo";
   els.storedWorksPanel.hidden = state.screen !== "library";
   els.uploadPanel.hidden = state.screen !== "upload";
+  if (els.storedWorks) els.storedWorks.hidden = !state.user;
+  if (els.storedWorksHint) {
+    els.storedWorksHint.textContent = state.user
+      ? "进入当前样例作品，开始分层观察与反思任务。"
+      : "请先登录；登录后可进入作品库并同步观察记录。";
+  }
 }
 
 function renderWorkCards() {
@@ -369,6 +455,8 @@ function renderWorkCards() {
 
 async function openWork(workId, options = {}) {
   activeWorkId = workId;
+  const routeSelectId = options.selectId || "";
+  state.space.pendingProbe = options.probe || "";
   state.screen = "demo";
   state.layer = "original";
   state.mode = "original";
@@ -399,14 +487,10 @@ async function openWork(workId, options = {}) {
   state.editingFirstLook = false;
   state.reflections = readReflections();
   renderEntry();
+  startWorkSession();
 
   if (options.updateUrl !== false) {
-    const nextUrl = new URL(window.location.href);
-    nextUrl.searchParams.set("work", activeWorkId);
-    nextUrl.searchParams.set("view", "demo");
-    nextUrl.searchParams.delete("select");
-    nextUrl.searchParams.delete("probe");
-    window.history.pushState({}, "", nextUrl);
+    writeDemoRoute(activeWorkId, options);
   }
 
   const response = activeWorkId === "work_003" ? await fetch(dataUrl()) : null;
@@ -415,9 +499,9 @@ async function openWork(workId, options = {}) {
   } else {
     state.data = await loadGeneratedWorkData(workId);
   }
-  if (initialSelectId && state.data.annotations?.some((item) => item.id === initialSelectId)) {
-    state.selectedId = initialSelectId;
-    const item = state.data.annotations.find((entry) => entry.id === initialSelectId);
+  if (routeSelectId && state.data.annotations?.some((item) => item.id === routeSelectId)) {
+    state.selectedId = routeSelectId;
+    const item = state.data.annotations.find((entry) => entry.id === routeSelectId);
     state.filter = item.type;
   }
   const workMeta = currentWorkMeta();
@@ -462,6 +546,7 @@ async function loadGeneratedWorkData(workId) {
       voidCandidates: "binary.png",
     },
     guideText,
+    guideKind: aiGuide?.status === "ai_draft" ? "ai_candidate" : "none",
     annotations,
   };
 }
@@ -630,13 +715,19 @@ function syncCanvasVisibility() {
 }
 
 function renderGuideList() {
+  renderGuidePanelHeader();
   const items = visibleAnnotations();
   els.guideList.replaceChildren();
 
   if (!items.length) {
     const empty = document.createElement("p");
     empty.className = "emptyList";
-    empty.textContent = "当前分类还没有观察点。";
+    empty.textContent =
+      guideKind() === "ai_candidate"
+        ? "当前分类还没有 AI 候选观察点。"
+        : guideKind() === "none"
+          ? "该上传作品尚未生成 AI 候选导览；可以在管理员上传时勾选生成草稿，或先使用原图、3D 和 RAG。"
+          : "当前分类还没有观察点。";
     els.guideList.append(empty);
     return;
   }
@@ -663,6 +754,28 @@ function renderGuideList() {
     button.append(number, content);
     els.guideList.append(button);
   });
+}
+
+function guideKind() {
+  if (activeWorkId === "work_003") return "manual";
+  return state.data?.guideKind || "none";
+}
+
+function renderGuidePanelHeader() {
+  const kind = guideKind();
+  if (!els.guidePanelTitle || !els.guidePanelNote) return;
+  if (kind === "manual") {
+    els.guidePanelTitle.textContent = "人工精选导览";
+    els.guidePanelNote.textContent = "用于默认作品，来自项目整理的人工观察点。";
+    return;
+  }
+  if (kind === "ai_candidate") {
+    els.guidePanelTitle.textContent = "AI 候选导览";
+    els.guidePanelNote.textContent = "用于上传作品；由 OpenCV 候选区域和 AI 草稿生成，尚未人工确认。";
+    return;
+  }
+  els.guidePanelTitle.textContent = "AI 候选导览";
+  els.guidePanelNote.textContent = "该上传作品暂未生成候选导览，不会伪装成人工或专家标注。";
 }
 
 function renderGlyphPanel() {
@@ -966,8 +1079,12 @@ function setFilter(filter) {
 }
 
 function renderFilterButtons() {
+  const availableTypes = new Set(annotations().map((item) => item.type));
   document.querySelectorAll(".filterButton").forEach((button) => {
-    button.classList.toggle("active", button.dataset.filter === state.filter);
+    const filter = button.dataset.filter;
+    const available = filter === "all" || availableTypes.has(filter);
+    button.disabled = !available;
+    button.classList.toggle("active", filter === state.filter);
   });
 }
 
@@ -1969,13 +2086,14 @@ function handleImageClick(event) {
 }
 
 function applyInitialProbe() {
-  if (!initialProbe || !els.image.naturalWidth || !els.image.naturalHeight) return;
-  const [x, y] = initialProbe.split(",").map(Number);
+  if (!state.space.pendingProbe || !els.image.naturalWidth || !els.image.naturalHeight) return;
+  const [x, y] = state.space.pendingProbe.split(",").map(Number);
   if (!Number.isFinite(x) || !Number.isFinite(y)) return;
   const percentX = clamp(x, 0, 100);
   const percentY = clamp(y, 0, 100);
   const pixelX = Math.round((percentX / 100) * els.image.naturalWidth);
   const pixelY = Math.round((percentY / 100) * els.image.naturalHeight);
+  state.space.pendingProbe = "";
   state.probe = analyzeProbe(pixelX, pixelY, percentX, percentY);
   renderOverlay();
   renderProbePanel();
@@ -2240,6 +2358,7 @@ function submitReflection() {
   }
   state.reflections[key] = { text, submitted: true };
   saveReflections();
+  syncReflection(key, text);
   renderReflectionPanel();
   requestAnimationFrame(() => els.expertFeedbackPanel.scrollIntoView({ behavior: "smooth", block: "nearest" }));
 }
@@ -2307,6 +2426,7 @@ function handleFirstLookSubmit(event) {
   state.firstLook = firstLook;
   state.introComplete = true;
   localStorage.setItem(firstLookStorageKey(), JSON.stringify(firstLook));
+  syncFirstLook(firstLook);
   els.firstLookError.hidden = true;
   renderAll();
 }
@@ -2328,6 +2448,7 @@ function editFirstLook() {
   state.firstLook = firstLook;
   state.editingFirstLook = false;
   localStorage.setItem(firstLookStorageKey(), JSON.stringify(firstLook));
+  syncFirstLook(firstLook);
   els.summaryEditError.hidden = true;
   renderFirstLook();
 }
@@ -2356,9 +2477,298 @@ function returnHome() {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-function returnToLibrary() {
+function requestLibraryAccess() {
+  if (!state.user) {
+    setAuthMode("login", "请先登录后再进入书画库。");
+    setScreen("home");
+    requestAnimationFrame(() => els.entryUserCard?.scrollIntoView({ behavior: "smooth", block: "center" }));
+    return;
+  }
   setScreen("library");
-  requestAnimationFrame(() => els.storedWorksPanel.scrollIntoView({ behavior: "smooth", block: "start" }));
+  requestAnimationFrame(() => els.storedWorksPanel?.scrollIntoView({ behavior: "smooth", block: "start" }));
+}
+
+function returnToLibrary() {
+  requestLibraryAccess();
+}
+
+async function handleBrowserRouteChange() {
+  const route = readRoute();
+  try {
+    if (!state.user && (route.view === "demo" || route.workId || route.selectId || route.probe || route.view === "library")) {
+      setAuthMode("login", "请先登录后再进入书画库。");
+      setScreen("home", { updateUrl: false });
+      return;
+    }
+    if (route.view === "demo" || route.workId || route.selectId || route.probe) {
+      await openWork(route.workId || state.worksIndex?.defaultWorkId || "work_003", {
+        updateUrl: false,
+        selectId: route.selectId,
+        probe: route.probe,
+      });
+      return;
+    }
+    if (route.view === "library") {
+      setScreen("library", { updateUrl: false });
+      requestAnimationFrame(() => els.storedWorksPanel?.scrollIntoView({ block: "start" }));
+      return;
+    }
+    if (route.view === "upload") {
+      setScreen("upload", { updateUrl: false });
+      setAdminLoggedIn(localStorage.getItem("callilens-admin-logged-in") === "true");
+      requestAnimationFrame(() => els.uploadPanel?.scrollIntoView({ block: "start" }));
+      return;
+    }
+    setScreen("home", { updateUrl: false });
+    window.scrollTo({ top: 0 });
+  } catch (error) {
+    console.error(error);
+    showEmptyDetail("页面切换失败", error.message);
+  }
+}
+
+function authHeaders() {
+  return state.authToken ? { Authorization: `Bearer ${state.authToken}` } : {};
+}
+
+function setAuthMode(mode = "login", message = "") {
+  state.authMode = mode === "register" ? "register" : "login";
+  if (els.userAuthTitle) els.userAuthTitle.textContent = state.authMode === "register" ? "请注册" : "请登录";
+  if (els.userAuthSubtitle) {
+    els.userAuthSubtitle.textContent =
+      state.authMode === "register"
+        ? "注册后会自动登录，并进入书画库开始保存观察记录。"
+        : "登录后可进入书画库，并把第一印象与反思同步到数据库。";
+  }
+  if (els.userLogin) els.userLogin.classList.toggle("active", state.authMode === "login");
+  if (els.userRegister) els.userRegister.classList.toggle("active", state.authMode === "register");
+  if (message) renderUserStatus(message);
+}
+
+function renderUserStatus(message = "") {
+  if (!els.userStatusText) return;
+  if (message) {
+    els.userStatusText.textContent = message;
+  } else if (state.user) {
+    els.userStatusText.textContent = `已登录：${state.user.username}，反思会同步到数据库。`;
+  } else {
+    els.userStatusText.textContent = "未登录：请先登录或注册。";
+  }
+  if (els.entryUserCard) els.entryUserCard.hidden = Boolean(state.user);
+  if (els.userAuthForm) els.userAuthForm.hidden = Boolean(state.user);
+  if (els.userLogout) els.userLogout.hidden = !state.user;
+  if (els.userUsername) els.userUsername.disabled = Boolean(state.user);
+  if (els.userPassword) els.userPassword.disabled = Boolean(state.user);
+  if (els.userBadge) els.userBadge.hidden = !state.user;
+  if (els.userBadgeName) els.userBadgeName.textContent = state.user ? `已登录：${state.user.username}` : "未登录";
+  if (els.userBadgeId) els.userBadgeId.textContent = state.user ? `ID ${state.user.id}` : "ID -";
+  if (!state.user) {
+    state.userRecordsOpen = false;
+    if (els.userRecordsPanel) els.userRecordsPanel.hidden = true;
+  }
+  renderEntry();
+}
+
+async function loadCurrentUser() {
+  if (!state.authToken) {
+    renderUserStatus();
+    return;
+  }
+  try {
+    const response = await fetch(`${API_BASE}/api/auth/me`, { headers: authHeaders(), cache: "no-store" });
+    const payload = await response.json();
+    if (!response.ok || !payload.authenticated) throw new Error(payload.detail || "登录已失效");
+    state.user = payload.user;
+  } catch {
+    state.authToken = "";
+    state.user = null;
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+  }
+  renderUserStatus();
+}
+
+async function submitUserAuth(mode) {
+  setAuthMode(mode);
+  if (!els.userUsername || !els.userPassword) return;
+  const username = els.userUsername.value.trim();
+  const password = els.userPassword.value;
+  if (!username || !password) {
+    renderUserStatus("请填写用户名和密码：用户名3-32位，密码至少6位。");
+    return;
+  }
+  if (username.length < 3 || username.length > 32) {
+    renderUserStatus("用户名长度需要在3-32位之间。");
+    return;
+  }
+  if (password.length < 6) {
+    renderUserStatus("密码至少需要6位。");
+    return;
+  }
+  renderUserStatus(mode === "register" ? "正在注册..." : "正在登录...");
+  try {
+    const response = await fetch(`${API_BASE}/api/auth/${mode}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+    let payload = {};
+    try {
+      payload = await response.json();
+    } catch (parseError) {
+      payload = {};
+    }
+    if (response.status === 405) {
+      throw new Error("当前后端没有启用用户接口。请确认后端已切到 codex/user-reflections-db 分支并重启，或 Render 已部署该分支/main合并后的版本。");
+    }
+    if (!response.ok) throw new Error(payload.detail || `HTTP ${response.status}`);
+    state.authToken = payload.token;
+    state.user = payload.user;
+    localStorage.setItem(AUTH_TOKEN_KEY, state.authToken);
+    els.userPassword.value = "";
+    renderUserStatus();
+    setScreen("library");
+    requestAnimationFrame(() => els.storedWorksPanel?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  } catch (error) {
+    renderUserStatus(`${mode === "register" ? "注册" : "登录"}失败：${error.message}`);
+  }
+}
+
+function logoutUser() {
+  state.authToken = "";
+  state.user = null;
+  state.userRecordsOpen = false;
+  localStorage.removeItem(AUTH_TOKEN_KEY);
+  if (els.userUsername) els.userUsername.disabled = false;
+  if (els.userPassword) {
+    els.userPassword.disabled = false;
+    els.userPassword.value = "";
+  }
+  renderUserStatus();
+  setAuthMode("login");
+  setScreen("home");
+}
+
+function formatRecordTime(value) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("zh-CN", { hour12: false });
+}
+
+function workTitleForRecord(workId) {
+  const work = (state.worksIndex?.works || []).find((item) => item.id === workId);
+  return work?.title || workId || "未知作品";
+}
+
+function appendUserRecord(title, text, meta = "") {
+  if (!els.userRecordsList) return;
+  const item = document.createElement("article");
+  item.className = "userRecordItem";
+  const heading = document.createElement("strong");
+  heading.textContent = title;
+  const body = document.createElement("p");
+  body.textContent = text;
+  item.append(heading, body);
+  if (meta) {
+    const small = document.createElement("p");
+    small.textContent = meta;
+    item.append(small);
+  }
+  els.userRecordsList.append(item);
+}
+
+function renderMyRecords(payload) {
+  if (!els.userRecordsList) return;
+  els.userRecordsList.replaceChildren();
+  const sessions = payload.sessions || [];
+  const firstLooks = payload.first_looks || [];
+  const reflections = payload.reflections || [];
+  const total = sessions.length + firstLooks.length + reflections.length;
+  if (els.userRecordsMeta) {
+    els.userRecordsMeta.textContent = `用户 ${payload.user?.username || state.user?.username || "-"}，共读取到 ${total} 条近期记录。`;
+  }
+  if (!total) {
+    appendUserRecord("暂无记录", "进入作品后提交第一印象或反思，这里会显示你的记录。");
+    return;
+  }
+  firstLooks.slice(0, 5).forEach((record) => {
+    appendUserRecord(
+      `第一印象 · ${workTitleForRecord(record.work_id)}`,
+      `整体：${record.overall || "未填写"}；运动感：${record.motion || "未填写"}；疏密：${record.density || "未填写"}`,
+      formatRecordTime(record.updated_at || record.created_at),
+    );
+  });
+  reflections.slice(0, 8).forEach((record) => {
+    appendUserRecord(
+      `我的反思 · ${workTitleForRecord(record.work_id)}`,
+      record.content || "（未填写）",
+      `${record.annotation_id || "free_reflection"} · ${formatRecordTime(record.created_at)}`,
+    );
+  });
+  sessions.slice(0, 5).forEach((record) => {
+    appendUserRecord("进入作品", workTitleForRecord(record.work_id), formatRecordTime(record.started_at));
+  });
+}
+
+async function toggleUserRecords() {
+  if (!state.user || !els.userRecordsPanel) return;
+  state.userRecordsOpen = !state.userRecordsOpen;
+  els.userRecordsPanel.hidden = !state.userRecordsOpen;
+  if (!state.userRecordsOpen) return;
+  if (els.userRecordsList) els.userRecordsList.textContent = "正在读取你的记录...";
+  try {
+    const response = await fetch(`${API_BASE}/api/me/records`, { headers: authHeaders(), cache: "no-store" });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.detail || `HTTP ${response.status}`);
+    renderMyRecords(payload);
+  } catch (error) {
+    if (els.userRecordsList) els.userRecordsList.textContent = `记录读取失败：${error.message}`;
+  }
+}
+
+async function startWorkSession() {
+  if (!state.authToken || !activeWorkId) return;
+  try {
+    await fetch(`${API_BASE}/api/sessions/start`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify({ work_id: activeWorkId }),
+    });
+  } catch {
+    renderUserStatus("已登录，但本次进入作品未能写入服务器。");
+  }
+}
+
+async function syncFirstLook(firstLook) {
+  if (!state.authToken || !activeWorkId) return;
+  try {
+    await fetch(`${API_BASE}/api/first-look`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify({ work_id: activeWorkId, ...firstLook }),
+    });
+  } catch {
+    renderUserStatus("第一印象已保存在本机，但未同步到服务器。");
+  }
+}
+
+async function syncReflection(annotationId, text) {
+  if (!state.authToken || !activeWorkId) return;
+  const item = selectedAnnotation();
+  try {
+    await fetch(`${API_BASE}/api/reflections`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify({
+        work_id: activeWorkId,
+        annotation_id: annotationId || "free_reflection",
+        reflection_type: item?.type || "free",
+        content: text,
+      }),
+    });
+  } catch {
+    renderUserStatus("反思已保存在本机，但未同步到服务器。");
+  }
 }
 
 function setAdminLoggedIn(loggedIn) {
@@ -2373,7 +2783,7 @@ function setAdminLoggedIn(loggedIn) {
 }
 
 function setAdminTab(tab) {
-  const nextTab = tab === "ai" ? "ai" : "works";
+  const nextTab = ["works", "ai", "records"].includes(tab) ? tab : "works";
   els.adminTabs?.forEach((button) => {
     button.classList.toggle("active", button.dataset.adminTab === nextTab);
   });
@@ -2382,6 +2792,7 @@ function setAdminTab(tab) {
   });
   if (nextTab === "ai") loadLlmStatus();
   if (nextTab === "works") renderAdminWorksList();
+  if (nextTab === "records") loadAdminRecords();
 }
 
 function renderAdminWorksList() {
@@ -2420,6 +2831,75 @@ async function refreshAdminWorks() {
   await loadWorksIndex();
   renderWorkCards();
   renderAdminWorksList();
+}
+
+function appendRecordGroup(title, records, renderItem) {
+  if (!els.adminRecordsList) return;
+  const group = document.createElement("section");
+  group.className = "adminRecordGroup";
+  const heading = document.createElement("h4");
+  heading.textContent = `${title} (${records.length})`;
+  group.append(heading);
+  if (!records.length) {
+    const empty = document.createElement("p");
+    empty.className = "adminEmpty";
+    empty.textContent = "暂无记录。";
+    group.append(empty);
+  } else {
+    records.slice(0, 20).forEach((record) => {
+      const item = document.createElement("div");
+      item.className = "adminRecordItem";
+      renderItem(item, record);
+      group.append(item);
+    });
+  }
+  els.adminRecordsList.append(group);
+}
+
+function appendRecordText(item, title, detail) {
+  const strong = document.createElement("strong");
+  strong.textContent = title;
+  const paragraph = document.createElement("p");
+  paragraph.textContent = detail;
+  item.append(strong, paragraph);
+}
+
+async function loadAdminRecords() {
+  if (!els.adminRecordsList) return;
+  els.adminRecordsList.textContent = "正在读取用户记录...";
+  try {
+    const response = await fetch(`${API_BASE}/api/admin/user-records`, { cache: "no-store" });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.detail || `HTTP ${response.status}`);
+    els.adminRecordsList.replaceChildren();
+    const database = document.createElement("p");
+    database.className = "adminEmpty";
+    database.textContent = `数据库：${payload.database?.driver || "unknown"} ${payload.database?.path || ""}`;
+    els.adminRecordsList.append(database);
+
+    appendRecordGroup("用户账号", payload.users || [], (item, record) => {
+      appendRecordText(item, record.username || "-", `角色：${record.role || "user"}；创建时间：${record.created_at || "-"}`);
+    });
+    appendRecordGroup("进入作品", payload.sessions || [], (item, record) => {
+      appendRecordText(item, `${record.username || "-"} / ${record.work_id || "-"}`, record.started_at || "-");
+    });
+    appendRecordGroup("第一印象", payload.first_looks || [], (item, record) => {
+      appendRecordText(
+        item,
+        `${record.username || "-"} / ${record.work_id || "-"}`,
+        `整体：${record.overall || ""}\n运动：${record.motion || ""}\n疏密：${record.density || ""}`,
+      );
+    });
+    appendRecordGroup("反思文字", payload.reflections || [], (item, record) => {
+      appendRecordText(
+        item,
+        `${record.username || "-"} / ${record.work_id || "-"} / ${record.annotation_id || "-"}`,
+        record.content || "",
+      );
+    });
+  } catch (error) {
+    els.adminRecordsList.textContent = `读取失败：${error.message}`;
+  }
 }
 
 async function deleteAdminWork(workId, title) {
@@ -2832,8 +3312,7 @@ els.spaceViewReset?.addEventListener("click", (event) => {
 });
 
 els.storedWorks.addEventListener("click", () => {
-  setScreen("library");
-  requestAnimationFrame(() => els.storedWorksPanel.scrollIntoView({ behavior: "smooth", block: "start" }));
+  requestLibraryAccess();
 });
 
 els.backHomeFromLibrary.addEventListener("click", returnHome);
@@ -2845,6 +3324,19 @@ els.uploadEntry.addEventListener("click", () => {
 });
 
 els.backHomeFromUpload.addEventListener("click", returnHome);
+
+els.userAuthForm?.addEventListener("submit", (event) => {
+  event.preventDefault();
+  submitUserAuth("login");
+});
+els.userRegister?.addEventListener("click", () => submitUserAuth("register"));
+els.userLogout?.addEventListener("click", logoutUser);
+els.userBadge?.addEventListener("click", toggleUserRecords);
+els.userRecordsClose?.addEventListener("click", () => {
+  state.userRecordsOpen = false;
+  if (els.userRecordsPanel) els.userRecordsPanel.hidden = true;
+});
+els.userLogoutPanel?.addEventListener("click", logoutUser);
 
 els.adminLoginForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -2874,6 +3366,7 @@ els.llmForm?.addEventListener("submit", saveLlmConfig);
 els.llmTest?.addEventListener("click", testLlmConfig);
 els.uploadWorkForm?.addEventListener("submit", uploadAdminWork);
 els.adminRefreshWorks?.addEventListener("click", refreshAdminWorks);
+els.adminRefreshRecords?.addEventListener("click", loadAdminRecords);
 els.adminTabs?.forEach((button) => {
   button.addEventListener("click", () => setAdminTab(button.dataset.adminTab));
 });
@@ -2884,8 +3377,7 @@ els.adminLogout?.addEventListener("click", () => {
 });
 
 els.browseFromUpload.addEventListener("click", () => {
-  setScreen("library");
-  requestAnimationFrame(() => els.storedWorksPanel.scrollIntoView({ behavior: "smooth", block: "start" }));
+  requestLibraryAccess();
 });
 
 els.firstLookForm.addEventListener("submit", handleFirstLookSubmit);
@@ -2932,5 +3424,6 @@ els.reflectionInput.addEventListener("input", () => {
 });
 window.addEventListener("resize", handleViewportResize);
 window.addEventListener("scroll", handleEntryScroll, { passive: true });
+window.addEventListener("popstate", handleBrowserRouteChange);
 
 boot();
