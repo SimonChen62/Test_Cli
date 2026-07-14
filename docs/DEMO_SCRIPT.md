@@ -21,7 +21,7 @@ http://127.0.0.1:5190/web/
 
 ```powershell
 python -m uvicorn backend.app.main:app --reload --port 8000
-python -m http.server 5190
+python -m http.server 5190 --bind 127.0.0.1
 ```
 
 ## 2. 首页说明

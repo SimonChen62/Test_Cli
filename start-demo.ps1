@@ -31,8 +31,8 @@ Write-Host "Starting CalliLens API at http://localhost:$apiPort"
 Start-Process -FilePath "python" -ArgumentList @("-m", "uvicorn", "backend.app.main:app", "--host", "127.0.0.1", "--port", "$apiPort") -WorkingDirectory $root -WindowStyle Hidden
 Start-Sleep -Seconds 2
 
-Write-Host "Starting CalliLens web at http://localhost:$webPort/web/"
-Start-Process -FilePath "python" -ArgumentList @("-m", "http.server", "$webPort") -WorkingDirectory $root -WindowStyle Hidden
+Write-Host "Starting CalliLens web at http://127.0.0.1:$webPort/web/"
+Start-Process -FilePath "python" -ArgumentList @("-m", "http.server", "$webPort", "--bind", "127.0.0.1") -WorkingDirectory $root -WindowStyle Hidden
 Start-Sleep -Seconds 1
 
-Start-Process "http://localhost:$webPort/web/"
+Start-Process "http://127.0.0.1:$webPort/web/"

@@ -43,7 +43,7 @@ python -m uvicorn backend.app.main:app --reload --port 8000
 
 ```powershell
 cd D:\技术学习\CalliLens
-python -m http.server 5190
+python -m http.server 5190 --bind 127.0.0.1
 ```
 
 然后打开：
