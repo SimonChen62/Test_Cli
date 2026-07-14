@@ -11,7 +11,7 @@
     "inkDensity": "ink_density.png",
     "voidCandidates": "void_candidates.png"
   },
-  "guideText": "先看原作整体，再进入图层和悬浮 3D。系统只把可见墨迹、留白、粗细和墨色变化作为观察线索，不自动评价书法水平，也不恢复真实笔顺。",
+  "guideText": "先看原作整体，再进入图层和平滑浮雕 3D。系统只把可见墨迹、留白、粗细和墨色变化作为观察线索，不自动评价书法水平，也不恢复真实笔顺。",
   "annotations": [
     {
       "id": "qi_1",
@@ -85,7 +85,7 @@
       "reflection": {
         "concept": "笔墨",
         "prompt": "这里的墨色轻重给你什么感觉？",
-        "expertFeedback": "悬浮 3D 只是把可见墨迹深浅转成高度，不是检测真实书写力道。"
+        "expertFeedback": "平滑浮雕 3D 只是把可见墨迹深浅转成高度，不是检测真实书写力道。"
       }
     }
   ]

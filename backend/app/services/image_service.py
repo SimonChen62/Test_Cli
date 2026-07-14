@@ -87,11 +87,10 @@ def process_work_dir(work_dir: Path) -> dict[str, object]:
         "mask": "mask.png",
         "height": "height.png",
         "displacement": {"scale": 0.42, "bias": 0.08},
-        "note": "墨迹深浅转换为悬浮高度；不代表真实笔顺或书法水平判断。",
+        "note": "墨迹深浅转换为平滑浮雕高度；不代表真实笔顺或书法水平判断。",
     }
     (work_dir / "floating_3d_data.json").write_text(
         json.dumps(floating, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
     return report
-

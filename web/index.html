@@ -131,6 +131,7 @@
           <button class="modeButton" data-mode="relation" type="button">虚实</button>
           <button class="modeButton" data-mode="ink" type="button">笔墨</button>
           <button class="modeButton" data-mode="space" type="button">全文3D</button>
+          <button id="inkverseLiteButton" class="modeButton inkverseLiteButton" type="button">入墨体验</button>
         </div>
 
         <div class="canvasShell" aria-label="作品查看器，点击图像可生成局部证据探针">
@@ -161,6 +162,30 @@
             <p id="glyphSummary">从人工框选区域中提取墨迹 mask、骨架和厚度图，再生成 3D 浮雕。</p>
           </div>
           <div id="glyphList" class="glyphList" aria-label="可查看的三维字形"></div>
+        </section>
+
+        <section id="inkverseLitePanel" class="inkverseLitePanel" hidden aria-label="InkVerse 轻量入墨体验">
+          <div class="inkverseLiteHeader">
+            <div>
+              <p class="eyebrow">InkVerse Lite</p>
+              <h2 id="inkverseLiteTitle">Original：回到原作</h2>
+            </div>
+            <button id="inkverseLiteClose" class="secondaryButton" type="button">收起</button>
+          </div>
+          <p id="inkverseLiteText" class="inkverseLiteText">先看整幅长卷，再进入墨迹、追随气脉，最后回到原作记录观察。</p>
+          <div class="inkverseLiteSteps" aria-label="入墨体验阶段">
+            <button class="inkverseStep active" type="button" data-inkverse-step="original">Original</button>
+            <button class="inkverseStep" type="button" data-inkverse-step="ink">Enter the Ink</button>
+            <button class="inkverseStep" type="button" data-inkverse-step="qi">Follow the Qi</button>
+            <button class="inkverseStep" type="button" data-inkverse-step="return">Return</button>
+          </div>
+          <div class="inkverseReflectionTags" aria-label="回到原作后的反思标签">
+            <button type="button" data-reflection-tag="我重新注意到作品里的运动感。">运动感</button>
+            <button type="button" data-reflection-tag="我重新注意到字与字之间的节奏。">节奏</button>
+            <button type="button" data-reflection-tag="我重新注意到留白在组织呼吸。">留白</button>
+            <button type="button" data-reflection-tag="我重新注意到墨色轻重带来的空间感。">墨色</button>
+            <button type="button" data-reflection-tag="我还有其他观察。">其他</button>
+          </div>
         </section>
       </section>
 
@@ -281,8 +306,13 @@
           <div id="ragQuickQuestions" class="ragQuickQuestions">
             <button type="button">赵孟頫是谁？</button>
             <button type="button">《光福重建塔记》是什么？</button>
-            <button type="button">为什么要做悬浮 3D？</button>
+            <button type="button">为什么要做平滑浮雕 3D？</button>
             <button type="button">什么是飞白？</button>
+            <button type="button">老师新文档要求是什么？</button>
+            <button type="button">InkVerse 和 RAG 怎么结合？</button>
+            <button type="button">现在有数据库吗？</button>
+            <button type="button">RAG 数据库在哪里？</button>
+            <button type="button">做完之后我怎么测试？</button>
           </div>
           <label class="questionField">
             <span>问题</span>
@@ -341,6 +371,6 @@
       </aside>
     </main>
 
-    <script src="./app.js?v=38"></script>
+    <script src="./app.js?v=39"></script>
   </body>
 </html>

@@ -1,13 +1,14 @@
 # CalliLens
 
-CalliLens 是一个书法数字导览 Demo，默认作品为赵孟頫《光福重建塔记》。项目将 OpenCV 图像处理、Three.js 悬浮 3D 墨迹展示和本地 RAG 问答结合起来，帮助普通观众理解作品的视觉魅力与历史文化背景。
+CalliLens 是一个书法数字导览 Demo，默认作品为赵孟頫《光福重建塔记》。项目将 OpenCV 图像处理、Three.js 平滑浮雕 3D 展示、InkVerse Lite 入墨体验和本地 RAG 问答结合起来，帮助普通观众理解作品的视觉魅力与历史文化背景。
 
-项目边界很明确：不自动评价书法水平，不判断真伪，不恢复真实笔顺，也不声称自动识别气韵。系统只把可见墨迹深浅转成 3D 空间效果，并用有来源的本地资料回答问题。
+项目边界很明确：不自动评价书法水平，不判断真伪，不恢复真实笔顺，也不声称自动识别气韵。系统只把可见墨迹深浅转成平滑浮雕高度，并用有来源的本地资料回答问题。
 
 ## 功能
 
 - 高清原图浏览
-- 整卷悬浮 3D 墨迹展示
+- 整卷平滑浮雕 3D 墨迹展示
+- InkVerse Lite 入墨体验入口：Original、Enter the Ink、Follow the Qi、Return
 - 放大、缩小、水平移动、拖拽旋转
 - 本地 RAG 问答，无 API key 也能运行
 - 可选 AI 润色，管理员在页面里配置 API key
@@ -59,6 +60,7 @@ docs/BACKEND_USAGE_GUIDE.md
 ```text
 docs/DEMO_SCRIPT.md
 docs/DEFENSE_QA.md
+docs/CALLILENS_NEXT_STAGE_TASKBOOK.md
 docs/CALLILENS_INKVERSE_RAG_FUSION_PLAN.md
 ```
 
@@ -71,6 +73,14 @@ callilens-admin
 ## AI 配置
 
 默认不需要付费 API。问答会使用本地 RAG 检索和模板回答。
+
+当前没有 MySQL、SQLite 或向量数据库。RAG 使用本地文件型知识库：
+
+```text
+data/works.json
+data/work_003/knowledge.json
+knowledge/*.md
+```
 
 如果要接入 AI 润色，可以在网页“管理员上传”页保存配置。配置会写入本机 `.env.local`，不会提交到 Git。
 
@@ -95,4 +105,4 @@ node --check web\app.js
 
 可以这样介绍：
 
-> 我们以赵孟頫《光福重建塔记》为例，搭建了一个书法数字导览系统。OpenCV 负责提取墨迹 mask 和高度图，Three.js 把墨迹深浅渲染成悬浮 3D 效果，RAG 问答则先检索本地作品资料、术语解释和技术说明，再生成有来源的导览回答。即使没有付费 API，系统也可以完整演示。
+> 我们以赵孟頫《光福重建塔记》为例，搭建了一个书法数字导览系统。OpenCV 负责提取墨迹 mask 和高度图，Three.js 把墨迹深浅渲染成平滑浮雕 3D，InkVerse Lite 把原作、入墨、气脉和回看串成短体验链，RAG 问答则先检索本地作品资料、术语解释和技术说明，再生成有来源的导览回答。即使没有付费 API，系统也可以完整演示。

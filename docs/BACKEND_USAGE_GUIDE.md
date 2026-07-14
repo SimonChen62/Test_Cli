@@ -178,3 +178,26 @@ python -m uvicorn backend.app.main:app --reload --port 8000
 
 - 不影响本地 RAG。
 - 先不要管 AI，答辩时可以说 API 是可选增强。
+
+## 10. 现在有数据库吗
+
+当前没有 MySQL、SQLite、向量数据库或云端数据库。
+
+现在的 RAG 使用本地文件型知识库：
+
+```text
+data/works.json
+data/work_003/knowledge.json
+knowledge/*.md
+```
+
+也就是说，后端每次回答问题时，会读取这些本地文件，做关键词和标签匹配，再返回答案和来源。
+
+第一版这样做更适合新手和课堂演示：
+
+- 不需要安装数据库。
+- 不需要连接云服务。
+- 没有 API key 也能跑。
+- 资料量不大时足够使用。
+
+后续如果作品数量变多，再考虑升级到 SQLite 或向量数据库。
