@@ -199,6 +199,8 @@ const els = {
   inkverseLiteText: document.querySelector("#inkverseLiteText"),
   inkverseLiteSteps: document.querySelector("#inkverseLitePanel .inkverseLiteSteps"),
   inkverseReflectionTags: document.querySelector("#inkverseLitePanel .inkverseReflectionTags"),
+  guidePanelTitle: document.querySelector("#guidePanelTitle"),
+  guidePanelNote: document.querySelector("#guidePanelNote"),
   guideList: document.querySelector("#guideList"),
   detailType: document.querySelector("#detailType"),
   annotationTitle: document.querySelector("#annotationTitle"),
@@ -462,6 +464,7 @@ async function loadGeneratedWorkData(workId) {
       voidCandidates: "binary.png",
     },
     guideText,
+    guideKind: aiGuide?.status === "ai_draft" ? "ai_candidate" : "none",
     annotations,
   };
 }
@@ -630,13 +633,19 @@ function syncCanvasVisibility() {
 }
 
 function renderGuideList() {
+  renderGuidePanelHeader();
   const items = visibleAnnotations();
   els.guideList.replaceChildren();
 
   if (!items.length) {
     const empty = document.createElement("p");
     empty.className = "emptyList";
-    empty.textContent = "当前分类还没有观察点。";
+    empty.textContent =
+      guideKind() === "ai_candidate"
+        ? "当前分类还没有 AI 候选观察点。"
+        : guideKind() === "none"
+          ? "该上传作品尚未生成 AI 候选导览；可以在管理员上传时勾选生成草稿，或先使用原图、3D 和 RAG。"
+          : "当前分类还没有观察点。";
     els.guideList.append(empty);
     return;
   }
@@ -663,6 +672,28 @@ function renderGuideList() {
     button.append(number, content);
     els.guideList.append(button);
   });
+}
+
+function guideKind() {
+  if (activeWorkId === "work_003") return "manual";
+  return state.data?.guideKind || "none";
+}
+
+function renderGuidePanelHeader() {
+  const kind = guideKind();
+  if (!els.guidePanelTitle || !els.guidePanelNote) return;
+  if (kind === "manual") {
+    els.guidePanelTitle.textContent = "人工精选导览";
+    els.guidePanelNote.textContent = "用于默认作品，来自项目整理的人工观察点。";
+    return;
+  }
+  if (kind === "ai_candidate") {
+    els.guidePanelTitle.textContent = "AI 候选导览";
+    els.guidePanelNote.textContent = "用于上传作品；由 OpenCV 候选区域和 AI 草稿生成，尚未人工确认。";
+    return;
+  }
+  els.guidePanelTitle.textContent = "AI 候选导览";
+  els.guidePanelNote.textContent = "该上传作品暂未生成候选导览，不会伪装成人工或专家标注。";
 }
 
 function renderGlyphPanel() {
@@ -966,8 +997,12 @@ function setFilter(filter) {
 }
 
 function renderFilterButtons() {
+  const availableTypes = new Set(annotations().map((item) => item.type));
   document.querySelectorAll(".filterButton").forEach((button) => {
-    button.classList.toggle("active", button.dataset.filter === state.filter);
+    const filter = button.dataset.filter;
+    const available = filter === "all" || availableTypes.has(filter);
+    button.disabled = !available;
+    button.classList.toggle("active", filter === state.filter);
   });
 }
 
