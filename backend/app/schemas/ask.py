@@ -7,6 +7,7 @@ class AskRequest(BaseModel):
     work_id: str = Field(default="work_003")
     question: str = Field(min_length=1)
     use_llm: bool = False
+    ask_mode: str = Field(default="local")
 
 
 class Source(BaseModel):
@@ -20,4 +21,3 @@ class AskResponse(BaseModel):
     answer: str
     sources: list[Source]
     mode: str = "local_rag"
-

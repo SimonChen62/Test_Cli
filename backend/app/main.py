@@ -6,11 +6,15 @@ from pathlib import Path
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 from .schemas.ask import AskRequest, AskResponse
-from .services import config_service, image_service, rag_service, work_service
+from .services import config_service, guide_service, image_service, llm_service, rag_service, work_service
 from .services.paths import DATA_DIR, KNOWLEDGE_DIR
 
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+WEB_DIR = PROJECT_ROOT / "web"
 
 app = FastAPI(title="CalliLens API", version="2.0.0")
 
@@ -67,12 +71,18 @@ def knowledge() -> dict[str, object]:
 
 @app.post("/api/ask", response_model=AskResponse)
 def ask(payload: AskRequest) -> dict[str, object]:
-    return rag_service.answer(payload.question, payload.work_id, payload.use_llm)
+    ask_mode = payload.ask_mode or ("ai_rag" if payload.use_llm else "local")
+    return rag_service.answer(payload.question, payload.work_id, ask_mode, config_service.llm_enabled())
 
 
 @app.get("/api/admin/llm-config")
 def llm_config_status() -> dict[str, object]:
     return config_service.llm_status()
+
+
+@app.get("/api/admin/llm-bindings")
+def llm_bindings() -> dict[str, object]:
+    return config_service.list_llm_bindings()
 
 
 @app.post("/api/admin/login")
@@ -84,15 +94,67 @@ def admin_login(password: str = Form(...)) -> dict[str, object]:
 
 @app.post("/api/admin/llm-config")
 def save_llm_config(
-    provider: str = Form("openrouter"),
+    provider: str = Form("doubao"),
     api_key: str = Form(""),
     model: str = Form(""),
     base_url: str = Form(""),
+    enabled: bool = Form(False),
 ) -> dict[str, object]:
     try:
-        return config_service.save_llm_config(provider, api_key, model, base_url)
+        return config_service.save_llm_config(provider, api_key, model, base_url, enabled)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/api/admin/llm-bindings")
+def add_llm_binding(
+    name: str = Form(""),
+    provider: str = Form("doubao"),
+    api_key: str = Form(""),
+    model: str = Form(""),
+    base_url: str = Form(""),
+    enabled: bool = Form(True),
+    activate: bool = Form(True),
+) -> dict[str, object]:
+    try:
+        return config_service.add_llm_binding(name, provider, api_key, model, base_url, enabled, activate)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/api/admin/llm-bindings/{binding_id}/activate")
+def activate_llm_binding(binding_id: str) -> dict[str, object]:
+    try:
+        return config_service.activate_llm_binding(binding_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.delete("/api/admin/llm-bindings/{binding_id}")
+def delete_llm_binding(binding_id: str) -> dict[str, object]:
+    try:
+        return config_service.delete_llm_binding(binding_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.post("/api/admin/test-llm")
+def test_llm_config() -> dict[str, object]:
+    status = config_service.llm_status()
+    if not status.get("configured"):
+        raise HTTPException(status_code=400, detail="尚未配置 API key。")
+    if not status.get("enabled"):
+        raise HTTPException(status_code=400, detail="AI 润色未启用，请先在管理员后台勾选启用。")
+    answer, provider = llm_service.enhance_answer(
+        "请用一句话回复：CalliLens AI 配置测试成功。",
+        "资料标题：CalliLens 测试\n来源：系统自检\n正文：这是管理员后台的 AI 配置连通性测试。",
+        "本地 RAG 正常，但 AI 未返回测试结果。",
+    )
+    return {
+        "ok": "不可用" not in answer and "未返回测试结果" not in answer,
+        "provider": provider,
+        "answer": answer,
+    }
 
 
 @app.post("/api/process/{work_id}")
@@ -120,6 +182,7 @@ async def upload_work(
     background: str = Form(""),
     source_url: str = Form(""),
     tags: str = Form(""),
+    generate_ai_guide: bool = Form(False),
 ) -> dict[str, object]:
     work_id = work_service.next_work_id()
     target = work_service.work_dir(work_id)
@@ -138,11 +201,13 @@ async def upload_work(
         "script_type": script_type,
         "museum": museum,
         "description": description,
+        "background": background,
         "thumbnail": "thumbnail.png",
         "status": "ready",
         "source": "管理员上传",
         "source_url": source_url,
         "tags": [item.strip() for item in tags.split(",") if item.strip()],
+        "guide_status": "ai_draft" if generate_ai_guide else "none",
     }
     work_service.write_json(target / "work-info.json", work)
 
@@ -175,14 +240,36 @@ async def upload_work(
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=400, detail=f"上传成功，但图像处理失败：{exc}") from exc
 
+    generated = report["outputs"] + ["floating_3d_data.json", "knowledge.json"]
+    if generate_ai_guide:
+        guide_service.create_ai_guide_draft(target, work, report)
+        generated.append("ai-guide-draft.json")
+
     work_service.upsert_work(work)
     return {
         "work_id": work_id,
         "message": "作品已上传并加入知识库",
-        "generated": report["outputs"] + ["floating_3d_data.json", "knowledge.json"],
+        "generated": generated,
     }
 
 
+@app.delete("/api/admin/works/{work_id}")
+def delete_admin_work(work_id: str) -> dict[str, object]:
+    try:
+        result = work_service.delete_work(work_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"message": "作品已删除", **result}
+
+
 @app.get("/")
-def root() -> dict[str, str]:
-    return {"message": "CalliLens API is running", "docs": "/docs"}
+def root() -> FileResponse:
+    return FileResponse(WEB_DIR / "index.html")
+
+
+@app.get("/web/")
+def web_index() -> FileResponse:
+    return FileResponse(WEB_DIR / "index.html")
+
+
+app.mount("/", StaticFiles(directory=str(WEB_DIR), html=True), name="web")

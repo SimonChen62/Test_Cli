@@ -144,9 +144,31 @@ def search(question: str, work_id: str = "work_003", limit: int = 5) -> list[Chu
     return [chunk for _, chunk in scored[:limit]]
 
 
-def answer(question: str, work_id: str = "work_003", use_llm: bool = False) -> dict[str, object]:
+def answer(question: str, work_id: str = "work_003", ask_mode: str = "local", llm_available: bool = False) -> dict[str, object]:
+    ask_mode = ask_mode if ask_mode in {"local", "ai_rag", "ai_free"} else "local"
+    ai_requested = ask_mode in {"ai_rag", "ai_free"}
     chunks = search(question, work_id=work_id)
     if not chunks:
+        if ask_mode == "ai_free" and llm_available:
+            answer_text, provider = llm_service.general_answer(question, "")
+            return {
+                "answer": f"（AI 补充回答：当前本地 RAG 没有匹配到明确资料，以下内容不是本地知识库来源。）\n\n{answer_text}",
+                "sources": [
+                    {
+                        "title": "AI 模型补充（非本地知识库来源）",
+                        "source": provider,
+                        "url": "",
+                        "work_id": "ai",
+                    }
+                ],
+                "mode": f"ai_free_{provider}",
+            }
+        if ai_requested and not llm_available:
+            return {
+                "answer": "AI 未启用或不可用；本地 RAG 也没有查询到对应资料。请先在管理员后台配置可用的 AI 接口，或补充作品资料后再提问。",
+                "sources": [],
+                "mode": "ai_requested_unavailable",
+            }
         return {
             "answer": "当前资料不足，无法给出有依据的回答。请补充作品说明、背景资料或术语解释后再提问。",
             "sources": [],
@@ -162,13 +184,24 @@ def answer(question: str, work_id: str = "work_003", use_llm: bool = False) -> d
     if supporting:
         answer_text += f"\n\n相关资料还包括：{supporting}。"
     mode = "local_rag"
-    if use_llm:
+    if ai_requested and not llm_available:
+        answer_text = f"（AI 未启用或不可用，以下为本地 RAG 检索结果。）\n\n{answer_text}"
+        mode = "ai_requested_unavailable"
+    elif ask_mode == "ai_rag" and llm_available:
         context = "\n\n".join(
             f"资料标题：{chunk.title}\n来源：{chunk.source}\n正文：{chunk.text}"
             for chunk in chunks
         )
         answer_text, provider = llm_service.enhance_answer(question, context, answer_text)
         mode = f"llm_{provider}" if provider != "local_rag" else "local_rag"
+    elif ask_mode == "ai_free" and llm_available:
+        context = "\n\n".join(
+            f"资料标题：{chunk.title}\n来源：{chunk.source}\n正文：{chunk.text}"
+            for chunk in chunks
+        )
+        answer_text, provider = llm_service.general_answer(question, context)
+        answer_text = f"（AI 补充回答：优先参考下方本地资料；若资料不足，模型会补充一般性说明。）\n\n{answer_text}"
+        mode = f"ai_free_{provider}"
     return {
         "answer": answer_text,
         "sources": [

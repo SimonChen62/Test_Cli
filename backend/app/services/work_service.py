@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
 from pathlib import Path
 from typing import Any
 
@@ -67,6 +68,32 @@ def upsert_work(work: dict[str, Any]) -> None:
     save_works_index(index)
 
 
+def delete_work(work_id: str) -> dict[str, Any]:
+    if work_id == "work_003":
+        raise ValueError("默认演示作品 work_003 不能删除。")
+
+    index = load_works_index()
+    works = index.setdefault("works", [])
+    before = len(works)
+    index["works"] = [item for item in works if item.get("id") != work_id]
+    removed_from_index = len(index["works"]) != before
+
+    if index.get("defaultWorkId") == work_id:
+        index["defaultWorkId"] = index["works"][0]["id"] if index["works"] else "work_003"
+
+    target = work_dir(work_id)
+    removed_files = False
+    if target.exists() and target.is_dir():
+        shutil.rmtree(target)
+        removed_files = True
+
+    save_works_index(index)
+    return {
+        "work_id": work_id,
+        "removed_from_index": removed_from_index,
+        "removed_files": removed_files,
+    }
+
+
 def work_dir(work_id: str) -> Path:
     return DATA_DIR / work_id
-

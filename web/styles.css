@@ -367,6 +367,18 @@ h3 {
   padding: 10px 12px;
 }
 
+.adminForm .inlineCheck {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: rgba(244, 239, 228, 0.86);
+}
+
+.adminForm .inlineCheck input {
+  width: auto;
+  min-width: 16px;
+}
+
 .adminCard {
   border: 1px solid rgba(226, 210, 185, 0.16);
   border-radius: 8px;
@@ -397,6 +409,144 @@ h3 {
   color: var(--paper);
   padding: 12px;
   text-align: center;
+}
+
+.adminToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid rgba(226, 210, 185, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 252, 245, 0.06);
+  padding: 12px 14px;
+}
+
+.adminToolbar p,
+.adminWorkItem p {
+  margin: 0;
+  color: rgba(244, 239, 228, 0.72);
+  font-size: 13px;
+}
+
+.adminTabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid rgba(226, 210, 185, 0.16);
+  padding-bottom: 10px;
+}
+
+.adminTabButton {
+  border: 1px solid rgba(226, 210, 185, 0.18);
+  border-radius: 8px;
+  background: rgba(255, 252, 245, 0.08);
+  color: rgba(244, 239, 228, 0.78);
+  padding: 10px 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.adminTabButton.active {
+  border-color: rgba(191, 74, 58, 0.72);
+  background: rgba(191, 74, 58, 0.88);
+  color: #fff8ec;
+}
+
+.adminPane {
+  display: none;
+  gap: 14px;
+}
+
+.adminPane.active {
+  display: grid;
+}
+
+.adminWorksList {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.adminWorkItem {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  border: 1px solid rgba(226, 210, 185, 0.14);
+  border-radius: 8px;
+  background: rgba(18, 16, 13, 0.18);
+  padding: 12px;
+}
+
+.adminWorkItem strong {
+  display: block;
+  margin-bottom: 4px;
+  color: rgba(255, 248, 236, 0.94);
+  overflow-wrap: anywhere;
+}
+
+.llmBindingsList {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.llmBindingItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid rgba(226, 210, 185, 0.16);
+  border-radius: 8px;
+  background: rgba(18, 16, 13, 0.18);
+  padding: 12px;
+}
+
+.llmBindingItem.active {
+  border-color: rgba(191, 74, 58, 0.7);
+  background: rgba(191, 74, 58, 0.14);
+}
+
+.llmBindingItem strong,
+.llmBindingItem p,
+.llmBindingItem small {
+  display: block;
+}
+
+.llmBindingItem strong {
+  color: rgba(255, 248, 236, 0.96);
+  overflow-wrap: anywhere;
+}
+
+.llmBindingItem p {
+  margin: 5px 0 3px;
+  color: rgba(244, 239, 228, 0.76);
+  font-size: 13px;
+}
+
+.llmBindingItem small,
+.adminEmpty,
+.formHint {
+  color: rgba(244, 239, 228, 0.66);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.llmBindingActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.dangerButton {
+  border-color: rgba(174, 63, 45, 0.38) !important;
+  color: #8f271c;
+}
+
+.dangerButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
 }
 
 .app {
@@ -937,6 +1087,36 @@ button:disabled {
   color: var(--ink);
   text-align: left;
   cursor: pointer;
+}
+
+.ragModeNote {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.ragAiToggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  margin: 8px 0 8px;
+  padding: 10px 12px;
+  border: 1px solid rgba(95, 76, 52, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 252, 245, 0.72);
+  color: var(--ink);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.ragAiToggle input {
+  width: 42px;
+  height: 22px;
+  flex: 0 0 auto;
+  accent-color: #9f4637;
 }
 
 .ragToggle {

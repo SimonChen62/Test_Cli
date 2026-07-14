@@ -4,7 +4,11 @@ const initialSelectId = params.get("select");
 const initialProbe = params.get("probe");
 const initialView = params.get("view");
 const WORKS_URL = "../data/works.json";
-const API_BASE = window.CALLILENS_API_BASE || "http://localhost:8000";
+const API_BASE =
+  window.CALLILENS_API_BASE ||
+  (["127.0.0.1", "localhost"].includes(window.location.hostname) && window.location.port && window.location.port !== "8000"
+    ? `${window.location.protocol}//${window.location.hostname}:8000`
+    : `${window.location.protocol}//${window.location.host}`);
 const ADMIN_PASSWORD = "callilens-admin";
 const THREE_MODULE_URL = "./vendor/three.module.js";
 const GLYPHS_MANIFEST = "glyphs/glyphs.json";
@@ -142,6 +146,7 @@ const state = {
     active: false,
     step: "original",
   },
+  ragUseAi: false,
 };
 
 state.introComplete = firstLookComplete(state.firstLook);
@@ -160,8 +165,15 @@ const els = {
   adminPassword: document.querySelector("#adminPassword"),
   adminLoginError: document.querySelector("#adminLoginError"),
   adminWorkspace: document.querySelector("#adminWorkspace"),
+  adminTabs: document.querySelectorAll(".adminTabButton[data-admin-tab]"),
+  adminPanes: document.querySelectorAll(".adminPane[data-admin-pane]"),
+  adminLogout: document.querySelector("#adminLogoutButton"),
+  adminRefreshWorks: document.querySelector("#adminRefreshWorksButton"),
+  adminWorksList: document.querySelector("#adminWorksList"),
   llmForm: document.querySelector("#llmForm"),
   llmStatus: document.querySelector("#llmStatus"),
+  llmTest: document.querySelector("#llmTestButton"),
+  llmBindingsList: document.querySelector("#llmBindingsList"),
   uploadWorkForm: document.querySelector("#uploadWorkForm"),
   uploadResult: document.querySelector("#uploadResult"),
   backToLibrary: document.querySelector("#backToLibraryButton"),
@@ -210,7 +222,8 @@ const els = {
   probeCandidate: document.querySelector("#probeCandidate"),
   ragQuickQuestions: document.querySelector("#ragQuickQuestions"),
   ragQuestionInput: document.querySelector("#ragQuestionInput"),
-  ragUseLlm: document.querySelector("#ragUseLlm"),
+  ragUseAiToggle: document.querySelector("#ragUseAiToggle"),
+  ragModeNote: document.querySelector("#ragModeNote"),
   ragAskButton: document.querySelector("#ragAskButton"),
   ragAnswer: document.querySelector("#ragAnswer"),
   ragSources: document.querySelector("#ragSources"),
@@ -286,8 +299,14 @@ async function boot() {
 }
 
 async function loadWorksIndex() {
-  const response = await fetch(WORKS_URL);
-  if (!response.ok) throw new Error(`无法加载 ${WORKS_URL}: ${response.status}`);
+  let response;
+  try {
+    response = await fetch(`${API_BASE}/api/works`, { cache: "no-store" });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  } catch {
+    response = await fetch(`${WORKS_URL}?t=${Date.now()}`, { cache: "no-store" });
+    if (!response.ok) throw new Error(`无法加载 ${WORKS_URL}: ${response.status}`);
+  }
   state.worksIndex = await response.json();
   if (!activeWorkId) activeWorkId = state.worksIndex.defaultWorkId || "work_003";
 }
@@ -393,8 +412,8 @@ async function openWork(workId, options = {}) {
     window.history.pushState({}, "", nextUrl);
   }
 
-  const response = await fetch(dataUrl());
-  if (response.ok) {
+  const response = activeWorkId === "work_003" ? await fetch(dataUrl()) : null;
+  if (response?.ok) {
     state.data = await response.json();
   } else {
     state.data = await loadGeneratedWorkData(workId);
@@ -420,6 +439,18 @@ async function loadGeneratedWorkData(workId) {
   const metaResponse = await fetch(`../data/${workId}/work-info.json`);
   if (!metaResponse.ok) throw new Error(`无法加载作品数据：${workId}`);
   const meta = await metaResponse.json();
+  let aiGuide = null;
+  try {
+    const guideResponse = await fetch(`../data/${workId}/ai-guide-draft.json?t=${Date.now()}`, { cache: "no-store" });
+    if (guideResponse.ok) aiGuide = await guideResponse.json();
+  } catch {
+    aiGuide = null;
+  }
+  const annotations = Array.isArray(aiGuide?.annotations) ? aiGuide.annotations : [];
+  const guideText = aiGuide?.guideText
+    ? `${aiGuide.warning || "AI 候选导览，需管理员确认。"}\n\n${aiGuide.guideText}`
+    : meta.description ||
+      "这是管理员上传作品。系统只展示原图、基础图层、平滑浮雕 3D 和 RAG 资料；未人工标注的作品不会自动生成专家导览点。";
   return {
     workId,
     title: meta.title,
@@ -433,8 +464,8 @@ async function loadGeneratedWorkData(workId) {
       skeleton: "binary.png",
       voidCandidates: "binary.png",
     },
-    guideText: meta.description || "这是管理员上传作品。系统可展示原图、基础图层，并把文字资料加入本地 RAG。",
-    annotations: [],
+    guideText,
+    annotations,
   };
 }
 
@@ -459,6 +490,37 @@ async function loadGlyphs() {
         },
       }));
       state.selectedGlyphId = state.glyphs[0]?.id || null;
+      return;
+    }
+
+    const floatingResponse = await fetch(`${imageBase()}floating_3d_data.json?t=${Date.now()}`, { cache: "no-store" });
+    if (floatingResponse.ok) {
+      const floating = await floatingResponse.json();
+      const scrollSize = floating.scroll_size || {};
+      const width = Number(scrollSize.width) || 1200;
+      const height = Number(scrollSize.height) || 800;
+      const cacheBust = Date.now();
+      const record = {
+        id: `${activeWorkId}_relief`,
+        source: "floating_relief",
+        char: "全图",
+        scroll_x: 0,
+        scroll_y: 0,
+        width,
+        height,
+        img_path: `data/${activeWorkId}/${floating.mask || "mask.png"}?t=${cacheBust}`,
+        height_path: `data/${activeWorkId}/${floating.height || "height.png"}?t=${cacheBust}`,
+      };
+      state.fullScrollRecords = [record];
+      state.glyphs = [
+        {
+          id: record.id,
+          label: "全图浮雕",
+          description: "上传作品已根据 OpenCV mask 和 height map 生成整图平滑浮雕。",
+          pixelBox: { x: 0, y: 0, width, height },
+        },
+      ];
+      state.selectedGlyphId = record.id;
       return;
     }
 
@@ -1382,12 +1444,12 @@ function applyGlyphHeight(geometry, maskField, displacementScale, displacementBi
 
 function createGlyphMesh(THREE, glyph, assets) {
   const maskCanvas = assets.mask.canvas;
-  const maskField = makeSmoothedGlyphCanvas(maskCanvas, 1.25);
+  const maskField = makeSmoothedGlyphCanvas(maskCanvas, 1.75);
   const aspect = maskCanvas.width / Math.max(1, maskCanvas.height);
   const planeHeight = 3.45;
   const planeWidth = clamp(planeHeight * aspect, 1.8, 5.4);
   const geometry = new THREE.PlaneGeometry(planeWidth, planeHeight, 512, 512);
-  applyGlyphHeight(geometry, maskField, 0.32, 0);
+  applyGlyphHeight(geometry, maskField, 0.27, 0);
 
   if (assets.texture) assets.texture.dispose?.();
   const texture = new THREE.CanvasTexture(maskField.canvas);
@@ -1409,7 +1471,7 @@ function createGlyphMesh(THREE, glyph, assets) {
     roughness: 0.5,
     metalness: 0.02,
     bumpMap: texture,
-    bumpScale: 0.14,
+    bumpScale: 0.09,
     side: THREE.FrontSide,
   });
   const mesh = new THREE.Mesh(geometry, material);
@@ -1467,6 +1529,12 @@ function fullScrollAssetUrl(path) {
 }
 
 function fullScrollSize(records) {
+  if (records.length === 1 && records[0].source === "floating_relief") {
+    return {
+      width: Math.max(1, records[0].width || 1),
+      height: Math.max(1, records[0].height || 1),
+    };
+  }
   const width = Math.max(18332, ...records.map((record) => record.scroll_x + record.width));
   const height = Math.max(2100, ...records.map((record) => record.scroll_y + record.height));
   return { width, height };
@@ -1532,15 +1600,15 @@ async function buildFullScrollAsset(THREE) {
         patchContext.imageSmoothingQuality = "high";
         patchContext.fillStyle = "#000";
         patchContext.fillRect(0, 0, width, itemHeight);
-        patchContext.filter = "blur(3.2px) contrast(112%) brightness(106%)";
+        patchContext.filter = "blur(4.8px) contrast(96%) brightness(102%)";
         patchContext.drawImage(height.canvas, 0, 0, width, itemHeight);
-        patchContext.filter = "blur(1.1px) contrast(132%) brightness(108%)";
-        patchContext.globalAlpha = 0.34;
+        patchContext.filter = "blur(2.4px) contrast(104%) brightness(102%)";
+        patchContext.globalAlpha = 0.18;
         patchContext.drawImage(height.canvas, 0, 0, width, itemHeight);
         patchContext.globalAlpha = 1;
         patchContext.filter = "none";
         patchContext.globalCompositeOperation = "destination-in";
-        patchContext.filter = "blur(1.8px)";
+        patchContext.filter = "blur(2.8px)";
         patchContext.drawImage(mask.canvas, 0, 0, width, itemHeight);
         patchContext.filter = "none";
         patchContext.globalCompositeOperation = "source-over";
@@ -1589,10 +1657,10 @@ function createFullScrollMesh(THREE, asset) {
   const material = new THREE.MeshStandardMaterial({
     map: asset.colorTexture,
     displacementMap: asset.heightTexture,
-    displacementScale: 0.26,
+    displacementScale: 0.21,
     displacementBias: 0.006,
     bumpMap: asset.heightTexture,
-    bumpScale: 0.018,
+    bumpScale: 0.012,
     roughness: 0.82,
     metalness: 0.01,
     color: 0xffffff,
@@ -2300,20 +2368,96 @@ function setAdminLoggedIn(loggedIn) {
   localStorage.setItem("callilens-admin-logged-in", loggedIn ? "true" : "false");
   if (els.adminWorkspace) els.adminWorkspace.hidden = !loggedIn;
   if (els.adminLoginForm) els.adminLoginForm.hidden = loggedIn;
-  if (loggedIn) loadLlmStatus();
+  if (loggedIn) {
+    setAdminTab("works");
+    loadLlmStatus();
+    renderAdminWorksList();
+  }
+}
+
+function setAdminTab(tab) {
+  const nextTab = tab === "ai" ? "ai" : "works";
+  els.adminTabs?.forEach((button) => {
+    button.classList.toggle("active", button.dataset.adminTab === nextTab);
+  });
+  els.adminPanes?.forEach((pane) => {
+    pane.classList.toggle("active", pane.dataset.adminPane === nextTab);
+  });
+  if (nextTab === "ai") loadLlmStatus();
+  if (nextTab === "works") renderAdminWorksList();
+}
+
+function renderAdminWorksList() {
+  if (!els.adminWorksList) return;
+  const works = state.worksIndex?.works || [];
+  els.adminWorksList.replaceChildren();
+  if (!works.length) {
+    els.adminWorksList.textContent = "还没有作品。";
+    return;
+  }
+
+  works.forEach((work) => {
+    const row = document.createElement("div");
+    row.className = "adminWorkItem";
+
+    const info = document.createElement("div");
+    const title = document.createElement("strong");
+    title.textContent = `${work.id} · ${work.title || "未命名作品"}`;
+    const meta = document.createElement("p");
+    meta.textContent = [work.artist, work.dynasty, work.script_type, work.museum].filter(Boolean).join(" · ") || "管理员作品资料";
+    info.append(title, meta);
+
+    const button = document.createElement("button");
+    button.className = "secondaryButton dangerButton";
+    button.type = "button";
+    button.textContent = work.id === "work_003" ? "默认作品保留" : "删除";
+    button.disabled = work.id === "work_003";
+    button.addEventListener("click", () => deleteAdminWork(work.id, work.title || work.id));
+
+    row.append(info, button);
+    els.adminWorksList.append(row);
+  });
+}
+
+async function refreshAdminWorks() {
+  await loadWorksIndex();
+  renderWorkCards();
+  renderAdminWorksList();
+}
+
+async function deleteAdminWork(workId, title) {
+  if (!workId || workId === "work_003") return;
+  const ok = window.confirm(`确定删除「${title}」吗？\n这会删除 data/${workId} 目录，并从 RAG 知识库移除它。`);
+  if (!ok) return;
+  if (els.uploadResult) {
+    els.uploadResult.hidden = false;
+    els.uploadResult.textContent = `正在删除 ${workId}...`;
+  }
+  try {
+    const response = await fetch(`${API_BASE}/api/admin/works/${workId}`, { method: "DELETE" });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.detail || `HTTP ${response.status}`);
+    if (els.uploadResult) els.uploadResult.textContent = `删除完成：${payload.work_id}`;
+    await refreshAdminWorks();
+  } catch (error) {
+    if (els.uploadResult) els.uploadResult.textContent = `删除失败：${error.message}`;
+  }
 }
 
 async function loadLlmStatus() {
   if (!els.llmStatus) return;
   try {
-    const response = await fetch(`${API_BASE}/api/admin/llm-config`);
+    const response = await fetch(`${API_BASE}/api/admin/llm-bindings`, { cache: "no-store" });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const status = await response.json();
+    const payload = await response.json();
+    const status = payload.status || {};
     els.llmStatus.textContent = status.configured
-      ? `已配置：${status.provider} / ${status.model}。问答卡片可勾选 AI 润色。`
-      : "尚未配置 API key。系统默认使用本地 RAG，不影响演示。";
+      ? `当前启用：${status.binding_name || status.provider} / ${status.model}。普通作品页会自动使用这个绑定。`
+      : "尚未启用 AI 绑定。系统默认使用本地 RAG，不影响演示。";
+    renderLlmBindings(payload.bindings || []);
   } catch (error) {
     els.llmStatus.textContent = `后端未启动或不可访问：${error.message}`;
+    renderLlmBindings([]);
   }
 }
 
@@ -2321,19 +2465,132 @@ async function saveLlmConfig(event) {
   event.preventDefault();
   if (!els.llmForm || !els.llmStatus) return;
   els.llmStatus.textContent = "正在保存 AI 配置...";
+  const formData = new FormData(els.llmForm);
+  const apiKey = String(formData.get("api_key") || "").trim();
+  const model = String(formData.get("model") || "").trim();
+  const baseUrl = String(formData.get("base_url") || "").trim();
+  if (/^https?:\/\//i.test(apiKey)) {
+    els.llmStatus.textContent = "保存失败：你把接口地址填进 API key 了。API key 要填火山方舟控制台里的 ARK_API_KEY；https://... 要填到“接口地址”。";
+    return;
+  }
+  if (/^https?:\/\//i.test(model)) {
+    els.llmStatus.textContent = "保存失败：模型栏不能填网址。豆包模型应类似 doubao-seed-2-0-lite-260428。";
+    return;
+  }
+  if (baseUrl && !/^https?:\/\//i.test(baseUrl)) {
+    els.llmStatus.textContent = "保存失败：接口地址必须以 http:// 或 https:// 开头。";
+    return;
+  }
   try {
-    const response = await fetch(`${API_BASE}/api/admin/llm-config`, {
+    const response = await fetch(`${API_BASE}/api/admin/llm-bindings`, {
       method: "POST",
-      body: new FormData(els.llmForm),
+      body: formData,
     });
     const payload = await response.json();
     if (!response.ok) throw new Error(payload.detail || `HTTP ${response.status}`);
-    els.llmStatus.textContent = payload.configured
-      ? `已配置：${payload.provider} / ${payload.model}。API key 已保存到本机 .env.local。`
+    const status = payload.status || {};
+    els.llmStatus.textContent = status.configured
+      ? `已保存并启用：${status.binding_name || status.provider} / ${status.model}。`
       : "未填写 API key，仍使用本地 RAG。";
+    renderLlmBindings(payload.bindings || []);
     els.llmForm.reset();
   } catch (error) {
     els.llmStatus.textContent = `保存失败：${error.message}`;
+  }
+}
+
+function renderLlmBindings(bindings) {
+  if (!els.llmBindingsList) return;
+  els.llmBindingsList.replaceChildren();
+  if (!bindings.length) {
+    const empty = document.createElement("p");
+    empty.className = "adminEmpty";
+    empty.textContent = "还没有 AI 绑定。保存一个配置后会出现在这里。";
+    els.llmBindingsList.append(empty);
+    return;
+  }
+  bindings.forEach((binding) => {
+    const item = document.createElement("div");
+    item.className = "llmBindingItem";
+    item.classList.toggle("active", Boolean(binding.active));
+
+    const info = document.createElement("div");
+    const title = document.createElement("strong");
+    title.textContent = `${binding.name || "未命名绑定"}${binding.active ? " · 当前启用" : ""}`;
+    const meta = document.createElement("p");
+    meta.textContent = `${binding.provider} / ${binding.model} · ${binding.key_masked || "未保存 key"}`;
+    const url = document.createElement("small");
+    url.textContent = binding.base_url || "默认接口地址";
+    info.append(title, meta, url);
+
+    const actions = document.createElement("div");
+    actions.className = "llmBindingActions";
+
+    const activate = document.createElement("button");
+    activate.type = "button";
+    activate.className = "secondaryButton";
+    activate.textContent = binding.active ? "已启用" : "启用";
+    activate.disabled = binding.active;
+    activate.addEventListener("click", () => activateLlmBinding(binding.id));
+
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "secondaryButton dangerButton";
+    remove.textContent = "删除";
+    remove.addEventListener("click", () => deleteLlmBinding(binding.id, binding.name || binding.provider));
+
+    actions.append(activate, remove);
+    item.append(info, actions);
+    els.llmBindingsList.append(item);
+  });
+}
+
+async function activateLlmBinding(bindingId) {
+  if (!bindingId || !els.llmStatus) return;
+  els.llmStatus.textContent = "正在启用 AI 绑定...";
+  try {
+    const response = await fetch(`${API_BASE}/api/admin/llm-bindings/${encodeURIComponent(bindingId)}/activate`, { method: "POST" });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.detail || `HTTP ${response.status}`);
+    const status = payload.status || {};
+    els.llmStatus.textContent = `已启用：${status.binding_name || status.provider} / ${status.model}`;
+    renderLlmBindings(payload.bindings || []);
+  } catch (error) {
+    els.llmStatus.textContent = `启用失败：${error.message}`;
+  }
+}
+
+async function deleteLlmBinding(bindingId, name) {
+  if (!bindingId || !els.llmStatus) return;
+  const ok = window.confirm(`确定删除 AI 绑定「${name}」吗？\n删除后不会影响本地 RAG。`);
+  if (!ok) return;
+  els.llmStatus.textContent = "正在删除 AI 绑定...";
+  try {
+    const response = await fetch(`${API_BASE}/api/admin/llm-bindings/${encodeURIComponent(bindingId)}`, { method: "DELETE" });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.detail || `HTTP ${response.status}`);
+    const status = payload.status || {};
+    els.llmStatus.textContent = status.configured
+      ? `已删除。当前启用：${status.binding_name || status.provider} / ${status.model}`
+      : "已删除。当前没有启用 AI，系统会回到本地 RAG。";
+    renderLlmBindings(payload.bindings || []);
+  } catch (error) {
+    els.llmStatus.textContent = `删除失败：${error.message}`;
+  }
+}
+
+async function testLlmConfig() {
+  if (!els.llmStatus) return;
+  els.llmStatus.textContent = "正在测试 AI 配置...";
+  try {
+    const response = await fetch(`${API_BASE}/api/admin/test-llm`, { method: "POST" });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.detail || `HTTP ${response.status}`);
+    els.llmStatus.textContent = payload.ok
+      ? `AI 测试成功：${payload.provider} 已返回结果。${payload.answer}`
+      : `AI 测试未通过：${payload.answer}`;
+  } catch (error) {
+    els.llmStatus.textContent = `AI 测试失败：${error.message}`;
   }
 }
 
@@ -2351,8 +2608,7 @@ async function uploadAdminWork(event) {
     if (!response.ok) throw new Error(payload.detail || `HTTP ${response.status}`);
     els.uploadResult.textContent = `上传完成：${payload.work_id}\n生成文件：${payload.generated.join("、")}\n返回作品库后可以看到新作品。`;
     els.uploadWorkForm.reset();
-    await loadWorksIndex();
-    renderWorkCards();
+    await refreshAdminWorks();
   } catch (error) {
     els.uploadResult.textContent = `上传失败：${error.message}\n请确认后端已启动：python -m uvicorn backend.app.main:app --reload --port 8000`;
   }
@@ -2363,7 +2619,10 @@ async function askRagQuestion() {
   if (!question) return;
   els.ragAnswer.hidden = false;
   els.ragSources.hidden = true;
-  els.ragAnswer.textContent = "正在检索本地知识库...";
+  const askMode = currentRagAskMode();
+  els.ragAnswer.textContent = state.ragUseAi
+    ? "正在检索本地知识库，并使用 AI 组织或补充..."
+    : "正在检索本地知识库...";
   try {
     const response = await fetch(`${API_BASE}/api/ask`, {
       method: "POST",
@@ -2371,16 +2630,42 @@ async function askRagQuestion() {
       body: JSON.stringify({
         work_id: activeWorkId || "work_003",
         question,
-        use_llm: Boolean(els.ragUseLlm?.checked),
+        use_llm: state.ragUseAi,
+        ask_mode: askMode,
       }),
     });
+    const contentType = response.headers.get("content-type") || "";
+    if (!contentType.includes("application/json")) {
+      throw new Error(`接口返回的不是 JSON。请确认后端已启动，并且问答接口地址是 ${API_BASE}/api/ask`);
+    }
     const payload = await response.json();
     if (!response.ok) throw new Error(payload.detail || `HTTP ${response.status}`);
-    els.ragAnswer.textContent = payload.answer;
+    els.ragAnswer.textContent = `回答模式：${formatRagMode(payload.mode || askMode, state.ragUseAi)}\n\n${payload.answer}`;
     renderRagSources(payload.sources || []);
   } catch (error) {
     els.ragAnswer.textContent = `问答服务不可用：${error.message}\n先启动后端：python -m uvicorn backend.app.main:app --reload --port 8000`;
   }
+}
+
+function currentRagAskMode() {
+  return state.ragUseAi ? "ai_free" : "local";
+}
+
+function formatRagMode(mode, aiRequested = false) {
+  if (mode?.startsWith?.("ai_free")) return "已启用 AI：RAG 检索 + AI 组织/补充";
+  if (mode?.startsWith?.("llm_")) return "已启用 AI：基于本地 RAG 资料润色";
+  if (mode === "ai_requested_unavailable") return "已请求 AI，但后端未配置或不可用，已退回本地 RAG";
+  if (aiRequested) return "已请求 AI，但本次只返回本地 RAG";
+  return "本地 RAG（未启用 AI）";
+}
+
+function setRagUseAi(enabled) {
+  state.ragUseAi = Boolean(enabled);
+  if (els.ragUseAiToggle) els.ragUseAiToggle.checked = state.ragUseAi;
+  if (!els.ragModeNote) return;
+  els.ragModeNote.textContent = state.ragUseAi
+    ? "已启用 AI：先检索本地 RAG；有资料时合并组织回答，资料不足时允许 AI 补充，并会标注为非本地知识库来源。"
+    : "未启用 AI：只检索本地 RAG 资料。资料里没有答案时，会明确提示未查询到，不会自动编造。";
 }
 
 function renderRagSources(sources) {
@@ -2583,7 +2868,17 @@ els.adminLoginForm?.addEventListener("submit", async (event) => {
 });
 
 els.llmForm?.addEventListener("submit", saveLlmConfig);
+els.llmTest?.addEventListener("click", testLlmConfig);
 els.uploadWorkForm?.addEventListener("submit", uploadAdminWork);
+els.adminRefreshWorks?.addEventListener("click", refreshAdminWorks);
+els.adminTabs?.forEach((button) => {
+  button.addEventListener("click", () => setAdminTab(button.dataset.adminTab));
+});
+els.adminLogout?.addEventListener("click", () => {
+  setAdminLoggedIn(false);
+  if (els.adminPassword) els.adminPassword.value = "";
+  requestAnimationFrame(() => els.adminLoginForm?.scrollIntoView({ behavior: "smooth", block: "center" }));
+});
 
 els.browseFromUpload.addEventListener("click", () => {
   setScreen("library");
@@ -2616,6 +2911,8 @@ document.querySelectorAll(".taskButton").forEach((button) => {
 });
 els.reflectionSubmit.addEventListener("click", submitReflection);
 els.reflectionEdit.addEventListener("click", editReflection);
+els.ragUseAiToggle?.addEventListener("change", () => setRagUseAi(els.ragUseAiToggle.checked));
+setRagUseAi(state.ragUseAi);
 els.ragAskButton?.addEventListener("click", askRagQuestion);
 els.ragQuickQuestions?.addEventListener("click", (event) => {
   if (!(event.target instanceof HTMLButtonElement)) return;
