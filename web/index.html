@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>CalliLens</title>
     <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="./styles.css?v=39" />
+    <link rel="stylesheet" href="./styles.css?v=40" />
   </head>
   <body>
     <section id="entryScreen" class="entryScreen" aria-label="CalliLens 入口">
@@ -19,6 +19,21 @@
       </div>
 
       <div class="entryReveal" aria-label="选择使用方式">
+        <section class="entryUserCard" aria-label="用户账号">
+          <div>
+            <strong>用户记录</strong>
+            <p id="userStatusText">未登录：反思只保存在本机。</p>
+          </div>
+          <form id="userAuthForm" class="userAuthForm">
+            <input id="userUsername" name="username" autocomplete="username" minlength="3" maxlength="32" placeholder="用户名（3-32位）" />
+            <input id="userPassword" name="password" type="password" autocomplete="current-password" minlength="6" placeholder="密码（至少6位）" />
+            <div class="userAuthActions">
+              <button id="userLoginButton" class="secondaryButton" type="submit">登录</button>
+              <button id="userRegisterButton" class="secondaryButton" type="button">注册</button>
+              <button id="userLogoutButton" class="secondaryButton" type="button" hidden>退出</button>
+            </div>
+          </form>
+        </section>
         <button id="uploadEntryButton" class="entryActionButton adminEntryButton" type="button">
           <span>管理员登录</span>
           <small>上传作品、配置 AI、管理资料。</small>
@@ -72,6 +87,7 @@
           <div class="adminTabs" role="tablist" aria-label="管理员后台功能">
             <button class="adminTabButton active" type="button" data-admin-tab="works">作品管理</button>
             <button class="adminTabButton" type="button" data-admin-tab="ai">AI 接入管理</button>
+            <button class="adminTabButton" type="button" data-admin-tab="records">用户记录</button>
           </div>
 
           <section class="adminPane active" data-admin-pane="works">
@@ -133,6 +149,15 @@
               <button class="primaryButton" type="submit">新增并启用绑定</button>
               <button id="llmTestButton" class="secondaryButton" type="button">测试当前启用绑定</button>
             </form>
+          </section>
+          </section>
+
+          <section class="adminPane" data-admin-pane="records">
+          <section class="adminCard">
+            <h3>用户记录</h3>
+            <p>查看用户账号、进入作品时间、第一印象和反思内容。本地默认写入 SQLite，Render 可通过 DATABASE_URL 切换到 PostgreSQL。</p>
+            <button id="adminRefreshRecordsButton" class="secondaryButton" type="button">刷新用户记录</button>
+            <div id="adminRecordsList" class="adminRecordsList" aria-label="用户记录列表"></div>
           </section>
           </section>
         </div>
@@ -406,6 +431,6 @@
       </aside>
     </main>
 
-    <script src="./app.js?v=52"></script>
+    <script src="./app.js?v=55"></script>
   </body>
 </html>
