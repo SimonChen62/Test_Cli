@@ -1444,12 +1444,12 @@ function applyGlyphHeight(geometry, maskField, displacementScale, displacementBi
 
 function createGlyphMesh(THREE, glyph, assets) {
   const maskCanvas = assets.mask.canvas;
-  const maskField = makeSmoothedGlyphCanvas(maskCanvas, 1.75);
+  const maskField = makeSmoothedGlyphCanvas(maskCanvas, 1.4);
   const aspect = maskCanvas.width / Math.max(1, maskCanvas.height);
   const planeHeight = 3.45;
   const planeWidth = clamp(planeHeight * aspect, 1.8, 5.4);
   const geometry = new THREE.PlaneGeometry(planeWidth, planeHeight, 512, 512);
-  applyGlyphHeight(geometry, maskField, 0.27, 0);
+  applyGlyphHeight(geometry, maskField, 0.34, 0);
 
   if (assets.texture) assets.texture.dispose?.();
   const texture = new THREE.CanvasTexture(maskField.canvas);
@@ -1471,7 +1471,7 @@ function createGlyphMesh(THREE, glyph, assets) {
     roughness: 0.5,
     metalness: 0.02,
     bumpMap: texture,
-    bumpScale: 0.09,
+    bumpScale: 0.13,
     side: THREE.FrontSide,
   });
   const mesh = new THREE.Mesh(geometry, material);
@@ -1600,15 +1600,15 @@ async function buildFullScrollAsset(THREE) {
         patchContext.imageSmoothingQuality = "high";
         patchContext.fillStyle = "#000";
         patchContext.fillRect(0, 0, width, itemHeight);
-        patchContext.filter = "blur(4.8px) contrast(96%) brightness(102%)";
+        patchContext.filter = "blur(3.4px) contrast(112%) brightness(106%)";
         patchContext.drawImage(height.canvas, 0, 0, width, itemHeight);
-        patchContext.filter = "blur(2.4px) contrast(104%) brightness(102%)";
-        patchContext.globalAlpha = 0.18;
+        patchContext.filter = "blur(1.4px) contrast(126%) brightness(107%)";
+        patchContext.globalAlpha = 0.28;
         patchContext.drawImage(height.canvas, 0, 0, width, itemHeight);
         patchContext.globalAlpha = 1;
         patchContext.filter = "none";
         patchContext.globalCompositeOperation = "destination-in";
-        patchContext.filter = "blur(2.8px)";
+        patchContext.filter = "blur(2px)";
         patchContext.drawImage(mask.canvas, 0, 0, width, itemHeight);
         patchContext.filter = "none";
         patchContext.globalCompositeOperation = "source-over";
@@ -1657,10 +1657,10 @@ function createFullScrollMesh(THREE, asset) {
   const material = new THREE.MeshStandardMaterial({
     map: asset.colorTexture,
     displacementMap: asset.heightTexture,
-    displacementScale: 0.21,
+    displacementScale: 0.31,
     displacementBias: 0.006,
     bumpMap: asset.heightTexture,
-    bumpScale: 0.012,
+    bumpScale: 0.022,
     roughness: 0.82,
     metalness: 0.01,
     color: 0xffffff,

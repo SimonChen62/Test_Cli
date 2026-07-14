@@ -116,7 +116,7 @@ def make_height_map(gray: np.ndarray, ink_mask: np.ndarray) -> np.ndarray:
     darkness = (255 - gray).astype(np.float32)
     ink_strength = np.zeros_like(darkness, dtype=np.float32)
     ink_strength[ink] = normalize_ink_values(darkness[ink])
-    ink_strength = cv2.GaussianBlur(ink_strength, (0, 0), 1.35)
+    ink_strength = cv2.GaussianBlur(ink_strength, (0, 0), 1.05)
 
     distance = cv2.distanceTransform(ink_mask, cv2.DIST_L2, 5)
     distance_values = distance[ink]
@@ -124,18 +124,18 @@ def make_height_map(gray: np.ndarray, ink_mask: np.ndarray) -> np.ndarray:
     if max_distance <= 0:
         max_distance = float(distance.max())
     dome = np.clip(distance / max(max_distance, 1.0), 0.0, 1.0)
-    dome = np.power(dome, 0.62)
-    dome = cv2.GaussianBlur(dome, (0, 0), 1.15)
+    dome = np.power(dome, 0.58)
+    dome = cv2.GaussianBlur(dome, (0, 0), 0.95)
 
-    soft_edge = cv2.GaussianBlur(ink_mask.astype(np.float32) / 255.0, (0, 0), 2.4)
-    relief = (0.46 * ink_strength + 0.54 * dome) * (0.42 + 0.58 * dome) * soft_edge
+    soft_edge = cv2.GaussianBlur(ink_mask.astype(np.float32) / 255.0, (0, 0), 2.0)
+    relief = (0.58 * ink_strength + 0.42 * dome) * (0.5 + 0.5 * dome) * soft_edge
     relief[~ink] = 0.0
-    relief = cv2.GaussianBlur(relief, (0, 0), 2.2)
+    relief = cv2.GaussianBlur(relief, (0, 0), 1.65)
     relief = np.clip(relief, 0.0, 1.0)
-    cap = float(np.percentile(relief[ink], 99.4))
+    cap = float(np.percentile(relief[ink], 99.2))
     if cap > 0:
         relief = np.clip(relief / cap, 0.0, 1.0)
-    return np.round(relief * 225).astype(np.uint8)
+    return np.round(relief * 245).astype(np.uint8)
 
 
 def make_thumbnail(image: np.ndarray, width: int = 1200) -> np.ndarray:
