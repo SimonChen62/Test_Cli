@@ -410,6 +410,7 @@ function renderEntry() {
   els.app.hidden = state.screen !== "demo";
   els.storedWorksPanel.hidden = state.screen !== "library";
   els.uploadPanel.hidden = state.screen !== "upload";
+  if (els.storedWorks) els.storedWorks.hidden = !state.user;
   if (els.storedWorksHint) {
     els.storedWorksHint.textContent = state.user
       ? "进入当前样例作品，开始分层观察与反思任务。"

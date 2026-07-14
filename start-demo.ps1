@@ -32,7 +32,13 @@ Start-Process -FilePath "python" -ArgumentList @("-m", "uvicorn", "backend.app.m
 Start-Sleep -Seconds 2
 
 Write-Host "Starting CalliLens web at http://127.0.0.1:$webPort/web/"
-Start-Process -FilePath "python" -ArgumentList @("-m", "http.server", "$webPort", "--bind", "127.0.0.1") -WorkingDirectory $root -WindowStyle Hidden
+Start-Process -FilePath "powershell" -ArgumentList @(
+  "-NoProfile",
+  "-ExecutionPolicy",
+  "Bypass",
+  "-Command",
+  "Set-Location '$root'; python -m http.server $webPort --bind 127.0.0.1"
+) -WindowStyle Hidden
 Start-Sleep -Seconds 1
 
 Start-Process "http://127.0.0.1:$webPort/web/"
