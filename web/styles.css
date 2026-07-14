@@ -2639,3 +2639,47 @@ body::after {
     max-width: none !important;
   }
 }
+
+/* Admin entry should stay secondary: the main visitor path is the works library. */
+.entryReveal {
+  grid-template-columns: minmax(0, min(560px, 100%)) !important;
+  justify-content: center;
+}
+
+.entryReveal .adminEntryButton {
+  position: fixed;
+  top: 18px;
+  left: 18px;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  min-width: 116px;
+  min-height: 42px;
+  padding: 10px 14px;
+  border-radius: 8px;
+}
+
+.entryReveal .adminEntryButton span {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.entryReveal .adminEntryButton small {
+  display: none;
+}
+
+.entryReveal .primaryEntryAction {
+  min-height: 176px;
+}
+
+@media (max-width: 700px) {
+  .entryReveal .adminEntryButton {
+    top: 12px;
+    left: 12px;
+    min-width: 104px;
+    min-height: 38px;
+    padding: 8px 11px;
+  }
+}

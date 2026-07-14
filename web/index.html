@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>CalliLens</title>
     <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="./styles.css?v=37" />
+    <link rel="stylesheet" href="./styles.css?v=38" />
   </head>
   <body>
     <section id="entryScreen" class="entryScreen" aria-label="CalliLens 入口">
@@ -19,9 +19,9 @@
       </div>
 
       <div class="entryReveal" aria-label="选择使用方式">
-        <button id="uploadEntryButton" class="entryActionButton" type="button">
-          <span>上传个性化书法作品</span>
-          <small>V2 入口：上传图片、生成辅助图层、人工确认观察点。</small>
+        <button id="uploadEntryButton" class="entryActionButton adminEntryButton" type="button">
+          <span>管理员登录</span>
+          <small>上传作品、配置 AI、管理资料。</small>
         </button>
         <button id="storedWorksButton" class="entryActionButton primaryEntryAction" type="button">
           <span>网页已存库</span>
@@ -51,10 +51,10 @@
         <form id="adminLoginForm" class="adminLoginForm">
           <label>
             <span>管理员口令</span>
-            <input id="adminPassword" type="password" autocomplete="current-password" placeholder="默认 callilens-admin" />
+            <input id="adminPassword" type="password" autocomplete="current-password" />
           </label>
           <button class="primaryButton" type="submit">进入后台</button>
-          <p id="adminLoginError" class="formError" hidden>口令不正确。演示默认口令是 callilens-admin。</p>
+          <p id="adminLoginError" class="formError" hidden>口令不正确，请确认管理员口令。</p>
         </form>
 
         <div id="adminWorkspace" class="adminWorkspace" hidden>
@@ -405,6 +405,6 @@
       </aside>
     </main>
 
-    <script src="./app.js?v=50"></script>
+    <script src="./app.js?v=51"></script>
   </body>
 </html>

@@ -9,7 +9,6 @@ const API_BASE =
   (["127.0.0.1", "localhost"].includes(window.location.hostname) && window.location.port && window.location.port !== "8000"
     ? `${window.location.protocol}//${window.location.hostname}:8000`
     : `${window.location.protocol}//${window.location.host}`);
-const ADMIN_PASSWORD = "callilens-admin";
 const THREE_MODULE_URL = "./vendor/three.module.js";
 const GLYPHS_MANIFEST = "glyphs/glyphs.json";
 const FULL_SCROLL_DATA = "full_scroll_3d_data.json";
@@ -2852,7 +2851,13 @@ els.adminLoginForm?.addEventListener("submit", async (event) => {
   els.adminLoginError.hidden = true;
   try {
     const formData = new FormData();
-    formData.set("password", els.adminPassword.value.trim() || ADMIN_PASSWORD);
+    const password = els.adminPassword.value.trim();
+    if (!password) {
+      els.adminLoginError.hidden = false;
+      els.adminPassword.focus();
+      return;
+    }
+    formData.set("password", password);
     const response = await fetch(`${API_BASE}/api/admin/login`, {
       method: "POST",
       body: formData,
