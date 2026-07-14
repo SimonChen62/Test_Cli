@@ -4,6 +4,7 @@ const initialSelectId = params.get("select");
 const initialProbe = params.get("probe");
 const initialView = params.get("view");
 const WORKS_URL = "../data/works.json";
+const AUTH_TOKEN_KEY = "callilens-auth-token";
 const API_BASE =
   window.CALLILENS_API_BASE ||
   (["127.0.0.1", "localhost"].includes(window.location.hostname) && window.location.port && window.location.port !== "8000"
@@ -146,6 +147,8 @@ const state = {
     step: "original",
   },
   ragUseAi: false,
+  authToken: localStorage.getItem(AUTH_TOKEN_KEY) || "",
+  user: null,
 };
 
 const els = {
@@ -158,6 +161,12 @@ const els = {
   uploadPanel: document.querySelector("#uploadPanel"),
   backHomeFromUpload: document.querySelector("#backHomeFromUploadButton"),
   browseFromUpload: document.querySelector("#browseFromUploadButton"),
+  userAuthForm: document.querySelector("#userAuthForm"),
+  userUsername: document.querySelector("#userUsername"),
+  userPassword: document.querySelector("#userPassword"),
+  userStatusText: document.querySelector("#userStatusText"),
+  userRegister: document.querySelector("#userRegisterButton"),
+  userLogout: document.querySelector("#userLogoutButton"),
   adminLoginForm: document.querySelector("#adminLoginForm"),
   adminPassword: document.querySelector("#adminPassword"),
   adminLoginError: document.querySelector("#adminLoginError"),
@@ -167,6 +176,8 @@ const els = {
   adminLogout: document.querySelector("#adminLogoutButton"),
   adminRefreshWorks: document.querySelector("#adminRefreshWorksButton"),
   adminWorksList: document.querySelector("#adminWorksList"),
+  adminRefreshRecords: document.querySelector("#adminRefreshRecordsButton"),
+  adminRecordsList: document.querySelector("#adminRecordsList"),
   llmForm: document.querySelector("#llmForm"),
   llmStatus: document.querySelector("#llmStatus"),
   llmTest: document.querySelector("#llmTestButton"),
@@ -282,6 +293,7 @@ function reflectionsStorageKey() {
 
 async function boot() {
   try {
+    await loadCurrentUser();
     await loadWorksIndex();
     const shouldOpenDemo = initialView === "demo" || Boolean(params.get("work")) || Boolean(initialSelectId) || Boolean(initialProbe);
     if (shouldOpenDemo) {
@@ -401,6 +413,7 @@ async function openWork(workId, options = {}) {
   state.editingFirstLook = false;
   state.reflections = readReflections();
   renderEntry();
+  startWorkSession();
 
   if (options.updateUrl !== false) {
     const nextUrl = new URL(window.location.href);
@@ -2275,6 +2288,7 @@ function submitReflection() {
   }
   state.reflections[key] = { text, submitted: true };
   saveReflections();
+  syncReflection(key, text);
   renderReflectionPanel();
   requestAnimationFrame(() => els.expertFeedbackPanel.scrollIntoView({ behavior: "smooth", block: "nearest" }));
 }
@@ -2342,6 +2356,7 @@ function handleFirstLookSubmit(event) {
   state.firstLook = firstLook;
   state.introComplete = true;
   localStorage.setItem(firstLookStorageKey(), JSON.stringify(firstLook));
+  syncFirstLook(firstLook);
   els.firstLookError.hidden = true;
   renderAll();
 }
@@ -2363,6 +2378,7 @@ function editFirstLook() {
   state.firstLook = firstLook;
   state.editingFirstLook = false;
   localStorage.setItem(firstLookStorageKey(), JSON.stringify(firstLook));
+  syncFirstLook(firstLook);
   els.summaryEditError.hidden = true;
   renderFirstLook();
 }
@@ -2396,6 +2412,127 @@ function returnToLibrary() {
   requestAnimationFrame(() => els.storedWorksPanel.scrollIntoView({ behavior: "smooth", block: "start" }));
 }
 
+function authHeaders() {
+  return state.authToken ? { Authorization: `Bearer ${state.authToken}` } : {};
+}
+
+function renderUserStatus(message = "") {
+  if (!els.userStatusText) return;
+  if (message) {
+    els.userStatusText.textContent = message;
+  } else if (state.user) {
+    els.userStatusText.textContent = `已登录：${state.user.username}，反思会同步到数据库。`;
+  } else {
+    els.userStatusText.textContent = "未登录：反思只保存在本机。";
+  }
+  if (els.userLogout) els.userLogout.hidden = !state.user;
+  if (els.userUsername) els.userUsername.disabled = Boolean(state.user);
+  if (els.userPassword) els.userPassword.disabled = Boolean(state.user);
+}
+
+async function loadCurrentUser() {
+  if (!state.authToken) {
+    renderUserStatus();
+    return;
+  }
+  try {
+    const response = await fetch(`${API_BASE}/api/auth/me`, { headers: authHeaders(), cache: "no-store" });
+    const payload = await response.json();
+    if (!response.ok || !payload.authenticated) throw new Error(payload.detail || "登录已失效");
+    state.user = payload.user;
+  } catch {
+    state.authToken = "";
+    state.user = null;
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+  }
+  renderUserStatus();
+}
+
+async function submitUserAuth(mode) {
+  if (!els.userUsername || !els.userPassword) return;
+  const username = els.userUsername.value.trim();
+  const password = els.userPassword.value;
+  if (!username || !password) {
+    renderUserStatus("请先填写用户名和密码。");
+    return;
+  }
+  renderUserStatus(mode === "register" ? "正在注册..." : "正在登录...");
+  try {
+    const response = await fetch(`${API_BASE}/api/auth/${mode}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.detail || `HTTP ${response.status}`);
+    state.authToken = payload.token;
+    state.user = payload.user;
+    localStorage.setItem(AUTH_TOKEN_KEY, state.authToken);
+    els.userPassword.value = "";
+    renderUserStatus();
+    startWorkSession();
+  } catch (error) {
+    renderUserStatus(`${mode === "register" ? "注册" : "登录"}失败：${error.message}`);
+  }
+}
+
+function logoutUser() {
+  state.authToken = "";
+  state.user = null;
+  localStorage.removeItem(AUTH_TOKEN_KEY);
+  if (els.userUsername) els.userUsername.disabled = false;
+  if (els.userPassword) {
+    els.userPassword.disabled = false;
+    els.userPassword.value = "";
+  }
+  renderUserStatus();
+}
+
+async function startWorkSession() {
+  if (!state.authToken || !activeWorkId) return;
+  try {
+    await fetch(`${API_BASE}/api/sessions/start`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify({ work_id: activeWorkId }),
+    });
+  } catch {
+    renderUserStatus("已登录，但本次进入作品未能写入服务器。");
+  }
+}
+
+async function syncFirstLook(firstLook) {
+  if (!state.authToken || !activeWorkId) return;
+  try {
+    await fetch(`${API_BASE}/api/first-look`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify({ work_id: activeWorkId, ...firstLook }),
+    });
+  } catch {
+    renderUserStatus("第一印象已保存在本机，但未同步到服务器。");
+  }
+}
+
+async function syncReflection(annotationId, text) {
+  if (!state.authToken || !activeWorkId) return;
+  const item = selectedAnnotation();
+  try {
+    await fetch(`${API_BASE}/api/reflections`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify({
+        work_id: activeWorkId,
+        annotation_id: annotationId || "free_reflection",
+        reflection_type: item?.type || "free",
+        content: text,
+      }),
+    });
+  } catch {
+    renderUserStatus("反思已保存在本机，但未同步到服务器。");
+  }
+}
+
 function setAdminLoggedIn(loggedIn) {
   localStorage.setItem("callilens-admin-logged-in", loggedIn ? "true" : "false");
   if (els.adminWorkspace) els.adminWorkspace.hidden = !loggedIn;
@@ -2408,7 +2545,7 @@ function setAdminLoggedIn(loggedIn) {
 }
 
 function setAdminTab(tab) {
-  const nextTab = tab === "ai" ? "ai" : "works";
+  const nextTab = ["works", "ai", "records"].includes(tab) ? tab : "works";
   els.adminTabs?.forEach((button) => {
     button.classList.toggle("active", button.dataset.adminTab === nextTab);
   });
@@ -2417,6 +2554,7 @@ function setAdminTab(tab) {
   });
   if (nextTab === "ai") loadLlmStatus();
   if (nextTab === "works") renderAdminWorksList();
+  if (nextTab === "records") loadAdminRecords();
 }
 
 function renderAdminWorksList() {
@@ -2455,6 +2593,75 @@ async function refreshAdminWorks() {
   await loadWorksIndex();
   renderWorkCards();
   renderAdminWorksList();
+}
+
+function appendRecordGroup(title, records, renderItem) {
+  if (!els.adminRecordsList) return;
+  const group = document.createElement("section");
+  group.className = "adminRecordGroup";
+  const heading = document.createElement("h4");
+  heading.textContent = `${title} (${records.length})`;
+  group.append(heading);
+  if (!records.length) {
+    const empty = document.createElement("p");
+    empty.className = "adminEmpty";
+    empty.textContent = "暂无记录。";
+    group.append(empty);
+  } else {
+    records.slice(0, 20).forEach((record) => {
+      const item = document.createElement("div");
+      item.className = "adminRecordItem";
+      renderItem(item, record);
+      group.append(item);
+    });
+  }
+  els.adminRecordsList.append(group);
+}
+
+function appendRecordText(item, title, detail) {
+  const strong = document.createElement("strong");
+  strong.textContent = title;
+  const paragraph = document.createElement("p");
+  paragraph.textContent = detail;
+  item.append(strong, paragraph);
+}
+
+async function loadAdminRecords() {
+  if (!els.adminRecordsList) return;
+  els.adminRecordsList.textContent = "正在读取用户记录...";
+  try {
+    const response = await fetch(`${API_BASE}/api/admin/user-records`, { cache: "no-store" });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.detail || `HTTP ${response.status}`);
+    els.adminRecordsList.replaceChildren();
+    const database = document.createElement("p");
+    database.className = "adminEmpty";
+    database.textContent = `数据库：${payload.database?.driver || "unknown"} ${payload.database?.path || ""}`;
+    els.adminRecordsList.append(database);
+
+    appendRecordGroup("用户账号", payload.users || [], (item, record) => {
+      appendRecordText(item, record.username || "-", `角色：${record.role || "user"}；创建时间：${record.created_at || "-"}`);
+    });
+    appendRecordGroup("进入作品", payload.sessions || [], (item, record) => {
+      appendRecordText(item, `${record.username || "-"} / ${record.work_id || "-"}`, record.started_at || "-");
+    });
+    appendRecordGroup("第一印象", payload.first_looks || [], (item, record) => {
+      appendRecordText(
+        item,
+        `${record.username || "-"} / ${record.work_id || "-"}`,
+        `整体：${record.overall || ""}\n运动：${record.motion || ""}\n疏密：${record.density || ""}`,
+      );
+    });
+    appendRecordGroup("反思文字", payload.reflections || [], (item, record) => {
+      appendRecordText(
+        item,
+        `${record.username || "-"} / ${record.work_id || "-"} / ${record.annotation_id || "-"}`,
+        record.content || "",
+      );
+    });
+  } catch (error) {
+    els.adminRecordsList.textContent = `读取失败：${error.message}`;
+  }
 }
 
 async function deleteAdminWork(workId, title) {
@@ -2881,6 +3088,13 @@ els.uploadEntry.addEventListener("click", () => {
 
 els.backHomeFromUpload.addEventListener("click", returnHome);
 
+els.userAuthForm?.addEventListener("submit", (event) => {
+  event.preventDefault();
+  submitUserAuth("login");
+});
+els.userRegister?.addEventListener("click", () => submitUserAuth("register"));
+els.userLogout?.addEventListener("click", logoutUser);
+
 els.adminLoginForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
   els.adminLoginError.hidden = true;
@@ -2909,6 +3123,7 @@ els.llmForm?.addEventListener("submit", saveLlmConfig);
 els.llmTest?.addEventListener("click", testLlmConfig);
 els.uploadWorkForm?.addEventListener("submit", uploadAdminWork);
 els.adminRefreshWorks?.addEventListener("click", refreshAdminWorks);
+els.adminRefreshRecords?.addEventListener("click", loadAdminRecords);
 els.adminTabs?.forEach((button) => {
   button.addEventListener("click", () => setAdminTab(button.dataset.adminTab));
 });

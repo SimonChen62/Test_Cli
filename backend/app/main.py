@@ -3,13 +3,14 @@ from __future__ import annotations
 import shutil
 from pathlib import Path
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, Header, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from pydantic import BaseModel
 
 from .schemas.ask import AskRequest, AskResponse
-from .services import config_service, guide_service, image_service, llm_service, rag_service, work_service
+from .services import config_service, guide_service, image_service, llm_service, rag_service, user_service, work_service
 from .services.paths import DATA_DIR, KNOWLEDGE_DIR
 
 
@@ -32,9 +33,112 @@ app.mount("/data", StaticFiles(directory=str(DATA_DIR)), name="data")
 ADMIN_PASSWORD = "callilens-admin"
 
 
+class AuthPayload(BaseModel):
+    username: str
+    password: str
+
+
+class SessionStartPayload(BaseModel):
+    work_id: str
+
+
+class FirstLookPayload(BaseModel):
+    work_id: str
+    overall: str
+    motion: str
+    density: str
+
+
+class ReflectionPayload(BaseModel):
+    work_id: str
+    annotation_id: str = "free_reflection"
+    reflection_type: str = "reflection"
+    content: str
+
+
+def bearer_token(authorization: str | None) -> str | None:
+    if not authorization:
+        return None
+    prefix = "Bearer "
+    if authorization.startswith(prefix):
+        return authorization[len(prefix) :].strip()
+    return authorization.strip() or None
+
+
+def auth_error(exc: ValueError) -> HTTPException:
+    return HTTPException(status_code=401, detail=str(exc))
+
+
 @app.get("/api/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.post("/api/auth/register")
+def register_user(payload: AuthPayload) -> dict[str, object]:
+    try:
+        return user_service.register(payload.username, payload.password)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/api/auth/login")
+def login_user(payload: AuthPayload) -> dict[str, object]:
+    try:
+        return user_service.login(payload.username, payload.password)
+    except ValueError as exc:
+        raise auth_error(exc) from exc
+
+
+@app.get("/api/auth/me")
+def current_user(authorization: str | None = Header(None)) -> dict[str, object]:
+    user = user_service.user_from_token(bearer_token(authorization))
+    return {"authenticated": bool(user), "user": user}
+
+
+@app.post("/api/sessions/start")
+def start_user_session(
+    payload: SessionStartPayload,
+    authorization: str | None = Header(None),
+    user_agent: str | None = Header(None),
+) -> dict[str, object]:
+    try:
+        return user_service.start_session(bearer_token(authorization), payload.work_id, user_agent or "")
+    except ValueError as exc:
+        raise auth_error(exc) from exc
+
+
+@app.post("/api/first-look")
+def save_first_look(payload: FirstLookPayload, authorization: str | None = Header(None)) -> dict[str, object]:
+    try:
+        return user_service.save_first_look(
+            bearer_token(authorization),
+            payload.work_id,
+            payload.overall,
+            payload.motion,
+            payload.density,
+        )
+    except ValueError as exc:
+        raise auth_error(exc) from exc
+
+
+@app.post("/api/reflections")
+def save_reflection(payload: ReflectionPayload, authorization: str | None = Header(None)) -> dict[str, object]:
+    try:
+        return user_service.save_reflection(
+            bearer_token(authorization),
+            payload.work_id,
+            payload.annotation_id,
+            payload.reflection_type,
+            payload.content,
+        )
+    except ValueError as exc:
+        raise auth_error(exc) from exc
+
+
+@app.get("/api/admin/user-records")
+def admin_user_records() -> dict[str, object]:
+    return user_service.admin_records()
 
 
 @app.get("/api/works")
