@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import shutil
+import time
 from pathlib import Path
+from typing import Any
 
 from fastapi import FastAPI, File, Form, Header, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,7 +12,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from .schemas.ask import AskRequest, AskResponse
-from .services import config_service, guide_service, image_service, llm_service, rag_service, user_service, work_service
+from .services import config_service, guide_service, image_service, llm_service, rag_service, user_service, work_service, group_service
 from .services.paths import DATA_DIR, KNOWLEDGE_DIR
 
 
@@ -154,7 +156,12 @@ def admin_user_records() -> dict[str, object]:
 
 @app.get("/api/works")
 def works() -> dict[str, object]:
-    return work_service.load_works_index()
+    index = work_service.load_works_index()
+    public_works = [w for w in index.get("works", []) if w.get("group_id") is None]
+    return {
+        "defaultWorkId": index.get("defaultWorkId", "work_003"),
+        "works": public_works
+    }
 
 
 @app.get("/api/works/{work_id}")
@@ -163,6 +170,171 @@ def work_detail(work_id: str) -> dict[str, object]:
     if not work:
         raise HTTPException(status_code=404, detail="作品不存在")
     return work
+
+
+# --- Group API Routes ---
+
+class CreateGroupPayload(BaseModel):
+    name: str
+
+
+class JoinGroupPayload(BaseModel):
+    invite_code: str
+
+
+@app.get("/api/groups")
+def get_groups(authorization: str | None = Header(None)) -> list[dict[str, Any]]:
+    user = user_service.require_user(bearer_token(authorization))
+    return group_service.get_user_groups(user["id"])
+
+
+@app.post("/api/groups")
+def create_group(payload: CreateGroupPayload, authorization: str | None = Header(None)) -> dict[str, Any]:
+    user = user_service.require_user(bearer_token(authorization))
+    try:
+        return group_service.create_group(payload.name, user["id"])
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/api/groups/join")
+def join_group(payload: JoinGroupPayload, authorization: str | None = Header(None)) -> dict[str, Any]:
+    user = user_service.require_user(bearer_token(authorization))
+    try:
+        return group_service.join_group(payload.invite_code, user["id"])
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.get("/api/groups/{group_id}")
+def get_group_details(group_id: int, authorization: str | None = Header(None)) -> dict[str, Any]:
+    user = user_service.require_user(bearer_token(authorization))
+    try:
+        details = group_service.get_group_details(group_id, user["id"])
+        # Fetch works associated with this group
+        all_works = work_service.load_works_index().get("works", [])
+        group_works = [w for w in all_works if w.get("group_id") == group_id]
+        details["works"] = group_works
+        return details
+    except ValueError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+
+
+@app.post("/api/groups/{group_id}/upload-work")
+async def upload_group_work(
+    group_id: int,
+    image: UploadFile = File(...),
+    title: str = Form(...),
+    artist: str = Form(""),
+    dynasty: str = Form(""),
+    date: str = Form(""),
+    script_type: str = Form(""),
+    museum: str = Form(""),
+    description: str = Form(""),
+    background: str = Form(""),
+    source_url: str = Form(""),
+    tags: str = Form(""),
+    quick_questions: str = Form(""),
+    generate_ai_guide: bool = Form(False),
+    authorization: str | None = Header(None),
+) -> dict[str, Any]:
+    user = user_service.require_user(bearer_token(authorization))
+    if not group_service.is_group_member(group_id, user["id"]):
+        raise HTTPException(status_code=403, detail="您不是该小组成员，无权上传作品。")
+    
+    work_id = work_service.next_work_id()
+    target = work_service.work_dir(work_id)
+    target.mkdir(parents=True, exist_ok=True)
+
+    image_path = target / "original.png"
+    with image_path.open("wb") as handle:
+        shutil.copyfileobj(image.file, handle)
+    
+    # Parse quick questions
+    qq_list = []
+    if quick_questions.strip():
+        normalized = quick_questions.replace("，", ",")
+        qq_list = [q.strip() for q in normalized.split(",") if q.strip()]
+    else:
+        subj_title = title or "这件作品"
+        subj_artist = artist or user["username"]
+        qq_list = [
+            f"{subj_artist}是谁？",
+            f"《{subj_title}》是什么？",
+            "这件作品是在什么时候写的？",
+            "这件作品是什么字体？",
+            "这件作品现藏在哪里？",
+            "怎么理解这幅作品的虚实与留白？"
+        ]
+
+    work = {
+        "id": work_id,
+        "title": title,
+        "artist": artist or user["username"],
+        "dynasty": dynasty or "学习小组",
+        "date": date or time.strftime("%Y-%m-%d", time.localtime()),
+        "script_type": script_type or "临帖/创作",
+        "museum": museum or "小组工作坊",
+        "description": description or f"由组员 {user['username']} 上传的学习或练习作品。",
+        "background": background or f"由组员 {user['username']} 上传。",
+        "thumbnail": "thumbnail.png",
+        "status": "ready",
+        "source": "小组自主上传",
+        "source_url": source_url,
+        "tags": [item.strip() for item in tags.split(",") if item.strip()] if tags.strip() else ["小组练习"],
+        "quick_questions": qq_list,
+        "guide_status": "ai_draft" if generate_ai_guide else "none",
+        "group_id": group_id,  # Set group ID!
+    }
+    work_service.write_json(target / "work-info.json", work)
+
+    # Write knowledge for RAG
+    knowledge = {
+        "chunks": [
+            {
+                "id": f"{work_id}_intro",
+                "work_id": work_id,
+                "title": f"{title}作品简介",
+                "text": work["description"],
+                "source": "小组自主上传",
+                "source_url": source_url,
+                "tags": work["tags"],
+            },
+            {
+                "id": f"{work_id}_background",
+                "work_id": work_id,
+                "title": f"{title}背景资料",
+                "text": work["background"],
+                "source": "小组自主上传",
+                "source_url": source_url,
+                "tags": work["tags"],
+            }
+        ]
+    }
+    work_service.write_json(target / "knowledge.json", knowledge)
+
+    try:
+        report = image_service.process_work_dir(target)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"上传成功，但图像处理失败：{exc}")
+
+    generated = report["outputs"] + ["floating_3d_data.json", "knowledge.json"]
+    if generate_ai_guide:
+        guide_service.create_ai_guide_draft(target, work, report)
+        generated.append("ai-guide-draft.json")
+
+    work_service.upsert_work(work)
+    return {
+        "work_id": work_id,
+        "message": "小组作品上传成功",
+        "generated": generated
+    }
+
+
+@app.get("/api/works/{work_id}/reflections")
+def get_reflections(work_id: str, authorization: str | None = Header(None)) -> list[dict[str, Any]]:
+    user_service.require_user(bearer_token(authorization))
+    return user_service.get_work_reflections(work_id)
 
 
 @app.get("/api/knowledge")
@@ -297,6 +469,7 @@ async def upload_work(
     background: str = Form(""),
     source_url: str = Form(""),
     tags: str = Form(""),
+    quick_questions: str = Form(""),
     generate_ai_guide: bool = Form(False),
 ) -> dict[str, object]:
     work_id = work_service.next_work_id()
@@ -306,6 +479,23 @@ async def upload_work(
     image_path = target / "original.png"
     with image_path.open("wb") as handle:
         shutil.copyfileobj(image.file, handle)
+
+    # Parse quick questions
+    qq_list = []
+    if quick_questions.strip():
+        normalized = quick_questions.replace("，", ",")
+        qq_list = [q.strip() for q in normalized.split(",") if q.strip()]
+    else:
+        subj_title = title or "这件作品"
+        subj_artist = artist or "作者"
+        qq_list = [
+            f"{subj_artist}是谁？",
+            f"《{subj_title}》是什么？",
+            "这件作品是在什么时候写的？",
+            "这件作品是什么字体？",
+            "这件作品现藏在哪里？",
+            "怎么理解这幅作品的虚实与留白？"
+        ]
 
     work = {
         "id": work_id,
@@ -322,6 +512,7 @@ async def upload_work(
         "source": "管理员上传",
         "source_url": source_url,
         "tags": [item.strip() for item in tags.split(",") if item.strip()],
+        "quick_questions": qq_list,
         "guide_status": "ai_draft" if generate_ai_guide else "none",
     }
     work_service.write_json(target / "work-info.json", work)
@@ -366,6 +557,132 @@ async def upload_work(
         "message": "作品已上传并加入知识库",
         "generated": generated,
     }
+
+
+@app.post("/api/admin/works/{work_id}")
+async def update_work(
+    work_id: str,
+    image: UploadFile | None = File(None),
+    title: str = Form(...),
+    artist: str = Form(""),
+    dynasty: str = Form(""),
+    date: str = Form(""),
+    script_type: str = Form(""),
+    museum: str = Form(""),
+    description: str = Form(""),
+    background: str = Form(""),
+    source_url: str = Form(""),
+    tags: str = Form(""),
+    quick_questions: str = Form(""),
+    generate_ai_guide: bool = Form(False),
+) -> dict[str, object]:
+    import json
+    target = work_service.work_dir(work_id)
+    if not target.exists():
+        raise HTTPException(status_code=404, detail="作品不存在")
+
+    image_updated = False
+    if image and image.filename:
+        image_path = target / "original.png"
+        with image_path.open("wb") as handle:
+            shutil.copyfileobj(image.file, handle)
+        image_updated = True
+
+    # Parse quick questions
+    qq_list = []
+    if quick_questions.strip():
+        normalized = quick_questions.replace("，", ",")
+        qq_list = [q.strip() for q in normalized.split(",") if q.strip()]
+    else:
+        subj_title = title or "这件作品"
+        subj_artist = artist or "作者"
+        qq_list = [
+            f"{subj_artist}是谁？",
+            f"《{subj_title}》是什么？",
+            "这件作品是在什么时候写的？",
+            "这件作品是什么字体？",
+            "这件作品现藏在哪里？",
+            "怎么理解这幅作品的虚实与留白？"
+        ]
+
+    # Read existing work info
+    existing = work_service.read_json(target / "work-info.json", {})
+
+    work = {
+        **existing,
+        "id": work_id,
+        "title": title,
+        "artist": artist,
+        "dynasty": dynasty,
+        "date": date,
+        "script_type": script_type,
+        "museum": museum,
+        "description": description,
+        "background": background,
+        "source_url": source_url,
+        "tags": [item.strip() for item in tags.split(",") if item.strip()],
+        "quick_questions": qq_list,
+    }
+    
+    if generate_ai_guide:
+        work["guide_status"] = "ai_draft"
+        
+    work_service.write_json(target / "work-info.json", work)
+
+    # Re-write knowledge.json
+    knowledge = {
+        "chunks": [
+            {
+                "id": f"{work_id}_intro",
+                "work_id": work_id,
+                "title": f"{title}作品说明",
+                "text": description or f"{title}是管理员上传的书法作品。",
+                "source": "管理员上传资料",
+                "source_url": source_url,
+                "tags": work["tags"],
+            },
+            {
+                "id": f"{work_id}_background",
+                "work_id": work_id,
+                "title": f"{title}背景资料",
+                "text": background or "管理员尚未补充背景资料。",
+                "source": "管理员上传资料",
+                "source_url": source_url,
+                "tags": work["tags"],
+            },
+        ]
+    }
+    work_service.write_json(target / "knowledge.json", knowledge)
+
+    generated = ["work-info.json", "knowledge.json"]
+
+    if image_updated:
+        try:
+            report = image_service.process_work_dir(target)
+            generated += report["outputs"] + ["floating_3d_data.json"]
+        except Exception as exc:  # noqa: BLE001
+            raise HTTPException(status_code=400, detail=f"保存修改成功，但新图片 OpenCV 处理失败：{exc}") from exc
+            
+    if generate_ai_guide:
+        report_file = target / "processing-report.json"
+        report = {}
+        if report_file.exists():
+            try:
+                report = json.loads(report_file.read_text(encoding="utf-8"))
+            except Exception:
+                pass
+        guide_service.create_ai_guide_draft(target, work, report)
+        generated.append("ai-guide-draft.json")
+
+    work_service.upsert_work(work)
+
+    return {
+        "work_id": work_id,
+        "message": "作品已更新",
+        "image_updated": image_updated,
+        "generated": generated,
+    }
+
 
 
 @app.delete("/api/admin/works/{work_id}")

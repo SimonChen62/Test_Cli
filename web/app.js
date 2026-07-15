@@ -149,6 +149,10 @@ const state = {
   user: null,
   authMode: "login",
   userRecordsOpen: false,
+  libraryTab: "official",
+  groups: [],
+  activeGroupId: null,
+  activeGroupDetails: null,
 };
 
 const els = {
@@ -275,6 +279,42 @@ const els = {
   summaryMotionInput: document.querySelector("#summaryMotionInput"),
   summaryDensityInput: document.querySelector("#summaryDensityInput"),
   summaryEditError: document.querySelector("#summaryEditError"),
+  tabOfficialWorks: document.querySelector("#tabOfficialWorks"),
+  tabGroupWorks: document.querySelector("#tabGroupWorks"),
+  paneOfficialWorks: document.querySelector("#paneOfficialWorks"),
+  paneGroupWorks: document.querySelector("#paneGroupWorks"),
+  createGroupForm: document.querySelector("#createGroupForm"),
+  newGroupName: document.querySelector("#newGroupName"),
+  joinGroupForm: document.querySelector("#joinGroupForm"),
+  joinInviteCode: document.querySelector("#joinInviteCode"),
+  userGroupsList: document.querySelector("#userGroupsList"),
+  groupDashboard: document.querySelector("#groupDashboard"),
+  groupDetailsView: document.querySelector("#groupDetailsView"),
+  groupDetailName: document.querySelector("#groupDetailName"),
+  groupDetailCode: document.querySelector("#groupDetailCode"),
+  groupDetailMembers: document.querySelector("#groupDetailMembers"),
+  backToGroupsListButton: document.querySelector("#backToGroupsListButton"),
+  groupUploadForm: document.querySelector("#groupUploadForm"),
+  groupUploadFile: document.querySelector("#groupUploadFile"),
+  groupUploadTitle: document.querySelector("#groupUploadTitle"),
+  groupUploadArtist: document.querySelector("#groupUploadArtist"),
+  groupUploadDynasty: document.querySelector("#groupUploadDynasty"),
+  groupUploadDate: document.querySelector("#groupUploadDate"),
+  groupUploadScriptType: document.querySelector("#groupUploadScriptType"),
+  groupUploadMuseum: document.querySelector("#groupUploadMuseum"),
+  groupUploadSourceUrl: document.querySelector("#groupUploadSourceUrl"),
+  groupUploadTags: document.querySelector("#groupUploadTags"),
+  groupUploadQuickQuestions: document.querySelector("#groupUploadQuickQuestions"),
+  groupUploadDesc: document.querySelector("#groupUploadDesc"),
+  groupUploadBackground: document.querySelector("#groupUploadBackground"),
+  groupUploadGenerateAi: document.querySelector("#groupUploadGenerateAi"),
+  groupUploadSubmit: document.querySelector("#groupUploadSubmit"),
+  groupUploadProgress: document.querySelector("#groupUploadProgress"),
+  groupUploadProgressText: document.querySelector("#groupUploadProgressText"),
+  groupUploadError: document.querySelector("#groupUploadError"),
+  groupWorksList: document.querySelector("#groupWorksList"),
+  peerReflectionsBlock: document.querySelector("#peerReflectionsBlock"),
+  peerReflectionsList: document.querySelector("#peerReflectionsList"),
 };
 
 function dataUrl() {
@@ -416,6 +456,7 @@ function renderEntry() {
       ? "进入当前样例作品，开始分层观察与反思任务。"
       : "请先登录；登录后可进入作品库并同步观察记录。";
   }
+  renderLibraryTabs();
 }
 
 function renderWorkCards() {
@@ -506,14 +547,60 @@ async function openWork(workId, options = {}) {
   }
   const workMeta = currentWorkMeta();
   els.title.textContent = workMeta?.title || state.data.title || "单作品书法导览";
+  renderQuickQuestions(workMeta);
   await loadGlyphs();
   renderAll();
   loadAnalysisCanvases();
   applyInitialProbe();
+  loadPeerReflections(workId);
 }
 
 function currentWorkMeta() {
   return (state.worksIndex?.works || []).find((work) => work.id === activeWorkId) || null;
+}
+
+function renderQuickQuestions(workMeta) {
+  if (!els.ragQuickQuestions) return;
+  els.ragQuickQuestions.replaceChildren();
+
+  const defaultQuestions = [
+    "赵孟頫是谁？",
+    "《光福重建塔记》是什么？",
+    "什么是飞白？",
+    "这件作品是什么时候写的？",
+    "这件作品现藏在哪里？",
+    "这件作品的风格特点是什么？",
+    "光福寺和重建塔有什么背景？",
+    "什么是行书？",
+    "什么是赵体？",
+    "QiVerse 和 CalliLens 怎么结合？"
+  ];
+
+  let questions = defaultQuestions;
+  if (workMeta && Array.isArray(workMeta.quick_questions) && workMeta.quick_questions.length > 0) {
+    questions = workMeta.quick_questions;
+  } else if (workMeta && workMeta.id !== "work_003") {
+    const title = workMeta.title || "这件作品";
+    const artist = workMeta.artist || "作者";
+    const dynasty = workMeta.dynasty || "";
+    const scriptType = workMeta.script_type || "";
+
+    questions = [
+      `${artist}是谁？`,
+      `《${title}》是什么？`,
+      "这件作品是在什么时候写的？",
+      "这件作品是什么字体？",
+      "这件作品现藏在哪里？",
+      "怎么理解这幅作品的虚实与留白？"
+    ];
+  }
+
+  questions.forEach((q) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = q;
+    els.ragQuickQuestions.appendChild(btn);
+  });
 }
 
 async function loadGeneratedWorkData(workId) {
@@ -2348,7 +2435,7 @@ function renderReflectionPanel() {
   }
 }
 
-function submitReflection() {
+async function submitReflection() {
   const key = reflectionKey();
   const text = els.reflectionInput.value.trim();
   if (!text) {
@@ -2358,7 +2445,8 @@ function submitReflection() {
   }
   state.reflections[key] = { text, submitted: true };
   saveReflections();
-  syncReflection(key, text);
+  await syncReflection(key, text);
+  loadPeerReflections(activeWorkId);
   renderReflectionPanel();
   requestAnimationFrame(() => els.expertFeedbackPanel.scrollIntoView({ behavior: "smooth", block: "nearest" }));
 }
@@ -2485,6 +2573,7 @@ function requestLibraryAccess() {
     return;
   }
   setScreen("library");
+  setLibraryTab(state.libraryTab || "official");
   requestAnimationFrame(() => els.storedWorksPanel?.scrollIntoView({ behavior: "smooth", block: "start" }));
 }
 
@@ -2811,14 +2900,38 @@ function renderAdminWorksList() {
     meta.textContent = [work.artist, work.dynasty, work.script_type, work.museum].filter(Boolean).join(" · ") || "管理员作品资料";
     info.append(title, meta);
 
-    const button = document.createElement("button");
-    button.className = "secondaryButton dangerButton";
-    button.type = "button";
-    button.textContent = work.id === "work_003" ? "默认作品保留" : "删除";
-    button.disabled = work.id === "work_003";
-    button.addEventListener("click", () => deleteAdminWork(work.id, work.title || work.id));
+    const actions = document.createElement("div");
+    actions.style.display = "flex";
+    actions.style.gap = "8px";
 
-    row.append(info, button);
+    const editBtn = document.createElement("button");
+    editBtn.className = "secondaryButton";
+    editBtn.type = "button";
+    editBtn.textContent = "编辑";
+    editBtn.addEventListener("click", async () => {
+      try {
+        editBtn.textContent = "读取中...";
+        editBtn.disabled = true;
+        const res = await fetch(`${API_BASE}/api/works/${work.id}`, { cache: "no-store" });
+        const detail = await res.json();
+        editWorkInForm(detail);
+      } catch (err) {
+        alert("读取作品详情失败：" + err.message);
+      } finally {
+        editBtn.textContent = "编辑";
+        editBtn.disabled = false;
+      }
+    });
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className = "secondaryButton dangerButton";
+    deleteBtn.type = "button";
+    deleteBtn.textContent = work.id === "work_003" ? "默认作品保留" : "删除";
+    deleteBtn.disabled = work.id === "work_003";
+    deleteBtn.addEventListener("click", () => deleteAdminWork(work.id, work.title || work.id));
+
+    actions.append(editBtn, deleteBtn);
+    row.append(info, actions);
     els.adminWorksList.append(row);
   });
 }
@@ -3071,19 +3184,95 @@ async function uploadAdminWork(event) {
   event.preventDefault();
   if (!els.uploadWorkForm || !els.uploadResult) return;
   els.uploadResult.hidden = false;
-  els.uploadResult.textContent = "正在上传图片、运行 OpenCV，并写入知识库...";
+  const isEditing = Boolean(state.adminEditingWorkId);
+  els.uploadResult.textContent = isEditing
+    ? "正在保存修改并更新知识库..."
+    : "正在上传图片、运行 OpenCV，并写入知识库...";
   try {
-    const response = await fetch(`${API_BASE}/api/admin/upload-work`, {
+    const url = isEditing
+      ? `${API_BASE}/api/admin/works/${state.adminEditingWorkId}`
+      : `${API_BASE}/api/admin/upload-work`;
+    const response = await fetch(url, {
       method: "POST",
       body: new FormData(els.uploadWorkForm),
     });
     const payload = await response.json();
     if (!response.ok) throw new Error(payload.detail || `HTTP ${response.status}`);
-    els.uploadResult.textContent = `上传完成：${payload.work_id}\n生成文件：${payload.generated.join("、")}\n返回作品库后可以看到新作品。`;
-    els.uploadWorkForm.reset();
+    els.uploadResult.textContent = isEditing
+      ? `修改已保存：${state.adminEditingWorkId}\n返回作品库后可以看到最新修改。`
+      : `上传完成：${payload.work_id}\n生成文件：${payload.generated.join("、")}\n返回作品库后可以看到新作品。`;
+    resetAdminForm();
     await refreshAdminWorks();
   } catch (error) {
-    els.uploadResult.textContent = `上传失败：${error.message}\n请确认后端已启动：python -m uvicorn backend.app.main:app --reload --port 8000`;
+    els.uploadResult.textContent = isEditing
+      ? `修改保存失败：${error.message}`
+      : `上传失败：${error.message}\n请确认后端已启动：python -m uvicorn backend.app.main:app --reload --port 8000`;
+  }
+}
+
+function editWorkInForm(work) {
+  state.adminEditingWorkId = work.id;
+  const form = els.uploadWorkForm;
+  if (!form) return;
+  
+  form.elements["title"].value = work.title || "";
+  form.elements["artist"].value = work.artist || "";
+  form.elements["dynasty"].value = work.dynasty || "";
+  form.elements["date"].value = work.date || "";
+  form.elements["script_type"].value = work.script_type || "";
+  form.elements["museum"].value = work.museum || "";
+  form.elements["description"].value = work.description || "";
+  form.elements["background"].value = work.background || "";
+  form.elements["source_url"].value = work.source_url || "";
+  form.elements["tags"].value = Array.isArray(work.tags) ? work.tags.join(", ") : "";
+  form.elements["quick_questions"].value = Array.isArray(work.quick_questions) ? work.quick_questions.join(", ") : "";
+
+  const imageInput = form.elements["image"];
+  if (imageInput) imageInput.required = false;
+
+  const header = form.previousElementSibling;
+  if (header && header.tagName === "H3") {
+    header.textContent = `修改书法作品 (${work.id})`;
+  }
+  const submitBtn = form.querySelector("button[type='submit']");
+  if (submitBtn) {
+    submitBtn.textContent = "保存修改";
+  }
+
+  let cancelBtn = form.querySelector("#cancelEditButton");
+  if (!cancelBtn) {
+    cancelBtn = document.createElement("button");
+    cancelBtn.id = "cancelEditButton";
+    cancelBtn.type = "button";
+    cancelBtn.className = "secondaryButton";
+    cancelBtn.textContent = "取消编辑";
+    cancelBtn.style.marginLeft = "10px";
+    cancelBtn.addEventListener("click", resetAdminForm);
+    submitBtn.parentNode.appendChild(cancelBtn);
+  }
+  form.scrollIntoView({ behavior: "smooth" });
+}
+
+function resetAdminForm() {
+  state.adminEditingWorkId = null;
+  const form = els.uploadWorkForm;
+  if (!form) return;
+  form.reset();
+
+  const imageInput = form.elements["image"];
+  if (imageInput) imageInput.required = true;
+
+  const header = form.previousElementSibling;
+  if (header && header.tagName === "H3") {
+    header.textContent = "上传书法作品";
+  }
+  const submitBtn = form.querySelector("button[type='submit']");
+  if (submitBtn) {
+    submitBtn.textContent = "上传并处理";
+  }
+  const cancelBtn = form.querySelector("#cancelEditButton");
+  if (cancelBtn) {
+    cancelBtn.remove();
   }
 }
 
@@ -3421,5 +3610,313 @@ els.reflectionInput.addEventListener("input", () => {
 window.addEventListener("resize", handleViewportResize);
 window.addEventListener("scroll", handleEntryScroll, { passive: true });
 window.addEventListener("popstate", handleBrowserRouteChange);
+
+/* --- Study Groups & Collaborative Learning logic --- */
+
+function setLibraryTab(tab) {
+  state.libraryTab = tab === "group" ? "group" : "official";
+  renderLibraryTabs();
+  
+  if (state.libraryTab === "group") {
+    loadUserGroups();
+  } else {
+    renderWorkCards();
+  }
+}
+
+function renderLibraryTabs() {
+  if (!els.tabOfficialWorks) return;
+  const isOfficial = state.libraryTab === "official";
+  els.tabOfficialWorks.classList.toggle("active", isOfficial);
+  els.tabGroupWorks.classList.toggle("active", !isOfficial);
+  els.paneOfficialWorks.classList.toggle("active", isOfficial);
+  els.paneGroupWorks.classList.toggle("active", !isOfficial);
+}
+
+async function loadUserGroups() {
+  if (!els.userGroupsList) return;
+  els.userGroupsList.textContent = "正在读取学习小组列表...";
+  try {
+    const response = await fetch(`${API_BASE}/api/groups`, {
+      headers: authHeaders(),
+      cache: "no-store",
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    state.groups = await response.json();
+    renderUserGroups();
+  } catch (error) {
+    els.userGroupsList.textContent = `小组列表加载失败：${error.message}`;
+  }
+}
+
+function renderUserGroups() {
+  if (!els.userGroupsList) return;
+  els.userGroupsList.replaceChildren();
+  if (!state.groups.length) {
+    els.userGroupsList.innerHTML = `<p class="emptyList">你还没有加入任何学习小组。请在上方输入小组名称创建，或者输入同伴分享的邀请码加入。</p>`;
+    return;
+  }
+  state.groups.forEach((group) => {
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = "groupItem";
+    card.innerHTML = `
+      <strong>${group.name}</strong>
+      <span>邀请码：${group.invite_code}</span>
+      <span>创建时间：${formatRecordTime(group.created_at)}</span>
+    `;
+    card.addEventListener("click", () => viewGroupDetails(group.id));
+    els.userGroupsList.appendChild(card);
+  });
+}
+
+async function handleCreateGroup(event) {
+  event.preventDefault();
+  const name = els.newGroupName.value.trim();
+  if (!name) return;
+  try {
+    const response = await fetch(`${API_BASE}/api/groups`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify({ name }),
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.detail || `HTTP ${response.status}`);
+    els.newGroupName.value = "";
+    await loadUserGroups();
+  } catch (error) {
+    alert(`创建小组失败：${error.message}`);
+  }
+}
+
+async function handleJoinGroup(event) {
+  event.preventDefault();
+  const inviteCode = els.joinInviteCode.value.trim().toUpperCase();
+  if (!inviteCode) return;
+  try {
+    const response = await fetch(`${API_BASE}/api/groups/join`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify({ invite_code: inviteCode }),
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.detail || `HTTP ${response.status}`);
+    els.joinInviteCode.value = "";
+    await loadUserGroups();
+  } catch (error) {
+    alert(`加入小组失败：${error.message}`);
+  }
+}
+
+async function viewGroupDetails(groupId) {
+  state.activeGroupId = groupId;
+  els.groupDashboard.hidden = true;
+  els.groupDetailsView.hidden = false;
+  els.groupDetailName.textContent = "正在加载小组详情...";
+  els.groupDetailCode.textContent = "-";
+  els.groupDetailMembers.textContent = "-";
+  els.groupWorksList.replaceChildren();
+  
+  try {
+    const response = await fetch(`${API_BASE}/api/groups/${groupId}`, {
+      headers: authHeaders(),
+      cache: "no-store",
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const details = await response.json();
+    state.activeGroupDetails = details;
+    
+    els.groupDetailName.textContent = details.group.name;
+    els.groupDetailCode.textContent = details.group.invite_code;
+    els.groupDetailMembers.textContent = (details.members || []).map(m => m.username).join("、");
+    
+    renderGroupWorks(details.works || []);
+  } catch (error) {
+    els.groupDetailName.textContent = "小组详情加载失败";
+    els.groupUploadError.textContent = error.message;
+    els.groupUploadError.hidden = false;
+  }
+}
+
+function renderGroupWorks(works) {
+  els.groupWorksList.replaceChildren();
+  const activeWorks = works.filter((w) => w.status === "ready");
+  if (!activeWorks.length) {
+    const empty = document.createElement("p");
+    empty.className = "emptyList";
+    empty.textContent = "该小组暂无上传的练习作品。请在上方选择你的练习作品照片上传！";
+    els.groupWorksList.appendChild(empty);
+    return;
+  }
+  
+  activeWorks.forEach((work) => {
+    const card = document.createElement("article");
+    card.className = "workCard ready";
+
+    const image = document.createElement("img");
+    image.alt = work.title;
+    image.src = `../data/${work.id}/${work.thumbnail || "original.png"}`;
+
+    const body = document.createElement("div");
+    const eyebrow = document.createElement("p");
+    eyebrow.className = "eyebrow";
+    eyebrow.textContent = "小组临帖";
+    const title = document.createElement("h3");
+    title.textContent = work.title;
+    const meta = document.createElement("p");
+    meta.className = "workMeta";
+    meta.textContent = `上传时间：${work.date} · 作者：${work.artist}`;
+    const description = document.createElement("p");
+    description.textContent = work.description || "进入观察与讨论。";
+    const button = document.createElement("button");
+    button.className = "primaryButton";
+    button.type = "button";
+    button.textContent = "进入观察";
+    button.addEventListener("click", () => openWork(work.id));
+
+    body.append(eyebrow, title, meta, description, button);
+    card.append(image, body);
+    els.groupWorksList.append(card);
+  });
+}
+
+function backToGroupsList() {
+  state.activeGroupId = null;
+  state.activeGroupDetails = null;
+  els.groupDashboard.hidden = false;
+  els.groupDetailsView.hidden = true;
+  els.groupUploadForm.reset();
+  els.groupUploadError.hidden = true;
+  els.groupUploadProgress.hidden = true;
+  loadUserGroups();
+}
+
+async function handleGroupUpload(event) {
+  event.preventDefault();
+  const fileInput = els.groupUploadFile;
+  const titleInput = els.groupUploadTitle;
+  const artistInput = els.groupUploadArtist;
+  const dynastyInput = els.groupUploadDynasty;
+  const dateInput = els.groupUploadDate;
+  const scriptTypeInput = els.groupUploadScriptType;
+  const museumInput = els.groupUploadMuseum;
+  const sourceUrlInput = els.groupUploadSourceUrl;
+  const tagsInput = els.groupUploadTags;
+  const quickQuestionsInput = els.groupUploadQuickQuestions;
+  const descInput = els.groupUploadDesc;
+  const backgroundInput = els.groupUploadBackground;
+  const generateAiInput = els.groupUploadGenerateAi;
+  
+  if (!fileInput.files.length || !titleInput.value.trim() || !state.activeGroupId) {
+    return;
+  }
+  
+  els.groupUploadSubmit.disabled = true;
+  els.groupUploadProgress.hidden = false;
+  els.groupUploadError.hidden = true;
+  
+  const formData = new FormData();
+  formData.append("image", fileInput.files[0]);
+  formData.append("title", titleInput.value.trim());
+  formData.append("artist", artistInput.value.trim());
+  formData.append("dynasty", dynastyInput.value.trim());
+  formData.append("date", dateInput.value.trim());
+  formData.append("script_type", scriptTypeInput.value.trim());
+  formData.append("museum", museumInput.value.trim());
+  formData.append("source_url", sourceUrlInput.value.trim());
+  formData.append("tags", tagsInput.value.trim());
+  formData.append("quick_questions", quickQuestionsInput.value.trim());
+  formData.append("description", descInput.value.trim());
+  formData.append("background", backgroundInput.value.trim());
+  formData.append("generate_ai_guide", generateAiInput.checked ? "true" : "false");
+  
+  try {
+    const response = await fetch(`${API_BASE}/api/groups/${state.activeGroupId}/upload-work`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: formData,
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.detail || `HTTP ${response.status}`);
+    
+    // Success
+    els.groupUploadForm.reset();
+    els.groupUploadProgress.hidden = true;
+    await viewGroupDetails(state.activeGroupId);
+  } catch (error) {
+    els.groupUploadError.textContent = `上传失败：${error.message}`;
+    els.groupUploadError.hidden = false;
+  } finally {
+    els.groupUploadSubmit.disabled = false;
+  }
+}
+
+async function loadPeerReflections(workId) {
+  if (!els.peerReflectionsBlock || !els.peerReflectionsList) return;
+  
+  // Only load reflections if user is logged in
+  if (!state.authToken) {
+    els.peerReflectionsBlock.hidden = true;
+    return;
+  }
+  
+  try {
+    const response = await fetch(`${API_BASE}/api/works/${workId}/reflections`, {
+      headers: authHeaders(),
+      cache: "no-store",
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const reflections = await response.json();
+    
+    els.peerReflectionsBlock.hidden = false;
+    els.peerReflectionsList.replaceChildren();
+    
+    if (!reflections.length) {
+      const empty = document.createElement("p");
+      empty.className = "emptyList";
+      empty.textContent = "暂无组员反思，快来提交你的第一条观察吧！";
+      els.peerReflectionsList.appendChild(empty);
+      return;
+    }
+    
+    reflections.forEach((record) => {
+      const item = document.createElement("div");
+      item.className = "peerReflectionItem";
+      
+      const header = document.createElement("div");
+      header.className = "reflectionHeader";
+      
+      const user = document.createElement("span");
+      user.className = "reflectionUser";
+      user.textContent = record.username;
+      
+      const time = document.createElement("span");
+      time.className = "reflectionTime";
+      time.textContent = formatRecordTime(record.created_at);
+      
+      header.append(user, time);
+      
+      const text = document.createElement("p");
+      const prefix = record.annotation_id && record.annotation_id !== "free_reflection" 
+        ? `【观察点 ${record.annotation_id}】` 
+        : "【自由观察】";
+      text.textContent = `${prefix}${record.content}`;
+      
+      item.append(header, text);
+      els.peerReflectionsList.appendChild(item);
+    });
+  } catch (error) {
+    console.error("Failed to load peer reflections:", error);
+    els.peerReflectionsBlock.hidden = true;
+  }
+}
+
+// Bind group event listeners
+els.tabOfficialWorks?.addEventListener("click", () => setLibraryTab("official"));
+els.tabGroupWorks?.addEventListener("click", () => setLibraryTab("group"));
+els.createGroupForm?.addEventListener("submit", handleCreateGroup);
+els.joinGroupForm?.addEventListener("submit", handleJoinGroup);
+els.backToGroupsListButton?.addEventListener("click", backToGroupsList);
+els.groupUploadForm?.addEventListener("submit", handleGroupUpload);
 
 boot();
