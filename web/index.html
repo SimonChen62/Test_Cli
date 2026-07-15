@@ -63,12 +63,96 @@
       <section id="storedWorksPanel" class="entryPanel libraryPanel" hidden>
         <div class="entryPanelHeader">
           <div>
-            <p class="eyebrow">网页已存库</p>
+            <p class="eyebrow" id="libraryEyebrow">网页已存库</p>
             <h2>选择作品</h2>
           </div>
           <button id="backHomeFromLibraryButton" class="secondaryButton" type="button">返回首页</button>
         </div>
-        <div id="storedWorksList" class="storedWorksList" aria-label="已存作品列表"></div>
+        
+        <div class="libraryTabs" role="tablist">
+          <button id="tabOfficialWorks" class="libraryTabButton active" type="button">官方经典作品</button>
+          <button id="tabGroupWorks" class="libraryTabButton" type="button">小组协作空间</button>
+        </div>
+
+        <div id="paneOfficialWorks" class="libraryPane active">
+          <div id="storedWorksList" class="storedWorksList" aria-label="已存作品列表"></div>
+        </div>
+
+        <div id="paneGroupWorks" class="libraryPane">
+          <div id="groupDashboard" class="groupDashboard">
+            <div class="groupActions">
+              <form id="createGroupForm" class="groupActionForm">
+                <input id="newGroupName" required placeholder="输入新小组名称" />
+                <button type="submit" class="secondaryButton">创建学习小组</button>
+              </form>
+              <form id="joinGroupForm" class="groupActionForm">
+                <input id="joinInviteCode" required placeholder="输入6位小组邀请码" maxlength="6" />
+                <button type="submit" class="secondaryButton">加入学习小组</button>
+              </form>
+            </div>
+            <hr class="groupDivider"/>
+            <h3>我的学习小组</h3>
+            <div id="userGroupsList" class="userGroupsList">正在加载小组列表...</div>
+          </div>
+
+          <div id="groupDetailsView" class="groupDetailsView" hidden>
+            <div class="groupDetailsHeader">
+              <div>
+                <h3 id="groupDetailName">小组名称</h3>
+                <p id="groupDetailMeta">邀请码: <strong id="groupDetailCode">-</strong> | 成员: <span id="groupDetailMembers">-</span></p>
+              </div>
+              <button id="backToGroupsListButton" class="secondaryButton" type="button">返回小组列表</button>
+            </div>
+            
+            <div class="groupDetailsContent">
+              <section class="groupUploadSection">
+                <h4>上传并研讨书法作品</h4>
+                <p class="sectionHint">上传你的书法作品照片，系统将自动运行 OpenCV 分析并生成 3D 浮雕，还可以配置 AI 导览与知识库进行同伴讨论。</p>
+                <form id="groupUploadForm" class="groupUploadForm">
+                  <div class="formRow">
+                    <label><span>作品图片</span><input id="groupUploadFile" type="file" accept="image/*" required /></label>
+                    <label><span>作品名称</span><input id="groupUploadTitle" required placeholder="例如：我的临帖练习" /></label>
+                  </div>
+                  <div class="formRow">
+                    <label><span>作者</span><input id="groupUploadArtist" placeholder="作者姓名（留空默认为用户名）" /></label>
+                    <label><span>朝代</span><input id="groupUploadDynasty" placeholder="例如：元代" /></label>
+                  </div>
+                  <div class="formRow">
+                    <label><span>创作时间</span><input id="groupUploadDate" placeholder="例如：至治元年（1321）" /></label>
+                    <label><span>书体</span><input id="groupUploadScriptType" placeholder="例如：行书" /></label>
+                  </div>
+                  <div class="formRow">
+                    <label><span>馆藏地/出处</span><input id="groupUploadMuseum" placeholder="例如：小组工坊" /></label>
+                    <label><span>资料来源 URL</span><input id="groupUploadSourceUrl" type="url" placeholder="https://..." /></label>
+                  </div>
+                  <div class="formRow">
+                    <label><span>关键词标签</span><input id="groupUploadTags" placeholder="用逗号分隔，例如：行书,临帖" /></label>
+                    <label><span>推荐问题</span><input id="groupUploadQuickQuestions" placeholder="用逗号分隔（留空则自动生成）" /></label>
+                  </div>
+                  <label><span>作品简介</span><textarea id="groupUploadDesc" rows="3" required placeholder="介绍此作品的特点及你的练习重点..."></textarea></label>
+                  <label><span>历史背景/说明</span><textarea id="groupUploadBackground" rows="3" placeholder="补充作品相关的历史文化背景..."></textarea></label>
+                  <label class="inlineCheck">
+                    <input id="groupUploadGenerateAi" type="checkbox" value="true" />
+                    <span>上传后生成 AI 候选导览草稿（保存到本地，不重复调用 API）</span>
+                  </label>
+                  <button type="submit" class="primaryButton" id="groupUploadSubmit">上传并处理</button>
+                </form>
+                <div id="groupUploadProgress" class="groupUploadProgress" hidden>
+                  <span class="spinner"></span>
+                  <span id="groupUploadProgressText">正在上传并运行 OpenCV 分析，这可能需要 5-10 秒...</span>
+                </div>
+                <div id="groupUploadError" class="formError" hidden></div>
+              </section>
+
+              <hr class="groupDivider"/>
+
+              <section class="groupWorksSection">
+                <h4>小组作品研讨库</h4>
+                <div id="groupWorksList" class="storedWorksList"></div>
+              </section>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section id="uploadPanel" class="entryPanel uploadPanel" hidden>
@@ -122,6 +206,7 @@
               <label><span>历史背景</span><textarea name="background" rows="3"></textarea></label>
               <label><span>资料来源 URL</span><input name="source_url" type="url" placeholder="https://..." /></label>
               <label><span>关键词</span><input name="tags" placeholder="用英文逗号分隔，例如：行书,长卷" /></label>
+              <label><span>快捷推荐提问</span><input name="quick_questions" placeholder="用逗号分隔，例如：作者是谁？,此作背景是什么？（留空则自动生成）" /></label>
               <label class="inlineCheck">
                 <input name="generate_ai_guide" type="checkbox" value="true" />
                 <span>上传后生成 AI 候选导览草稿（保存到本地，不重复调用 API）</span>
@@ -439,6 +524,13 @@
             </div>
             <p class="feedbackNote">系统只提供观察候选，不代表唯一正确答案；你的感受同样有价值。</p>
           </div>
+        </article>
+
+        <!-- Peer Reflections / Comments list -->
+        <article class="workflowBlock peerReflectionsPanel" id="peerReflectionsBlock" hidden>
+          <p class="workflowStep">小组讨论</p>
+          <h3>小组成员观察与反思</h3>
+          <div id="peerReflectionsList" class="peerReflectionsList">正在加载同伴反思...</div>
         </article>
       </aside>
     </main>

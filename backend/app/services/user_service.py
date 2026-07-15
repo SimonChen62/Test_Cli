@@ -332,3 +332,20 @@ def my_records(token: str | None, limit: int = 40) -> dict[str, Any]:
         "first_looks": first_looks,
         "reflections": reflections,
     }
+
+
+def get_work_reflections(work_id: str) -> list[dict[str, Any]]:
+    init_db()
+    with db_service.connect() as connection:
+        sql = """
+        SELECT r.id, r.user_id, u.username, r.work_id, r.annotation_id, r.reflection_type, r.content, r.created_at
+        FROM reflections r
+        JOIN users u ON r.user_id = u.id
+        WHERE r.work_id = ?
+        ORDER BY r.created_at DESC
+        """
+        if db_service.using_postgres():
+            sql = sql.replace("?", "%s")
+        cursor = connection.execute(sql, (work_id,))
+        return [db_service.row_to_dict(r) for r in cursor.fetchall() if r]
+
