@@ -63,6 +63,35 @@ textarea:focus-visible,
   display: none !important;
 }
 
+h1,
+h2,
+h3,
+button,
+.entrySubtitle,
+.entryCompact,
+.entrySticky,
+.entryActionButton,
+.entryPanelHeader,
+.topbar,
+.evidenceBar,
+.workflowStep,
+.eyebrow,
+.modeButton,
+.filterButton,
+.taskButton,
+.reflectionChip,
+.inkverseLiteHeader,
+.inkverseLiteSteps,
+.userBadgeButton,
+.userRecordsHeader,
+.adminTabs,
+.uploadSteps,
+.spaceLabel,
+.glyphPanel h2 {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 .entryScreen {
   position: relative;
   min-height: 122vh;
