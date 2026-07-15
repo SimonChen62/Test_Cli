@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>QiVerse Lite · CalliLens</title>
+    <link rel="stylesheet" href="./styles.css?v=1" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a href="../web/" class="backLink">返回 CalliLens</a>
+        <div>
+          <p class="eyebrow">QiVerse Lite</p>
+          <h1>墨气之境</h1>
+        </div>
+        <button id="xrButton" class="ghostButton" type="button">检测 XR</button>
+      </header>
+
+      <section class="stageLayout">
+        <section class="viewerPanel" aria-label="QiVerse Three.js 体验">
+          <canvas id="qiverseCanvas"></canvas>
+          <div id="stageHint" class="stageHint">Original：先看原作，再进入墨迹。</div>
+        </section>
+
+        <aside class="controlPanel" aria-label="体验控制">
+          <p class="eyebrow">Experience State Machine</p>
+          <h2 id="stepTitle">Original · 静墨</h2>
+          <p id="stepText" class="stepText">
+            面前是一幅原作。先观察整体势态，再触发入墨体验。
+          </p>
+
+          <div class="stepButtons" role="tablist" aria-label="QiVerse 阶段">
+            <button class="stepButton active" type="button" data-step="original">Original</button>
+            <button class="stepButton" type="button" data-step="enter">Enter Ink</button>
+            <button class="stepButton" type="button" data-step="ride">Ride Stroke</button>
+            <button class="stepButton" type="button" data-step="qi">Follow Qi</button>
+            <button class="stepButton" type="button" data-step="void">Walk Void</button>
+            <button class="stepButton" type="button" data-step="return">Return</button>
+          </div>
+
+          <div class="actionRow">
+            <button id="playButton" class="primaryButton" type="button">播放体验链</button>
+            <button id="resetButton" class="ghostButton" type="button">重置视角</button>
+          </div>
+
+          <section class="conceptCard">
+            <p class="eyebrow">解释边界</p>
+            <p>
+              当前版本是 expert-informed interpretive visualization：
+              用人工数据和图像特征做解释性可视化，不声称自动识别真实笔顺、真伪或书法水平。
+            </p>
+          </section>
+        </aside>
+      </section>
+    </main>
+    <script type="module" src="./qiverse.js?v=1"></script>
+  </body>
+</html>

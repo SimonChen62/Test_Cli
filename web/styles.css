@@ -842,6 +842,12 @@ h3 {
   background: rgba(244, 239, 228, 0.16);
 }
 
+.qiverseEntryButton {
+  border-color: rgba(196, 163, 90, 0.5);
+  color: var(--paper);
+  text-decoration: none;
+}
+
 .iconButton {
   width: 40px;
   height: 40px;

@@ -102,7 +102,7 @@ def _technical_overlap_bonus(question: str, haystack: str) -> float:
     question_lower = question.lower()
     haystack_lower = haystack.lower()
     bonus = 0.0
-    for term in ("opencv", "three", "three.js", "rag", "api", "key", "webxr", "inkverse"):
+    for term in ("opencv", "three", "three.js", "rag", "api", "key", "webxr", "inkverse", "qiverse", "qi verse"):
         if term in question_lower and term in haystack_lower:
             bonus += 5.0
     return bonus
