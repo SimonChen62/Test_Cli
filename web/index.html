@@ -123,6 +123,11 @@
               <label><span>资料来源 URL</span><input name="source_url" type="url" placeholder="https://..." /></label>
               <label><span>关键词</span><input name="tags" placeholder="用英文逗号分隔，例如：行书,长卷" /></label>
               <label><span>专属推荐提问</span><input name="quick_questions" placeholder="用逗号分隔，例如：作者是谁？,此作背景是什么？（留空则显示通用示例）" /></label>
+              <div class="adminInlineActions">
+                <button id="adminGenerateQuestionsButton" class="secondaryButton" type="button">AI 生成推荐问题草稿</button>
+                <span>先编辑已有作品，再生成草稿；确认后点击保存才会展示给用户。</span>
+              </div>
+              <p id="adminQuestionDraftResult" class="adminResult" hidden></p>
               <label class="inlineCheck">
                 <input name="generate_ai_guide" type="checkbox" value="true" />
                 <span>上传后生成 AI 候选导览草稿（保存到本地，不重复调用 API）</span>
@@ -375,6 +380,7 @@
           <p class="workflowStep">本地 RAG 导览</p>
           <h3>示例提问（可参考）</h3>
           <p class="ragQuestionHint">以下问题用于示范问法；管理员可为每件作品填写专属推荐问题，未填写时不代表全部与当前作品强相关。</p>
+          <p id="workDataQualityNotice" class="dataQualityNotice" hidden></p>
           <div id="ragQuickQuestions" class="ragQuickQuestions">
             <button type="button">这件作品可以从哪些角度了解？</button>
             <button type="button">作者和时代背景有什么信息？</button>

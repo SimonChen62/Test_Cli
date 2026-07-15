@@ -496,6 +496,21 @@ async def update_work(
 
 
 
+@app.post("/api/admin/works/{work_id}/question-draft")
+def create_work_question_draft(work_id: str) -> dict[str, object]:
+    target = work_service.work_dir(work_id)
+    if not target.exists():
+        raise HTTPException(status_code=404, detail="作品不存在")
+    work = work_service.get_work(work_id)
+    if not work:
+        raise HTTPException(status_code=404, detail="作品不存在")
+    draft = guide_service.create_question_draft(target, work)
+    return {
+        "work_id": work_id,
+        **draft,
+    }
+
+
 @app.delete("/api/admin/works/{work_id}")
 def delete_admin_work(work_id: str) -> dict[str, object]:
     try:

@@ -2909,3 +2909,22 @@ body::after {
     padding: 8px 11px;
   }
 }
+
+.adminInlineActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.dataQualityNotice {
+  margin: 10px 0 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(219, 168, 92, 0.42);
+  border-radius: 8px;
+  background: rgba(219, 168, 92, 0.1);
+  color: var(--paper);
+  line-height: 1.55;
+}

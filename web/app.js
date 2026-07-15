@@ -192,6 +192,8 @@ const els = {
   adminWorksList: document.querySelector("#adminWorksList"),
   adminRefreshRecords: document.querySelector("#adminRefreshRecordsButton"),
   adminRecordsList: document.querySelector("#adminRecordsList"),
+  adminGenerateQuestions: document.querySelector("#adminGenerateQuestionsButton"),
+  adminQuestionDraftResult: document.querySelector("#adminQuestionDraftResult"),
   llmForm: document.querySelector("#llmForm"),
   llmStatus: document.querySelector("#llmStatus"),
   llmTest: document.querySelector("#llmTestButton"),
@@ -245,6 +247,7 @@ const els = {
   densityMetric: document.querySelector("#densityMetric"),
   probeCandidate: document.querySelector("#probeCandidate"),
   ragQuickQuestions: document.querySelector("#ragQuickQuestions"),
+  workDataQualityNotice: document.querySelector("#workDataQualityNotice"),
   ragQuestionInput: document.querySelector("#ragQuestionInput"),
   ragUseAiToggle: document.querySelector("#ragUseAiToggle"),
   ragModeNote: document.querySelector("#ragModeNote"),
@@ -520,6 +523,8 @@ function currentWorkMeta() {
 function renderQuickQuestions(workMeta) {
   if (!els.ragQuickQuestions) return;
   els.ragQuickQuestions.replaceChildren();
+  const missingFields = missingWorkQualityFields(workMeta);
+  renderWorkQualityNotice(workMeta, missingFields);
 
   const work003Questions = [
     "赵孟頫是谁？",
@@ -550,6 +555,15 @@ function renderQuickQuestions(workMeta) {
     questions = workMeta.quick_questions;
   } else if (workMeta?.id === "work_003") {
     questions = work003Questions;
+  } else if (workMeta && missingFields.length) {
+    questions = [
+      "这件作品目前有哪些已上传资料？",
+      "当前资料还缺哪些关键信息？",
+      "可以怎样观察墨色、飞白和留白？",
+      "OpenCV 如何生成 3D 浮雕数据？",
+      "RAG 资料不足时会怎样回答？",
+      "管理员应如何补充这件作品的知识库？",
+    ];
   } else if (workMeta) {
     const title = workMeta.title ? `《${workMeta.title}》可以从哪些角度了解？` : "";
     const artist = workMeta.artist ? `${workMeta.artist}是谁？` : "";
@@ -563,6 +577,28 @@ function renderQuickQuestions(workMeta) {
     btn.textContent = q;
     els.ragQuickQuestions.appendChild(btn);
   });
+}
+
+function missingWorkQualityFields(workMeta) {
+  if (!workMeta) return [];
+  const missing = [];
+  if (!String(workMeta.artist || "").trim()) missing.push("作者");
+  if (!String(workMeta.dynasty || workMeta.date || "").trim()) missing.push("年代");
+  const source = String(workMeta.source || "").trim();
+  const genericSource = source.includes("管理员") || source.includes("上传");
+  if (!String(workMeta.source_url || workMeta.museum || "").trim() && (!source || genericSource)) missing.push("资料来源");
+  return missing;
+}
+
+function renderWorkQualityNotice(workMeta, missingFields = []) {
+  if (!els.workDataQualityNotice) return;
+  if (!workMeta || !missingFields.length) {
+    els.workDataQualityNotice.hidden = true;
+    els.workDataQualityNotice.textContent = "";
+    return;
+  }
+  els.workDataQualityNotice.hidden = false;
+  els.workDataQualityNotice.textContent = `资料不足：当前作品缺少${missingFields.join("、")}。本地 RAG 只能根据已上传资料回答，不能替你编造作者、年代、馆藏或来源。`;
 }
 
 async function loadGeneratedWorkData(workId) {
@@ -2990,6 +3026,36 @@ async function deleteAdminWork(workId, title) {
   }
 }
 
+async function generateAdminQuestionDraft() {
+  if (!els.uploadWorkForm || !els.adminQuestionDraftResult) return;
+  els.adminQuestionDraftResult.hidden = false;
+  if (!state.adminEditingWorkId) {
+    els.adminQuestionDraftResult.textContent = "请先在上方作品列表点击“编辑”，再为该作品生成推荐问题草稿。";
+    return;
+  }
+  els.adminGenerateQuestions.disabled = true;
+  els.adminQuestionDraftResult.textContent = "正在生成推荐问题草稿...";
+  try {
+    const response = await fetch(`${API_BASE}/api/admin/works/${state.adminEditingWorkId}/question-draft`, {
+      method: "POST",
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.detail || `HTTP ${response.status}`);
+    const questions = Array.isArray(payload.questions) ? payload.questions : [];
+    els.uploadWorkForm.elements["quick_questions"].value = questions.join(", ");
+    const missing = Array.isArray(payload.missing_fields) && payload.missing_fields.length
+      ? `\n资料不足提醒：缺少${payload.missing_fields.join("、")}。`
+      : "";
+    const source = payload.provider === "local_rag" ? "本地模板" : `AI：${payload.provider}`;
+    els.adminQuestionDraftResult.textContent =
+      `已生成草稿来源：${source}。请检查问题是否适合当前作品，确认后点击“保存修改”。${missing}`;
+  } catch (error) {
+    els.adminQuestionDraftResult.textContent = `生成失败：${error.message}`;
+  } finally {
+    els.adminGenerateQuestions.disabled = false;
+  }
+}
+
 async function loadLlmStatus() {
   if (!els.llmStatus) return;
   try {
@@ -3174,6 +3240,10 @@ function editWorkInForm(work) {
   state.adminEditingWorkId = work.id;
   const form = els.uploadWorkForm;
   if (!form) return;
+  if (els.adminQuestionDraftResult) {
+    els.adminQuestionDraftResult.hidden = true;
+    els.adminQuestionDraftResult.textContent = "";
+  }
   
   form.elements["title"].value = work.title || "";
   form.elements["artist"].value = work.artist || "";
@@ -3218,6 +3288,10 @@ function resetAdminForm() {
   const form = els.uploadWorkForm;
   if (!form) return;
   form.reset();
+  if (els.adminQuestionDraftResult) {
+    els.adminQuestionDraftResult.hidden = true;
+    els.adminQuestionDraftResult.textContent = "";
+  }
 
   const imageInput = form.elements["image"];
   if (imageInput) imageInput.required = true;
@@ -3510,6 +3584,7 @@ els.adminLoginForm?.addEventListener("submit", async (event) => {
 els.llmForm?.addEventListener("submit", saveLlmConfig);
 els.llmTest?.addEventListener("click", testLlmConfig);
 els.uploadWorkForm?.addEventListener("submit", uploadAdminWork);
+els.adminGenerateQuestions?.addEventListener("click", generateAdminQuestionDraft);
 els.adminRefreshWorks?.addEventListener("click", refreshAdminWorks);
 els.adminRefreshRecords?.addEventListener("click", loadAdminRecords);
 els.adminTabs?.forEach((button) => {

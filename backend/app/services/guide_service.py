@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -8,6 +9,97 @@ import cv2
 import numpy as np
 
 from . import llm_service
+
+
+def _work_context(work: dict[str, Any]) -> str:
+    return (
+        f"作品名称：{work.get('title') or '未填写'}\n"
+        f"作者：{work.get('artist') or '未填写'}\n"
+        f"朝代/年代：{work.get('dynasty') or work.get('date') or '未填写'}\n"
+        f"书体：{work.get('script_type') or '未填写'}\n"
+        f"馆藏/出处：{work.get('museum') or work.get('source') or '未填写'}\n"
+        f"资料来源 URL：{work.get('source_url') or '未填写'}\n"
+        f"简介：{work.get('description') or '未填写'}\n"
+        f"背景：{work.get('background') or '未填写'}\n"
+        f"关键词：{', '.join(work.get('tags') or []) if isinstance(work.get('tags'), list) else work.get('tags') or '未填写'}"
+    )
+
+
+def _missing_quality_fields(work: dict[str, Any]) -> list[str]:
+    missing: list[str] = []
+    if not (work.get("artist") or "").strip():
+        missing.append("作者")
+    if not ((work.get("dynasty") or "").strip() or (work.get("date") or "").strip()):
+        missing.append("年代")
+    source = (work.get("source") or "").strip()
+    generic_source = "管理员" in source or "上传" in source
+    if not ((work.get("source_url") or "").strip() or (work.get("museum") or "").strip() or (source and not generic_source)):
+        missing.append("资料来源")
+    return missing
+
+
+def _local_question_suggestions(work: dict[str, Any]) -> list[str]:
+    title = work.get("title") or "这件作品"
+    script_type = work.get("script_type") or "书体"
+    questions = [
+        f"《{title}》目前有哪些已上传资料？",
+        f"可以从哪些角度观察《{title}》？",
+        f"什么是{script_type}？" if script_type != "书体" else "可以怎样理解不同书体的基本特点？",
+        "可以怎样观察墨色、飞白和留白？",
+        "OpenCV 在这件作品的 3D 浮雕处理中做了什么？",
+        "如果作品资料不足，RAG 会怎样回答？",
+    ]
+    if work.get("artist"):
+        questions.insert(1, f"{work.get('artist')}和这件作品有什么关系？")
+    return questions[:6]
+
+
+def _parse_question_list(text: str, fallback: list[str]) -> list[str]:
+    if not text:
+        return fallback
+    try:
+        match = re.search(r"\[[\s\S]*\]", text)
+        if match:
+            payload = json.loads(match.group(0))
+            if isinstance(payload, list):
+                parsed = [str(item).strip() for item in payload if str(item).strip()]
+                if parsed:
+                    return parsed[:8]
+    except json.JSONDecodeError:
+        pass
+
+    questions: list[str] = []
+    for line in text.splitlines():
+        cleaned = re.sub(r"^\s*[-*•\d.、)）]+\s*", "", line).strip().strip('"“”')
+        if cleaned and ("?" in cleaned or "？" in cleaned):
+            questions.append(cleaned)
+    return questions[:8] or fallback
+
+
+def create_question_draft(work_dir: Path, work: dict[str, Any]) -> dict[str, Any]:
+    fallback_questions = _local_question_suggestions(work)
+    context = _work_context(work)
+    fallback = "\n".join(f"{index}. {question}" for index, question in enumerate(fallback_questions, start=1))
+    prompt = (
+        "请根据资料为管理员生成 5-6 个“推荐提问”草稿，返回 JSON 数组即可。\n"
+        "要求：问题必须服务于书法作品导览；不要生成和作品无关的闲聊问题；"
+        "资料缺少作者、年代或来源时，不要编造事实，可以生成“当前资料有哪些/还缺什么”的问题；"
+        "不要把 AI 推测当作馆藏事实。"
+    )
+    answer, provider = llm_service.enhance_answer(prompt, context, fallback)
+    questions = _parse_question_list(answer, fallback_questions)
+    draft = {
+        "status": "ai_question_draft" if provider != "local_rag" else "local_question_draft",
+        "provider": provider,
+        "questions": questions,
+        "missing_fields": _missing_quality_fields(work),
+        "warning": "这是推荐提问草稿，需管理员确认保存后才会展示给用户。",
+    }
+    (work_dir / "question-draft.json").write_text(
+        json.dumps(draft, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    return draft
 
 
 def _read_gray(path: Path) -> np.ndarray | None:
