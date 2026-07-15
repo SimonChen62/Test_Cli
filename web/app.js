@@ -212,6 +212,7 @@ const els = {
   uploadWorkForm: document.querySelector("#uploadWorkForm"),
   uploadResult: document.querySelector("#uploadResult"),
   backToLibrary: document.querySelector("#backToLibraryButton"),
+  qiverseEntry: document.querySelector("#qiverseEntryButton"),
   app: document.querySelector(".app"),
   title: document.querySelector("#workTitle"),
   image: document.querySelector("#workImage"),
@@ -520,6 +521,9 @@ async function openWork(workId, options = {}) {
   }
   const workMeta = currentWorkMeta();
   els.title.textContent = workMeta?.title || state.data.title || "单作品书法导览";
+  if (els.qiverseEntry) {
+    els.qiverseEntry.href = `../qiverse/?work=${encodeURIComponent(activeWorkId)}`;
+  }
   renderQuickQuestions(workMeta);
   await loadGlyphs();
   renderAll();

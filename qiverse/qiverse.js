@@ -10,12 +10,22 @@ const xrButton = document.querySelector("#xrButton");
 const sceneKicker = document.querySelector("#sceneKicker");
 const sceneTitle = document.querySelector("#sceneTitle");
 const sceneText = document.querySelector("#sceneText");
+const backLink = document.querySelector(".backLink");
+const launchTitle = document.querySelector("#launchPanel h1");
+const launchCopy = document.querySelector(".launchCopy");
 const chapterButtons = Array.from(document.querySelectorAll(".chapter"));
 
 const sceneOrder = ["galaxy", "assemble", "enter", "ride", "qi", "void", "return"];
 const journeyDurations = [0, 4200, 8200, 12400, 16600, 20800, 25000];
 const SCROLL_WIDTH = 31.5;
 const MAX_PARTICLES = 72000;
+const routeParams = new URLSearchParams(window.location.search);
+const requestedWorkId = routeParams.get("work") || "work_003";
+const API_BASE =
+  window.CALLILENS_API_BASE ||
+  (["127.0.0.1", "localhost"].includes(window.location.hostname) && window.location.port && window.location.port !== "8000"
+    ? `${window.location.protocol}//${window.location.hostname}:8000`
+    : `${window.location.protocol}//${window.location.host}`);
 
 const sceneCopy = {
   galaxy: {
@@ -154,9 +164,43 @@ function loadImage(src) {
 }
 
 async function loadData() {
-  const response = await fetch("./calligraphy-work.json", { cache: "no-store" });
-  if (!response.ok) throw new Error(`无法加载 QiVerse 数据：${response.status}`);
-  state.data = await response.json();
+  let work = null;
+  try {
+    const response = await fetch(`${API_BASE}/api/works/${encodeURIComponent(requestedWorkId)}`, { cache: "no-store" });
+    if (response.ok) work = await response.json();
+  } catch {
+    work = null;
+  }
+
+  if (!work) {
+    const indexResponse = await fetch("../data/works.json", { cache: "no-store" });
+    if (indexResponse.ok) {
+      const index = await indexResponse.json();
+      work = (index.works || []).find((item) => item.id === requestedWorkId) || null;
+    }
+  }
+
+  if (!work && requestedWorkId === "work_003") {
+    const response = await fetch("./calligraphy-work.json", { cache: "no-store" });
+    if (!response.ok) throw new Error(`无法加载 QiVerse 数据：${response.status}`);
+    state.data = await response.json();
+    return;
+  }
+
+  if (!work) throw new Error(`无法加载作品：${requestedWorkId}`);
+
+  state.data = {
+    id: `${requestedWorkId}_qiverse_character_constellation`,
+    sourceWorkId: requestedWorkId,
+    title: `${work.title || requestedWorkId} · QiVerse 星字长卷`,
+    workTitle: work.title || requestedWorkId,
+    artist: work.artist || "",
+    heightImage: `data/${requestedWorkId}/height.png`,
+    fallbackImage: `data/${requestedWorkId}/ink_density.png`,
+    description:
+      work.description ||
+      "QiVerse 会读取当前作品的 OpenCV 高度图，让星点按该作品的墨迹重新组成长卷；不恢复真实笔顺，也不自动评价书法水平。",
+  };
 }
 
 function sampleScrollHeightMap(image, maxPoints = MAX_PARTICLES) {
@@ -322,7 +366,20 @@ function createParticleField(samples) {
 
 async function init() {
   await loadData();
-  const heightImage = await loadImage(resolveAssetPath(state.data.heightImage));
+  document.title = `${state.data.workTitle || state.data.title || "QiVerse"} - QiVerse`;
+  if (launchTitle) launchTitle.textContent = state.data.workTitle || "墨气星河";
+  if (launchCopy) {
+    launchCopy.textContent = `${state.data.description || "系统读取当前作品的 OpenCV 高度图，让星点按这件作品的墨迹重新组成长卷。"} 当前作品：${state.data.sourceWorkId || requestedWorkId}`;
+  }
+  if (backLink) backLink.href = `../web/?view=demo&work=${encodeURIComponent(state.data.sourceWorkId || requestedWorkId)}`;
+
+  let heightImage;
+  try {
+    heightImage = await loadImage(resolveAssetPath(state.data.heightImage));
+  } catch (error) {
+    if (!state.data.fallbackImage) throw error;
+    heightImage = await loadImage(resolveAssetPath(state.data.fallbackImage));
+  }
 
   state.threeScene = new THREE.Scene();
   state.threeScene.background = new THREE.Color(0x050506);
