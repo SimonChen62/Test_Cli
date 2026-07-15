@@ -167,6 +167,52 @@ h1 {
   line-height: 1.58;
 }
 
+.reflectionPanel {
+  position: fixed;
+  right: 22px;
+  top: 88px;
+  z-index: 8;
+  width: min(360px, calc(100vw - 44px));
+  border: 1px solid rgba(244, 239, 228, 0.18);
+  border-radius: 8px;
+  background: linear-gradient(145deg, rgba(18, 16, 12, 0.72), rgba(18, 16, 12, 0.42));
+  box-shadow: 0 20px 70px rgba(0, 0, 0, 0.36);
+  backdrop-filter: blur(18px);
+  padding: 18px;
+}
+
+.reflectionPanel[hidden] {
+  display: none;
+}
+
+.reflectionPanel h2 {
+  margin: 0 0 8px;
+  font-size: 24px;
+  line-height: 1.2;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.reflectionPanel p {
+  color: rgba(244, 239, 228, 0.72);
+  line-height: 1.58;
+}
+
+.reflectionTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.reflectionTags button {
+  border: 1px solid rgba(201, 169, 104, 0.32);
+  border-radius: 999px;
+  background: rgba(201, 169, 104, 0.12);
+  color: var(--paper);
+  cursor: pointer;
+  padding: 7px 11px;
+}
+
 .timeline {
   position: fixed;
   left: 50%;
@@ -231,6 +277,13 @@ h1 {
     left: 12px;
     bottom: 72px;
     width: calc(100vw - 24px);
+  }
+
+  .reflectionPanel {
+    top: 72px;
+    right: 12px;
+    left: 12px;
+    width: auto;
   }
 
   .launchPanel {
