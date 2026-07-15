@@ -127,7 +127,7 @@
                   </div>
                   <div class="formRow">
                     <label><span>关键词标签</span><input id="groupUploadTags" placeholder="用逗号分隔，例如：行书,临帖" /></label>
-                    <label><span>推荐问题</span><input id="groupUploadQuickQuestions" placeholder="用逗号分隔（留空则自动生成）" /></label>
+                    <label><span>专属推荐提问</span><input id="groupUploadQuickQuestions" placeholder="用逗号分隔（留空则显示通用示例）" /></label>
                   </div>
                   <label><span>作品简介</span><textarea id="groupUploadDesc" rows="3" required placeholder="介绍此作品的特点及你的练习重点..."></textarea></label>
                   <label><span>历史背景/说明</span><textarea id="groupUploadBackground" rows="3" placeholder="补充作品相关的历史文化背景..."></textarea></label>
@@ -206,7 +206,7 @@
               <label><span>历史背景</span><textarea name="background" rows="3"></textarea></label>
               <label><span>资料来源 URL</span><input name="source_url" type="url" placeholder="https://..." /></label>
               <label><span>关键词</span><input name="tags" placeholder="用英文逗号分隔，例如：行书,长卷" /></label>
-              <label><span>快捷推荐提问</span><input name="quick_questions" placeholder="用逗号分隔，例如：作者是谁？,此作背景是什么？（留空则自动生成）" /></label>
+              <label><span>专属推荐提问</span><input name="quick_questions" placeholder="用逗号分隔，例如：作者是谁？,此作背景是什么？（留空则显示通用示例）" /></label>
               <label class="inlineCheck">
                 <input name="generate_ai_guide" type="checkbox" value="true" />
                 <span>上传后生成 AI 候选导览草稿（保存到本地，不重复调用 API）</span>
@@ -457,17 +457,16 @@
 
         <article class="workflowBlock ragPanel">
           <p class="workflowStep">本地 RAG 导览</p>
-          <h3>围绕作品提问</h3>
+          <h3>示例提问（可参考）</h3>
+          <p class="ragQuestionHint">以下问题用于示范问法；管理员可为每件作品填写专属推荐问题，未填写时不代表全部与当前作品强相关。</p>
           <div id="ragQuickQuestions" class="ragQuickQuestions">
-            <button type="button">赵孟頫是谁？</button>
-            <button type="button">《光福重建塔记》是什么？</button>
-            <button type="button">什么是飞白？</button>
-            <button type="button">这件作品是什么时候写的？</button>
-            <button type="button">这件作品现藏在哪里？</button>
-            <button type="button">这件作品的风格特点是什么？</button>
-            <button type="button">光福寺和重建塔有什么背景？</button>
-            <button type="button">什么是行书？</button>
-            <button type="button">什么是赵体？</button>
+            <button type="button">这件作品可以从哪些角度了解？</button>
+            <button type="button">作者和时代背景有什么信息？</button>
+            <button type="button">这件作品使用了什么书体？</button>
+            <button type="button">可以怎样观察墨色、飞白和留白？</button>
+            <button type="button">OpenCV 在这个项目里做了什么？</button>
+            <button type="button">RAG 为什么比直接问 AI 更可靠？</button>
+            <button type="button">如果资料不足，系统会怎么回答？</button>
             <button type="button">QiVerse 和 CalliLens 怎么结合？</button>
           </div>
           <label class="questionField">

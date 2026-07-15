@@ -563,7 +563,7 @@ function renderQuickQuestions(workMeta) {
   if (!els.ragQuickQuestions) return;
   els.ragQuickQuestions.replaceChildren();
 
-  const defaultQuestions = [
+  const work003Questions = [
     "赵孟頫是谁？",
     "《光福重建塔记》是什么？",
     "什么是飞白？",
@@ -576,23 +576,27 @@ function renderQuickQuestions(workMeta) {
     "QiVerse 和 CalliLens 怎么结合？"
   ];
 
-  let questions = defaultQuestions;
+  const exampleQuestions = [
+    "这件作品可以从哪些角度了解？",
+    "作者和时代背景有什么信息？",
+    "这件作品使用了什么书体？",
+    "可以怎样观察墨色、飞白和留白？",
+    "OpenCV 在这个项目里做了什么？",
+    "RAG 为什么比直接问 AI 更可靠？",
+    "如果资料不足，系统会怎么回答？",
+    "QiVerse 和 CalliLens 怎么结合？"
+  ];
+
+  let questions = exampleQuestions;
   if (workMeta && Array.isArray(workMeta.quick_questions) && workMeta.quick_questions.length > 0) {
     questions = workMeta.quick_questions;
-  } else if (workMeta && workMeta.id !== "work_003") {
-    const title = workMeta.title || "这件作品";
-    const artist = workMeta.artist || "作者";
-    const dynasty = workMeta.dynasty || "";
-    const scriptType = workMeta.script_type || "";
-
-    questions = [
-      `${artist}是谁？`,
-      `《${title}》是什么？`,
-      "这件作品是在什么时候写的？",
-      "这件作品是什么字体？",
-      "这件作品现藏在哪里？",
-      "怎么理解这幅作品的虚实与留白？"
-    ];
+  } else if (workMeta?.id === "work_003") {
+    questions = work003Questions;
+  } else if (workMeta) {
+    const title = workMeta.title ? `《${workMeta.title}》可以从哪些角度了解？` : "";
+    const artist = workMeta.artist ? `${workMeta.artist}是谁？` : "";
+    const scriptType = workMeta.script_type ? `什么是${workMeta.script_type}？` : "";
+    questions = [title, artist, scriptType, ...exampleQuestions].filter(Boolean).slice(0, 8);
   }
 
   questions.forEach((q) => {

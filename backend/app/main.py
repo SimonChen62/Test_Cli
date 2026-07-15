@@ -255,17 +255,6 @@ async def upload_group_work(
     if quick_questions.strip():
         normalized = quick_questions.replace("，", ",")
         qq_list = [q.strip() for q in normalized.split(",") if q.strip()]
-    else:
-        subj_title = title or "这件作品"
-        subj_artist = artist or user["username"]
-        qq_list = [
-            f"{subj_artist}是谁？",
-            f"《{subj_title}》是什么？",
-            "这件作品是在什么时候写的？",
-            "这件作品是什么字体？",
-            "这件作品现藏在哪里？",
-            "怎么理解这幅作品的虚实与留白？"
-        ]
 
     work = {
         "id": work_id,
@@ -485,17 +474,6 @@ async def upload_work(
     if quick_questions.strip():
         normalized = quick_questions.replace("，", ",")
         qq_list = [q.strip() for q in normalized.split(",") if q.strip()]
-    else:
-        subj_title = title or "这件作品"
-        subj_artist = artist or "作者"
-        qq_list = [
-            f"{subj_artist}是谁？",
-            f"《{subj_title}》是什么？",
-            "这件作品是在什么时候写的？",
-            "这件作品是什么字体？",
-            "这件作品现藏在哪里？",
-            "怎么理解这幅作品的虚实与留白？"
-        ]
 
     work = {
         "id": work_id,
@@ -593,17 +571,6 @@ async def update_work(
     if quick_questions.strip():
         normalized = quick_questions.replace("，", ",")
         qq_list = [q.strip() for q in normalized.split(",") if q.strip()]
-    else:
-        subj_title = title or "这件作品"
-        subj_artist = artist or "作者"
-        qq_list = [
-            f"{subj_artist}是谁？",
-            f"《{subj_title}》是什么？",
-            "这件作品是在什么时候写的？",
-            "这件作品是什么字体？",
-            "这件作品现藏在哪里？",
-            "怎么理解这幅作品的虚实与留白？"
-        ]
 
     # Read existing work info
     existing = work_service.read_json(target / "work-info.json", {})

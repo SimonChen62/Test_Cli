@@ -1282,6 +1282,13 @@ button:disabled {
   min-height: 96px;
 }
 
+.ragQuestionHint {
+  margin: -4px 0 10px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
 .ragQuickQuestions {
   display: grid;
   grid-template-columns: 1fr 1fr;
