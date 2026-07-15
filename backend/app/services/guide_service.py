@@ -102,6 +102,75 @@ def create_question_draft(work_dir: Path, work: dict[str, Any]) -> dict[str, Any
     return draft
 
 
+def create_appreciation_draft(work_dir: Path, work: dict[str, Any]) -> dict[str, Any]:
+    report = {}
+    report_path = work_dir / "processing-report.json"
+    if report_path.exists():
+        try:
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            report = {}
+    context = (
+        f"{_work_context(work)}\n"
+        f"图像尺寸：{report.get('width') or '未记录'}x{report.get('height') or '未记录'}\n"
+        f"墨迹占比：{report.get('ink_ratio') or '未记录'}"
+    )
+    fallback = (
+        "这是一段管理员待确认的全文赏析草稿。可以从作品整体布局、墨色轻重、飞白细线、留白关系和 3D 浮雕展示方式入手理解。"
+        "当前资料不足时，应明确说明哪些内容来自已上传资料，哪些只是一般性观察建议。"
+    )
+    answer, provider = llm_service.enhance_answer(
+        "请生成一段 120-180 字的书法作品全文赏析导览草稿。要求：面向普通观众；只根据资料和可观察图像处理信息表达；不要判断真伪、不要评价书法好坏、不要声称恢复笔顺；如果资料不足要说明。",
+        context,
+        fallback,
+    )
+    draft = {
+        "status": "ai_appreciation_draft" if provider != "local_rag" else "local_appreciation_draft",
+        "provider": provider,
+        "guideText": answer,
+        "missing_fields": _missing_quality_fields(work),
+        "warning": "这是全文赏析草稿，需管理员确认保存后才会展示给用户。",
+    }
+    (work_dir / "appreciation-draft.json").write_text(
+        json.dumps(draft, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    return draft
+
+
+def save_manual_annotation(work_dir: Path, work: dict[str, Any], annotations_json: str = "", guide_text: str = "") -> list[str]:
+    annotations: list[dict[str, Any]] = []
+    if annotations_json.strip():
+        loaded = json.loads(annotations_json)
+        if not isinstance(loaded, list):
+            raise ValueError("manual_annotations_json must be a list")
+        annotations = loaded
+    if not annotations and not guide_text.strip():
+        return []
+    payload = {
+        "workId": work.get("id"),
+        "title": work.get("title") or work.get("id") or "上传作品",
+        "style": " / ".join(str(part) for part in [work.get("dynasty"), work.get("script_type")] if part),
+        "source": "管理员人工标注",
+        "images": {
+            "original": "original.png",
+            "binary": "binary.png",
+            "skeleton": "skeleton.png",
+            "strokeWidth": "ink_density.png",
+            "inkDensity": "ink_density.png",
+            "voidCandidates": "mask.png",
+        },
+        "guideText": guide_text.strip() or "管理员已为该上传作品保存人工框选导览点。请先看整体，再逐个查看观察点。",
+        "guideKind": "admin_manual",
+        "annotations": annotations,
+    }
+    (work_dir / "annotation.json").write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    return ["annotation.json"]
+
+
 def _read_gray(path: Path) -> np.ndarray | None:
     data = np.fromfile(str(path), dtype=np.uint8)
     image = cv2.imdecode(data, cv2.IMREAD_GRAYSCALE)

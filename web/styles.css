@@ -2928,3 +2928,107 @@ body::after {
   color: var(--paper);
   line-height: 1.55;
 }
+
+.manualAnnotationEditor {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(226, 210, 185, 0.18);
+  border-radius: 8px;
+  background: rgba(255, 252, 244, 0.05);
+}
+
+.manualAnnotationEditor[hidden] {
+  display: none;
+}
+
+.manualAnnotationHeader,
+.manualAnnotationToolbar,
+.manualAnnotationItemHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.manualAnnotationHeader h4 {
+  margin: 0 0 4px;
+}
+
+.manualAnnotationHeader p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.manualAnnotationStage {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(226, 210, 185, 0.2);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.24);
+  cursor: crosshair;
+  user-select: none;
+  touch-action: none;
+}
+
+.manualAnnotationStage img {
+  display: block;
+  width: 100%;
+  max-height: 420px;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.manualAnnotationOverlay,
+.manualAnnotationBox {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.manualAnnotationBox {
+  inset: auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 3px 5px;
+  border: 2px solid rgba(176, 75, 60, 0.9);
+  border-radius: 4px;
+  color: #fffaf0;
+  font-size: 12px;
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+  background: rgba(176, 75, 60, 0.08);
+}
+
+.manualAnnotationBox.void_solid {
+  border-color: rgba(101, 139, 118, 0.95);
+  background: rgba(101, 139, 118, 0.12);
+}
+
+.manualAnnotationBox.qi_flow {
+  border-color: rgba(196, 150, 76, 0.95);
+  background: rgba(196, 150, 76, 0.12);
+}
+
+.manualAnnotationBox.draft {
+  border-style: dashed;
+  border-color: rgba(255, 252, 244, 0.92);
+  background: rgba(255, 252, 244, 0.08);
+}
+
+.manualAnnotationList {
+  display: grid;
+  gap: 10px;
+}
+
+.manualAnnotationItem {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid rgba(226, 210, 185, 0.14);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.14);
+}

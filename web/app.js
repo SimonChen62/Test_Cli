@@ -149,6 +149,8 @@ const state = {
   user: null,
   authMode: "login",
   userRecordsOpen: false,
+  manualAnnotations: [],
+  manualAnnotationDraft: null,
 };
 
 const els = {
@@ -194,6 +196,15 @@ const els = {
   adminRecordsList: document.querySelector("#adminRecordsList"),
   adminGenerateQuestions: document.querySelector("#adminGenerateQuestionsButton"),
   adminQuestionDraftResult: document.querySelector("#adminQuestionDraftResult"),
+  adminGenerateAppreciation: document.querySelector("#adminGenerateAppreciationButton"),
+  adminAppreciationDraftResult: document.querySelector("#adminAppreciationDraftResult"),
+  manualAnnotationEditor: document.querySelector("#manualAnnotationEditor"),
+  manualAnnotationStage: document.querySelector("#manualAnnotationStage"),
+  manualAnnotationImage: document.querySelector("#manualAnnotationImage"),
+  manualAnnotationOverlay: document.querySelector("#manualAnnotationOverlay"),
+  manualAnnotationType: document.querySelector("#manualAnnotationType"),
+  manualAnnotationClear: document.querySelector("#manualAnnotationClearButton"),
+  manualAnnotationList: document.querySelector("#manualAnnotationList"),
   llmForm: document.querySelector("#llmForm"),
   llmStatus: document.querySelector("#llmStatus"),
   llmTest: document.querySelector("#llmTestButton"),
@@ -605,6 +616,19 @@ async function loadGeneratedWorkData(workId) {
   const metaResponse = await fetch(`../data/${workId}/work-info.json`);
   if (!metaResponse.ok) throw new Error(`无法加载作品数据：${workId}`);
   const meta = await metaResponse.json();
+  try {
+    const manualResponse = await fetch(`../data/${workId}/annotation.json?t=${Date.now()}`, { cache: "no-store" });
+    if (manualResponse.ok) {
+      const manualGuide = await manualResponse.json();
+      return {
+        ...manualGuide,
+        guideKind: manualGuide.guideKind || "admin_manual",
+        annotations: Array.isArray(manualGuide.annotations) ? manualGuide.annotations : [],
+      };
+    }
+  } catch {
+    // Uploaded works can exist without manual annotations.
+  }
   let aiGuide = null;
   try {
     const guideResponse = await fetch(`../data/${workId}/ai-guide-draft.json?t=${Date.now()}`, { cache: "no-store" });
@@ -612,7 +636,7 @@ async function loadGeneratedWorkData(workId) {
   } catch {
     aiGuide = null;
   }
-  const annotations = Array.isArray(aiGuide?.annotations) ? aiGuide.annotations : [];
+  const annotations = [];
   const guideText = aiGuide?.guideText
     ? `${aiGuide.warning || "AI 候选导览，需管理员确认。"}\n\n${aiGuide.guideText}`
     : meta.description ||
@@ -631,7 +655,7 @@ async function loadGeneratedWorkData(workId) {
       voidCandidates: "binary.png",
     },
     guideText,
-    guideKind: aiGuide?.status === "ai_draft" ? "ai_candidate" : "none",
+    guideKind: "none",
     annotations,
   };
 }
@@ -811,7 +835,7 @@ function renderGuideList() {
       guideKind() === "ai_candidate"
         ? "当前分类还没有 AI 候选观察点。"
         : guideKind() === "none"
-          ? "该上传作品尚未生成 AI 候选导览；可以在管理员上传时勾选生成草稿，或先使用原图、3D 和 RAG。"
+          ? "该上传作品尚未保存人工框选导览点；可先查看全文导览、原图、3D 和 RAG。"
           : "当前分类还没有观察点。";
     els.guideList.append(empty);
     return;
@@ -852,6 +876,11 @@ function renderGuidePanelHeader() {
   if (kind === "manual") {
     els.guidePanelTitle.textContent = "人工精选导览";
     els.guidePanelNote.textContent = "用于默认作品，来自项目整理的人工观察点。";
+    return;
+  }
+  if (kind === "admin_manual") {
+    els.guidePanelTitle.textContent = "管理员人工标注导览";
+    els.guidePanelNote.textContent = "用于上传作品；由管理员在后台框选并确认保存。";
     return;
   }
   if (kind === "ai_candidate") {
@@ -1001,6 +1030,11 @@ function renderBox(item, className) {
 function renderDetail() {
   const item = selectedAnnotation();
   if (!item) {
+    if (activeWorkId !== "work_003" && state.data?.guideText) {
+      showEmptyDetail("全文导览", state.data.guideText);
+      setStepButtonsDisabled(true);
+      return;
+    }
     const detail = modeMeta[state.mode]?.detail || modeMeta.original.detail;
     showEmptyDetail(detail[0], detail[1]);
     setStepButtonsDisabled(true);
@@ -3056,6 +3090,229 @@ async function generateAdminQuestionDraft() {
   }
 }
 
+function annotationTypeName(type) {
+  return typeMeta[type]?.name || type || "观察点";
+}
+
+function defaultManualAnnotation(type, box) {
+  const name = annotationTypeName(type);
+  const concept = type === "void_solid" ? "留白" : type === "qi_flow" ? "趋势" : "笔墨";
+  const id = `manual_${Date.now()}_${state.manualAnnotations.length + 1}`;
+  return {
+    id,
+    type,
+    label: `${name}观察点`,
+    evidenceLayers: ["original", "inkDensity"],
+    box,
+    formal: "请管理员根据框选区域补充可见的形式证据，例如墨色轻重、线条粗细、留白关系或上下承接。",
+    perception: "请管理员补充普通观众可能产生的观看感受。",
+    aesthetic: "请管理员补充文化或审美解释；避免直接判断书法好坏、真伪或真实笔顺。",
+    reflection: {
+      concept,
+      prompt: "你在这个位置注意到了什么？",
+      expertFeedback: "这是管理员人工确认的观察点，可作为观众反思的参考。",
+    },
+  };
+}
+
+function syncManualAnnotationForm() {
+  const form = els.uploadWorkForm;
+  if (!form) return;
+  const annotationsInput = form.elements["manual_annotations_json"];
+  if (annotationsInput) annotationsInput.value = JSON.stringify(state.manualAnnotations || []);
+}
+
+function setManualEditorVisible(visible, workId = "") {
+  if (!els.manualAnnotationEditor) return;
+  els.manualAnnotationEditor.hidden = !visible;
+  if (visible && els.manualAnnotationImage && workId) {
+    els.manualAnnotationImage.src = `../data/${workId}/original.png?t=${Date.now()}`;
+  }
+}
+
+async function loadManualAnnotationDraft(workId) {
+  state.manualAnnotations = [];
+  const form = els.uploadWorkForm;
+  if (form?.elements["manual_guide_text"]) form.elements["manual_guide_text"].value = "";
+  try {
+    const response = await fetch(`../data/${workId}/annotation.json?t=${Date.now()}`, { cache: "no-store" });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const payload = await response.json();
+    state.manualAnnotations = Array.isArray(payload.annotations) ? payload.annotations : [];
+    if (form?.elements["manual_guide_text"]) form.elements["manual_guide_text"].value = payload.guideText || "";
+  } catch {
+    state.manualAnnotations = [];
+  }
+  syncManualAnnotationForm();
+  renderManualAnnotationEditor();
+}
+
+function stagePercentPoint(event) {
+  const rect = els.manualAnnotationStage.getBoundingClientRect();
+  return {
+    x: clamp(((event.clientX - rect.left) / rect.width) * 100, 0, 100),
+    y: clamp(((event.clientY - rect.top) / rect.height) * 100, 0, 100),
+  };
+}
+
+function normalizedBox(a, b) {
+  const x = Math.min(a.x, b.x);
+  const y = Math.min(a.y, b.y);
+  return {
+    x: Number(x.toFixed(2)),
+    y: Number(y.toFixed(2)),
+    width: Number(Math.abs(a.x - b.x).toFixed(2)),
+    height: Number(Math.abs(a.y - b.y).toFixed(2)),
+  };
+}
+
+function renderManualAnnotationEditor() {
+  if (!els.manualAnnotationOverlay || !els.manualAnnotationList) return;
+  els.manualAnnotationOverlay.replaceChildren();
+  els.manualAnnotationList.replaceChildren();
+
+  const drawBox = (box, className, label = "") => {
+    const node = document.createElement("div");
+    node.className = `manualAnnotationBox ${className}`;
+    node.style.left = `${box.x}%`;
+    node.style.top = `${box.y}%`;
+    node.style.width = `${box.width}%`;
+    node.style.height = `${box.height}%`;
+    node.textContent = label;
+    els.manualAnnotationOverlay.append(node);
+  };
+
+  state.manualAnnotations.forEach((item, index) => {
+    if (item.box) drawBox(item.box, item.type || "brush_ink", String(index + 1));
+  });
+  if (state.manualAnnotationDraft) {
+    drawBox(normalizedBox(state.manualAnnotationDraft.start, state.manualAnnotationDraft.end), "draft", "");
+  }
+
+  if (!state.manualAnnotations.length) {
+    const empty = document.createElement("p");
+    empty.className = "adminEmpty";
+    empty.textContent = "还没有人工框选点。请在图片上拖拽框选区域。";
+    els.manualAnnotationList.append(empty);
+  }
+
+  state.manualAnnotations.forEach((item, index) => {
+    const card = document.createElement("section");
+    card.className = "manualAnnotationItem";
+    const heading = document.createElement("div");
+    heading.className = "manualAnnotationItemHeader";
+    const title = document.createElement("strong");
+    title.textContent = `${String(index + 1).padStart(2, "0")} · ${annotationTypeName(item.type)}`;
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "secondaryButton dangerButton";
+    remove.textContent = "删除";
+    remove.addEventListener("click", () => {
+      state.manualAnnotations.splice(index, 1);
+      syncManualAnnotationForm();
+      renderManualAnnotationEditor();
+    });
+    heading.append(title, remove);
+
+    const label = document.createElement("input");
+    label.value = item.label || "";
+    label.placeholder = "导览点标题";
+    label.addEventListener("input", () => {
+      item.label = label.value.trim();
+      syncManualAnnotationForm();
+    });
+
+    const formal = document.createElement("textarea");
+    formal.rows = 2;
+    formal.value = item.formal || "";
+    formal.placeholder = "形式证据：这里看到了什么";
+    formal.addEventListener("input", () => {
+      item.formal = formal.value.trim();
+      syncManualAnnotationForm();
+    });
+
+    const perception = document.createElement("textarea");
+    perception.rows = 2;
+    perception.value = item.perception || "";
+    perception.placeholder = "观看感受：观众可能怎样感受";
+    perception.addEventListener("input", () => {
+      item.perception = perception.value.trim();
+      syncManualAnnotationForm();
+    });
+
+    const aesthetic = document.createElement("textarea");
+    aesthetic.rows = 2;
+    aesthetic.value = item.aesthetic || "";
+    aesthetic.placeholder = "解释：不要判断真伪/好坏/真实笔顺";
+    aesthetic.addEventListener("input", () => {
+      item.aesthetic = aesthetic.value.trim();
+      syncManualAnnotationForm();
+    });
+
+    card.append(heading, label, formal, perception, aesthetic);
+    els.manualAnnotationList.append(card);
+  });
+  syncManualAnnotationForm();
+}
+
+function startManualAnnotation(event) {
+  if (!state.adminEditingWorkId || !els.manualAnnotationStage || state.manualAnnotations.length >= 5) return;
+  event.preventDefault();
+  const point = stagePercentPoint(event);
+  state.manualAnnotationDraft = { start: point, end: point };
+  els.manualAnnotationStage.setPointerCapture?.(event.pointerId);
+  renderManualAnnotationEditor();
+}
+
+function moveManualAnnotation(event) {
+  if (!state.manualAnnotationDraft) return;
+  state.manualAnnotationDraft.end = stagePercentPoint(event);
+  renderManualAnnotationEditor();
+}
+
+function finishManualAnnotation(event) {
+  if (!state.manualAnnotationDraft) return;
+  state.manualAnnotationDraft.end = stagePercentPoint(event);
+  const box = normalizedBox(state.manualAnnotationDraft.start, state.manualAnnotationDraft.end);
+  state.manualAnnotationDraft = null;
+  if (box.width >= 1 && box.height >= 1) {
+    state.manualAnnotations.push(defaultManualAnnotation(els.manualAnnotationType?.value || "brush_ink", box));
+  }
+  renderManualAnnotationEditor();
+}
+
+function clearManualAnnotations() {
+  state.manualAnnotations = [];
+  state.manualAnnotationDraft = null;
+  syncManualAnnotationForm();
+  renderManualAnnotationEditor();
+}
+
+async function generateAdminAppreciationDraft() {
+  if (!els.uploadWorkForm || !els.adminAppreciationDraftResult) return;
+  els.adminAppreciationDraftResult.hidden = false;
+  if (!state.adminEditingWorkId) {
+    els.adminAppreciationDraftResult.textContent = "请先编辑已有作品，再生成全文赏析草稿。";
+    return;
+  }
+  els.adminGenerateAppreciation.disabled = true;
+  els.adminAppreciationDraftResult.textContent = "正在生成全文赏析草稿...";
+  try {
+    const response = await fetch(`${API_BASE}/api/admin/works/${state.adminEditingWorkId}/appreciation-draft`, {
+      method: "POST",
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.detail || `HTTP ${response.status}`);
+    els.uploadWorkForm.elements["manual_guide_text"].value = payload.guideText || "";
+    const source = payload.provider === "local_rag" ? "本地模板" : `AI：${payload.provider}`;
+    els.adminAppreciationDraftResult.textContent = `已生成全文赏析草稿来源：${source}。请修改确认后点击“保存修改”。`;
+  } catch (error) {
+    els.adminAppreciationDraftResult.textContent = `生成失败：${error.message}`;
+  } finally {
+    els.adminGenerateAppreciation.disabled = false;
+  }
+}
+
 async function loadLlmStatus() {
   if (!els.llmStatus) return;
   try {
@@ -3209,6 +3466,7 @@ async function testLlmConfig() {
 async function uploadAdminWork(event) {
   event.preventDefault();
   if (!els.uploadWorkForm || !els.uploadResult) return;
+  syncManualAnnotationForm();
   els.uploadResult.hidden = false;
   const isEditing = Boolean(state.adminEditingWorkId);
   els.uploadResult.textContent = isEditing
@@ -3256,6 +3514,8 @@ function editWorkInForm(work) {
   form.elements["source_url"].value = work.source_url || "";
   form.elements["tags"].value = Array.isArray(work.tags) ? work.tags.join(", ") : "";
   form.elements["quick_questions"].value = Array.isArray(work.quick_questions) ? work.quick_questions.join(", ") : "";
+  setManualEditorVisible(true, work.id);
+  loadManualAnnotationDraft(work.id);
 
   const imageInput = form.elements["image"];
   if (imageInput) imageInput.required = false;
@@ -3285,6 +3545,8 @@ function editWorkInForm(work) {
 
 function resetAdminForm() {
   state.adminEditingWorkId = null;
+  state.manualAnnotations = [];
+  state.manualAnnotationDraft = null;
   const form = els.uploadWorkForm;
   if (!form) return;
   form.reset();
@@ -3308,6 +3570,8 @@ function resetAdminForm() {
   if (cancelBtn) {
     cancelBtn.remove();
   }
+  setManualEditorVisible(false);
+  renderManualAnnotationEditor();
 }
 
 async function askRagQuestion() {
@@ -3585,6 +3849,15 @@ els.llmForm?.addEventListener("submit", saveLlmConfig);
 els.llmTest?.addEventListener("click", testLlmConfig);
 els.uploadWorkForm?.addEventListener("submit", uploadAdminWork);
 els.adminGenerateQuestions?.addEventListener("click", generateAdminQuestionDraft);
+els.adminGenerateAppreciation?.addEventListener("click", generateAdminAppreciationDraft);
+els.manualAnnotationStage?.addEventListener("pointerdown", startManualAnnotation);
+els.manualAnnotationStage?.addEventListener("pointermove", moveManualAnnotation);
+els.manualAnnotationStage?.addEventListener("pointerup", finishManualAnnotation);
+els.manualAnnotationStage?.addEventListener("pointercancel", () => {
+  state.manualAnnotationDraft = null;
+  renderManualAnnotationEditor();
+});
+els.manualAnnotationClear?.addEventListener("click", clearManualAnnotations);
 els.adminRefreshWorks?.addEventListener("click", refreshAdminWorks);
 els.adminRefreshRecords?.addEventListener("click", loadAdminRecords);
 els.adminTabs?.forEach((button) => {

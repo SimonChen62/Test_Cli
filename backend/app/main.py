@@ -303,6 +303,8 @@ async def upload_work(
     source_url: str = Form(""),
     tags: str = Form(""),
     quick_questions: str = Form(""),
+    manual_annotations_json: str = Form(""),
+    manual_guide_text: str = Form(""),
     generate_ai_guide: bool = Form(False),
 ) -> dict[str, object]:
     work_id = work_service.next_work_id()
@@ -369,6 +371,10 @@ async def upload_work(
         raise HTTPException(status_code=400, detail=f"上传成功，但图像处理失败：{exc}") from exc
 
     generated = report["outputs"] + ["floating_3d_data.json", "knowledge.json"]
+    try:
+        generated += guide_service.save_manual_annotation(target, work, manual_annotations_json, manual_guide_text)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     if generate_ai_guide:
         guide_service.create_ai_guide_draft(target, work, report)
         generated.append("ai-guide-draft.json")
@@ -396,6 +402,8 @@ async def update_work(
     source_url: str = Form(""),
     tags: str = Form(""),
     quick_questions: str = Form(""),
+    manual_annotations_json: str = Form(""),
+    manual_guide_text: str = Form(""),
     generate_ai_guide: bool = Form(False),
 ) -> dict[str, object]:
     import json
@@ -466,6 +474,10 @@ async def update_work(
     work_service.write_json(target / "knowledge.json", knowledge)
 
     generated = ["work-info.json", "knowledge.json"]
+    try:
+        generated += guide_service.save_manual_annotation(target, work, manual_annotations_json, manual_guide_text)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     if image_updated:
         try:
@@ -505,6 +517,21 @@ def create_work_question_draft(work_id: str) -> dict[str, object]:
     if not work:
         raise HTTPException(status_code=404, detail="作品不存在")
     draft = guide_service.create_question_draft(target, work)
+    return {
+        "work_id": work_id,
+        **draft,
+    }
+
+
+@app.post("/api/admin/works/{work_id}/appreciation-draft")
+def create_work_appreciation_draft(work_id: str) -> dict[str, object]:
+    target = work_service.work_dir(work_id)
+    if not target.exists():
+        raise HTTPException(status_code=404, detail="作品不存在")
+    work = work_service.get_work(work_id)
+    if not work:
+        raise HTTPException(status_code=404, detail="作品不存在")
+    draft = guide_service.create_appreciation_draft(target, work)
     return {
         "work_id": work_id,
         **draft,
