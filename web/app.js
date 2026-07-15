@@ -151,6 +151,7 @@ const state = {
   userRecordsOpen: false,
   manualAnnotations: [],
   manualAnnotationDraft: null,
+  manualAnnotationObjectUrl: "",
 };
 
 const els = {
@@ -3126,12 +3127,39 @@ function syncManualAnnotationForm() {
   if (annotationsInput) annotationsInput.value = JSON.stringify(state.manualAnnotations || []);
 }
 
-function setManualEditorVisible(visible, workId = "") {
+function revokeManualAnnotationObjectUrl() {
+  if (state.manualAnnotationObjectUrl) {
+    URL.revokeObjectURL(state.manualAnnotationObjectUrl);
+    state.manualAnnotationObjectUrl = "";
+  }
+}
+
+function setManualEditorVisible(visible, workId = "", imageUrl = "") {
   if (!els.manualAnnotationEditor) return;
   els.manualAnnotationEditor.hidden = !visible;
-  if (visible && els.manualAnnotationImage && workId) {
+  if (!visible) {
+    if (els.manualAnnotationImage) els.manualAnnotationImage.removeAttribute("src");
+    return;
+  }
+  if (els.manualAnnotationImage && imageUrl) {
+    els.manualAnnotationImage.src = imageUrl;
+  } else if (els.manualAnnotationImage && workId) {
     els.manualAnnotationImage.src = `../data/${workId}/original.png?t=${Date.now()}`;
   }
+}
+
+function showManualEditorForUploadFile(file) {
+  revokeManualAnnotationObjectUrl();
+  state.manualAnnotations = [];
+  state.manualAnnotationDraft = null;
+  if (!file) {
+    setManualEditorVisible(false);
+    renderManualAnnotationEditor();
+    return;
+  }
+  state.manualAnnotationObjectUrl = URL.createObjectURL(file);
+  setManualEditorVisible(true, "", state.manualAnnotationObjectUrl);
+  renderManualAnnotationEditor();
 }
 
 async function loadManualAnnotationDraft(workId) {
@@ -3260,7 +3288,8 @@ function renderManualAnnotationEditor() {
 }
 
 function startManualAnnotation(event) {
-  if (!state.adminEditingWorkId || !els.manualAnnotationStage || state.manualAnnotations.length >= 5) return;
+  if (!els.manualAnnotationStage || els.manualAnnotationEditor?.hidden || state.manualAnnotations.length >= 5) return;
+  if (!els.manualAnnotationImage?.getAttribute("src")) return;
   event.preventDefault();
   const point = stagePercentPoint(event);
   state.manualAnnotationDraft = { start: point, end: point };
@@ -3296,7 +3325,7 @@ async function generateAdminAppreciationDraft() {
   if (!els.uploadWorkForm || !els.adminAppreciationDraftResult) return;
   els.adminAppreciationDraftResult.hidden = false;
   if (!state.adminEditingWorkId) {
-    els.adminAppreciationDraftResult.textContent = "请先编辑已有作品，再生成全文赏析草稿。";
+    els.adminAppreciationDraftResult.textContent = "新上传作品还没有作品 ID，不能生成 AI 全文赏析草稿。你可以先手写导览并框选上传；上传完成后再点“编辑”生成 AI 草稿。";
     return;
   }
   els.adminGenerateAppreciation.disabled = true;
@@ -3551,6 +3580,7 @@ function resetAdminForm() {
   state.adminEditingWorkId = null;
   state.manualAnnotations = [];
   state.manualAnnotationDraft = null;
+  revokeManualAnnotationObjectUrl();
   const form = els.uploadWorkForm;
   if (!form) return;
   form.reset();
@@ -3576,6 +3606,15 @@ function resetAdminForm() {
   }
   setManualEditorVisible(false);
   renderManualAnnotationEditor();
+}
+
+function handleAdminImageSelection(event) {
+  const file = event.currentTarget?.files?.[0] || null;
+  if (state.adminEditingWorkId) {
+    if (file) showManualEditorForUploadFile(file);
+    return;
+  }
+  showManualEditorForUploadFile(file);
 }
 
 async function askRagQuestion() {
@@ -3852,6 +3891,7 @@ els.adminLoginForm?.addEventListener("submit", async (event) => {
 els.llmForm?.addEventListener("submit", saveLlmConfig);
 els.llmTest?.addEventListener("click", testLlmConfig);
 els.uploadWorkForm?.addEventListener("submit", uploadAdminWork);
+els.uploadWorkForm?.elements?.["image"]?.addEventListener("change", handleAdminImageSelection);
 els.adminGenerateQuestions?.addEventListener("click", generateAdminQuestionDraft);
 els.adminGenerateAppreciation?.addEventListener("click", generateAdminAppreciationDraft);
 els.manualAnnotationStage?.addEventListener("pointerdown", startManualAnnotation);
