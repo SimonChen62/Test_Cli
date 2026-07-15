@@ -149,10 +149,6 @@ const state = {
   user: null,
   authMode: "login",
   userRecordsOpen: false,
-  libraryTab: "official",
-  groups: [],
-  activeGroupId: null,
-  activeGroupDetails: null,
 };
 
 const els = {
@@ -279,42 +275,6 @@ const els = {
   summaryMotionInput: document.querySelector("#summaryMotionInput"),
   summaryDensityInput: document.querySelector("#summaryDensityInput"),
   summaryEditError: document.querySelector("#summaryEditError"),
-  tabOfficialWorks: document.querySelector("#tabOfficialWorks"),
-  tabGroupWorks: document.querySelector("#tabGroupWorks"),
-  paneOfficialWorks: document.querySelector("#paneOfficialWorks"),
-  paneGroupWorks: document.querySelector("#paneGroupWorks"),
-  createGroupForm: document.querySelector("#createGroupForm"),
-  newGroupName: document.querySelector("#newGroupName"),
-  joinGroupForm: document.querySelector("#joinGroupForm"),
-  joinInviteCode: document.querySelector("#joinInviteCode"),
-  userGroupsList: document.querySelector("#userGroupsList"),
-  groupDashboard: document.querySelector("#groupDashboard"),
-  groupDetailsView: document.querySelector("#groupDetailsView"),
-  groupDetailName: document.querySelector("#groupDetailName"),
-  groupDetailCode: document.querySelector("#groupDetailCode"),
-  groupDetailMembers: document.querySelector("#groupDetailMembers"),
-  backToGroupsListButton: document.querySelector("#backToGroupsListButton"),
-  groupUploadForm: document.querySelector("#groupUploadForm"),
-  groupUploadFile: document.querySelector("#groupUploadFile"),
-  groupUploadTitle: document.querySelector("#groupUploadTitle"),
-  groupUploadArtist: document.querySelector("#groupUploadArtist"),
-  groupUploadDynasty: document.querySelector("#groupUploadDynasty"),
-  groupUploadDate: document.querySelector("#groupUploadDate"),
-  groupUploadScriptType: document.querySelector("#groupUploadScriptType"),
-  groupUploadMuseum: document.querySelector("#groupUploadMuseum"),
-  groupUploadSourceUrl: document.querySelector("#groupUploadSourceUrl"),
-  groupUploadTags: document.querySelector("#groupUploadTags"),
-  groupUploadQuickQuestions: document.querySelector("#groupUploadQuickQuestions"),
-  groupUploadDesc: document.querySelector("#groupUploadDesc"),
-  groupUploadBackground: document.querySelector("#groupUploadBackground"),
-  groupUploadGenerateAi: document.querySelector("#groupUploadGenerateAi"),
-  groupUploadSubmit: document.querySelector("#groupUploadSubmit"),
-  groupUploadProgress: document.querySelector("#groupUploadProgress"),
-  groupUploadProgressText: document.querySelector("#groupUploadProgressText"),
-  groupUploadError: document.querySelector("#groupUploadError"),
-  groupWorksList: document.querySelector("#groupWorksList"),
-  peerReflectionsBlock: document.querySelector("#peerReflectionsBlock"),
-  peerReflectionsList: document.querySelector("#peerReflectionsList"),
 };
 
 function dataUrl() {
@@ -456,7 +416,6 @@ function renderEntry() {
       ? "进入当前样例作品，开始分层观察与反思任务。"
       : "请先登录；登录后可进入作品库并同步观察记录。";
   }
-  renderLibraryTabs();
 }
 
 function renderWorkCards() {
@@ -552,7 +511,6 @@ async function openWork(workId, options = {}) {
   renderAll();
   loadAnalysisCanvases();
   applyInitialProbe();
-  loadPeerReflections(workId);
 }
 
 function currentWorkMeta() {
@@ -2450,7 +2408,6 @@ async function submitReflection() {
   state.reflections[key] = { text, submitted: true };
   saveReflections();
   await syncReflection(key, text);
-  loadPeerReflections(activeWorkId);
   renderReflectionPanel();
   requestAnimationFrame(() => els.expertFeedbackPanel.scrollIntoView({ behavior: "smooth", block: "nearest" }));
 }
@@ -2577,7 +2534,6 @@ function requestLibraryAccess() {
     return;
   }
   setScreen("library");
-  setLibraryTab(state.libraryTab || "official");
   requestAnimationFrame(() => els.storedWorksPanel?.scrollIntoView({ behavior: "smooth", block: "start" }));
 }
 
@@ -3614,313 +3570,5 @@ els.reflectionInput.addEventListener("input", () => {
 window.addEventListener("resize", handleViewportResize);
 window.addEventListener("scroll", handleEntryScroll, { passive: true });
 window.addEventListener("popstate", handleBrowserRouteChange);
-
-/* --- Study Groups & Collaborative Learning logic --- */
-
-function setLibraryTab(tab) {
-  state.libraryTab = tab === "group" ? "group" : "official";
-  renderLibraryTabs();
-  
-  if (state.libraryTab === "group") {
-    loadUserGroups();
-  } else {
-    renderWorkCards();
-  }
-}
-
-function renderLibraryTabs() {
-  if (!els.tabOfficialWorks) return;
-  const isOfficial = state.libraryTab === "official";
-  els.tabOfficialWorks.classList.toggle("active", isOfficial);
-  els.tabGroupWorks.classList.toggle("active", !isOfficial);
-  els.paneOfficialWorks.classList.toggle("active", isOfficial);
-  els.paneGroupWorks.classList.toggle("active", !isOfficial);
-}
-
-async function loadUserGroups() {
-  if (!els.userGroupsList) return;
-  els.userGroupsList.textContent = "正在读取学习小组列表...";
-  try {
-    const response = await fetch(`${API_BASE}/api/groups`, {
-      headers: authHeaders(),
-      cache: "no-store",
-    });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    state.groups = await response.json();
-    renderUserGroups();
-  } catch (error) {
-    els.userGroupsList.textContent = `小组列表加载失败：${error.message}`;
-  }
-}
-
-function renderUserGroups() {
-  if (!els.userGroupsList) return;
-  els.userGroupsList.replaceChildren();
-  if (!state.groups.length) {
-    els.userGroupsList.innerHTML = `<p class="emptyList">你还没有加入任何学习小组。请在上方输入小组名称创建，或者输入同伴分享的邀请码加入。</p>`;
-    return;
-  }
-  state.groups.forEach((group) => {
-    const card = document.createElement("button");
-    card.type = "button";
-    card.className = "groupItem";
-    card.innerHTML = `
-      <strong>${group.name}</strong>
-      <span>邀请码：${group.invite_code}</span>
-      <span>创建时间：${formatRecordTime(group.created_at)}</span>
-    `;
-    card.addEventListener("click", () => viewGroupDetails(group.id));
-    els.userGroupsList.appendChild(card);
-  });
-}
-
-async function handleCreateGroup(event) {
-  event.preventDefault();
-  const name = els.newGroupName.value.trim();
-  if (!name) return;
-  try {
-    const response = await fetch(`${API_BASE}/api/groups`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...authHeaders() },
-      body: JSON.stringify({ name }),
-    });
-    const payload = await response.json();
-    if (!response.ok) throw new Error(payload.detail || `HTTP ${response.status}`);
-    els.newGroupName.value = "";
-    await loadUserGroups();
-  } catch (error) {
-    alert(`创建小组失败：${error.message}`);
-  }
-}
-
-async function handleJoinGroup(event) {
-  event.preventDefault();
-  const inviteCode = els.joinInviteCode.value.trim().toUpperCase();
-  if (!inviteCode) return;
-  try {
-    const response = await fetch(`${API_BASE}/api/groups/join`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...authHeaders() },
-      body: JSON.stringify({ invite_code: inviteCode }),
-    });
-    const payload = await response.json();
-    if (!response.ok) throw new Error(payload.detail || `HTTP ${response.status}`);
-    els.joinInviteCode.value = "";
-    await loadUserGroups();
-  } catch (error) {
-    alert(`加入小组失败：${error.message}`);
-  }
-}
-
-async function viewGroupDetails(groupId) {
-  state.activeGroupId = groupId;
-  els.groupDashboard.hidden = true;
-  els.groupDetailsView.hidden = false;
-  els.groupDetailName.textContent = "正在加载小组详情...";
-  els.groupDetailCode.textContent = "-";
-  els.groupDetailMembers.textContent = "-";
-  els.groupWorksList.replaceChildren();
-  
-  try {
-    const response = await fetch(`${API_BASE}/api/groups/${groupId}`, {
-      headers: authHeaders(),
-      cache: "no-store",
-    });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const details = await response.json();
-    state.activeGroupDetails = details;
-    
-    els.groupDetailName.textContent = details.group.name;
-    els.groupDetailCode.textContent = details.group.invite_code;
-    els.groupDetailMembers.textContent = (details.members || []).map(m => m.username).join("、");
-    
-    renderGroupWorks(details.works || []);
-  } catch (error) {
-    els.groupDetailName.textContent = "小组详情加载失败";
-    els.groupUploadError.textContent = error.message;
-    els.groupUploadError.hidden = false;
-  }
-}
-
-function renderGroupWorks(works) {
-  els.groupWorksList.replaceChildren();
-  const activeWorks = works.filter((w) => w.status === "ready");
-  if (!activeWorks.length) {
-    const empty = document.createElement("p");
-    empty.className = "emptyList";
-    empty.textContent = "该小组暂无上传的练习作品。请在上方选择你的练习作品照片上传！";
-    els.groupWorksList.appendChild(empty);
-    return;
-  }
-  
-  activeWorks.forEach((work) => {
-    const card = document.createElement("article");
-    card.className = "workCard ready";
-
-    const image = document.createElement("img");
-    image.alt = work.title;
-    image.src = `../data/${work.id}/${work.thumbnail || "original.png"}`;
-
-    const body = document.createElement("div");
-    const eyebrow = document.createElement("p");
-    eyebrow.className = "eyebrow";
-    eyebrow.textContent = "小组临帖";
-    const title = document.createElement("h3");
-    title.textContent = work.title;
-    const meta = document.createElement("p");
-    meta.className = "workMeta";
-    meta.textContent = `上传时间：${work.date} · 作者：${work.artist}`;
-    const description = document.createElement("p");
-    description.textContent = work.description || "进入观察与讨论。";
-    const button = document.createElement("button");
-    button.className = "primaryButton";
-    button.type = "button";
-    button.textContent = "进入观察";
-    button.addEventListener("click", () => openWork(work.id));
-
-    body.append(eyebrow, title, meta, description, button);
-    card.append(image, body);
-    els.groupWorksList.append(card);
-  });
-}
-
-function backToGroupsList() {
-  state.activeGroupId = null;
-  state.activeGroupDetails = null;
-  els.groupDashboard.hidden = false;
-  els.groupDetailsView.hidden = true;
-  els.groupUploadForm.reset();
-  els.groupUploadError.hidden = true;
-  els.groupUploadProgress.hidden = true;
-  loadUserGroups();
-}
-
-async function handleGroupUpload(event) {
-  event.preventDefault();
-  const fileInput = els.groupUploadFile;
-  const titleInput = els.groupUploadTitle;
-  const artistInput = els.groupUploadArtist;
-  const dynastyInput = els.groupUploadDynasty;
-  const dateInput = els.groupUploadDate;
-  const scriptTypeInput = els.groupUploadScriptType;
-  const museumInput = els.groupUploadMuseum;
-  const sourceUrlInput = els.groupUploadSourceUrl;
-  const tagsInput = els.groupUploadTags;
-  const quickQuestionsInput = els.groupUploadQuickQuestions;
-  const descInput = els.groupUploadDesc;
-  const backgroundInput = els.groupUploadBackground;
-  const generateAiInput = els.groupUploadGenerateAi;
-  
-  if (!fileInput.files.length || !titleInput.value.trim() || !state.activeGroupId) {
-    return;
-  }
-  
-  els.groupUploadSubmit.disabled = true;
-  els.groupUploadProgress.hidden = false;
-  els.groupUploadError.hidden = true;
-  
-  const formData = new FormData();
-  formData.append("image", fileInput.files[0]);
-  formData.append("title", titleInput.value.trim());
-  formData.append("artist", artistInput.value.trim());
-  formData.append("dynasty", dynastyInput.value.trim());
-  formData.append("date", dateInput.value.trim());
-  formData.append("script_type", scriptTypeInput.value.trim());
-  formData.append("museum", museumInput.value.trim());
-  formData.append("source_url", sourceUrlInput.value.trim());
-  formData.append("tags", tagsInput.value.trim());
-  formData.append("quick_questions", quickQuestionsInput.value.trim());
-  formData.append("description", descInput.value.trim());
-  formData.append("background", backgroundInput.value.trim());
-  formData.append("generate_ai_guide", generateAiInput.checked ? "true" : "false");
-  
-  try {
-    const response = await fetch(`${API_BASE}/api/groups/${state.activeGroupId}/upload-work`, {
-      method: "POST",
-      headers: authHeaders(),
-      body: formData,
-    });
-    const payload = await response.json();
-    if (!response.ok) throw new Error(payload.detail || `HTTP ${response.status}`);
-    
-    // Success
-    els.groupUploadForm.reset();
-    els.groupUploadProgress.hidden = true;
-    await viewGroupDetails(state.activeGroupId);
-  } catch (error) {
-    els.groupUploadError.textContent = `上传失败：${error.message}`;
-    els.groupUploadError.hidden = false;
-  } finally {
-    els.groupUploadSubmit.disabled = false;
-  }
-}
-
-async function loadPeerReflections(workId) {
-  if (!els.peerReflectionsBlock || !els.peerReflectionsList) return;
-  
-  // Only load reflections if user is logged in
-  if (!state.authToken) {
-    els.peerReflectionsBlock.hidden = true;
-    return;
-  }
-  
-  try {
-    const response = await fetch(`${API_BASE}/api/works/${workId}/reflections`, {
-      headers: authHeaders(),
-      cache: "no-store",
-    });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const reflections = await response.json();
-    
-    els.peerReflectionsBlock.hidden = false;
-    els.peerReflectionsList.replaceChildren();
-    
-    if (!reflections.length) {
-      const empty = document.createElement("p");
-      empty.className = "emptyList";
-      empty.textContent = "暂无组员反思，快来提交你的第一条观察吧！";
-      els.peerReflectionsList.appendChild(empty);
-      return;
-    }
-    
-    reflections.forEach((record) => {
-      const item = document.createElement("div");
-      item.className = "peerReflectionItem";
-      
-      const header = document.createElement("div");
-      header.className = "reflectionHeader";
-      
-      const user = document.createElement("span");
-      user.className = "reflectionUser";
-      user.textContent = record.username;
-      
-      const time = document.createElement("span");
-      time.className = "reflectionTime";
-      time.textContent = formatRecordTime(record.created_at);
-      
-      header.append(user, time);
-      
-      const text = document.createElement("p");
-      const prefix = record.annotation_id && record.annotation_id !== "free_reflection" 
-        ? `【观察点 ${record.annotation_id}】` 
-        : "【自由观察】";
-      text.textContent = `${prefix}${record.content}`;
-      
-      item.append(header, text);
-      els.peerReflectionsList.appendChild(item);
-    });
-  } catch (error) {
-    console.error("Failed to load peer reflections:", error);
-    els.peerReflectionsBlock.hidden = true;
-  }
-}
-
-// Bind group event listeners
-els.tabOfficialWorks?.addEventListener("click", () => setLibraryTab("official"));
-els.tabGroupWorks?.addEventListener("click", () => setLibraryTab("group"));
-els.createGroupForm?.addEventListener("submit", handleCreateGroup);
-els.joinGroupForm?.addEventListener("submit", handleJoinGroup);
-els.backToGroupsListButton?.addEventListener("click", backToGroupsList);
-els.groupUploadForm?.addEventListener("submit", handleGroupUpload);
 
 boot();

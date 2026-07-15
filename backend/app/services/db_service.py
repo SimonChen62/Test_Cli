@@ -106,23 +106,6 @@ def create_schema() -> None:
                 created_at TEXT NOT NULL
             )
             """,
-            """
-            CREATE TABLE IF NOT EXISTS groups (
-                id BIGSERIAL PRIMARY KEY,
-                name TEXT NOT NULL,
-                invite_code TEXT NOT NULL UNIQUE,
-                creator_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-                created_at TEXT NOT NULL
-            )
-            """,
-            """
-            CREATE TABLE IF NOT EXISTS group_members (
-                group_id BIGINT NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
-                user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-                joined_at TEXT NOT NULL,
-                PRIMARY KEY (group_id, user_id)
-            )
-            """,
         ]
     else:
         statements = [
@@ -173,23 +156,6 @@ def create_schema() -> None:
                 reflection_type TEXT NOT NULL,
                 content TEXT NOT NULL,
                 created_at TEXT NOT NULL
-            )
-            """,
-            """
-            CREATE TABLE IF NOT EXISTS groups (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                invite_code TEXT NOT NULL UNIQUE,
-                creator_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-                created_at TEXT NOT NULL
-            )
-            """,
-            """
-            CREATE TABLE IF NOT EXISTS group_members (
-                group_id INTEGER NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
-                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-                joined_at TEXT NOT NULL,
-                PRIMARY KEY (group_id, user_id)
             )
             """,
         ]
