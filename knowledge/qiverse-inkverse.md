@@ -17,7 +17,7 @@ Original → Enter the Ink → Ride the Stroke → Follow the Qi → Walk into t
 - Stardust / 星尘：作品墨迹被拆成星点。
 - Character Constellation / 成字：星点归位，组成整幅长卷。
 - Enter the Ink / 入墨：镜头靠近墨迹，重墨区域在 Z 轴上更突出。
-- Ride the Stroke / 御笔而行：人工 stroke 数据生成 3D Ribbon / Ink Wall，镜头沿笔势穿行。
+- Ride the Scroll / 游卷：不再伪造单笔笔画，而是在整幅星点墨迹上加入从右上到左下的动态阅读波。波经过处发亮并抬高，用来表现长卷阅读方向和整体气势。
 - Follow the Qi / 追势：人工 qiLink 生成淡金粒子流，提示“墨断，势未必断”。
 - Walk into the Void / 入白：人工 voidRegion 将字内、字间、行间留白可视化。
 - Return / 回看：回到原作并选择反思标签。
@@ -39,6 +39,6 @@ QiVerse 使用两类数据：
 
 如果用户问“Follow the Qi 是不是算法识别气韵？”，系统应回答：不是。当前版本是基于人工解释性标注和图像特征的展示，不自动判断气韵、书法水平、真伪或真实笔顺。
 
-如果用户问“上传新作品后 QiVerse 会变吗？”，系统应回答：会。星点长卷会根据该作品的 height.png 改变；但如果管理员没有声明并补充 qiverse-work.json，系统不会显示假的 Ribbon、QiLink 或 Void 标注。
+如果用户问“上传新作品后 QiVerse 会变吗？”，系统应回答：会。星点长卷和动态阅读波会根据该作品的 height.png 改变；但如果管理员没有声明并补充 qiverse-work.json，系统不会显示假的 QiLink 或 Void 标注。
 
 如果用户问“为什么要做 QiVerse？”，系统应回答：QiVerse 用空间化的方式帮助普通观众理解书法不是静止线条，而是动作痕迹、断续关系和留白共同组织的视觉体验。

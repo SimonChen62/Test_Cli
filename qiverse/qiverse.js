@@ -54,8 +54,8 @@ const baseSceneCopy = {
   },
   ride: {
     kicker: "Scene 3",
-    title: "Ride the Stroke / 御笔而行",
-    text: "人工 stroke 数据生成真实 3D Ribbon。粗重处形成墨壁，细线和飞白处收窄，镜头沿笔势穿行。",
+    title: "Ride the Scroll / 游卷",
+    text: "不再伪造单笔笔画。系统让阅读波从右上向左下扫过整幅墨迹，波经过处星点发亮、抬高，表现长卷阅读时的流动感。",
     camera: [8, -0.75, 6.2],
     target: [6.7, -0.05, 0.2],
   },
@@ -108,6 +108,7 @@ const state = {
   density: null,
   anchors: null,
   backgroundStars: null,
+  readingWaveRange: { minY: -1, maxY: 1 },
   ribbonGroup: null,
   qiGroup: null,
   voidGroup: null,
@@ -411,6 +412,13 @@ function createParticleField(samples) {
   state.colors = colors;
   state.density = density;
   state.anchors = anchors;
+  state.readingWaveRange = samples.reduce(
+    (range, sample) => ({
+      minY: Math.min(range.minY, sample.target.y),
+      maxY: Math.max(range.maxY, sample.target.y),
+    }),
+    { minY: Infinity, maxY: -Infinity }
+  );
   state.particleGeometry = geometry;
   state.particleMaterial = material;
   state.particleSystem = new THREE.Points(geometry, material);
@@ -451,73 +459,11 @@ function strokeNormal(points, index) {
   return new THREE.Vector3(-tangent.y, tangent.x, 0).normalize();
 }
 
-function createRibbonGeometry(stroke) {
-  const samples = resampleStroke(stroke);
-  const vertices = [];
-  const colors = [];
-  const indices = [];
-  const baseZ = 0.02;
-
-  samples.forEach((sample, index) => {
-    const normal = strokeNormal(samples, index);
-    const side = normal.multiplyScalar(sample.width);
-    const ridge = 0.2 + sample.ink * 0.9;
-    const lift = ridge + Math.sin(sample.t * Math.PI) * 0.12;
-    const left = sample.point.clone().add(side);
-    const right = sample.point.clone().sub(side);
-    left.z += lift;
-    right.z += lift * 0.92;
-
-    const shade = 0.04 + sample.ink * 0.12;
-    vertices.push(left.x, left.y, left.z, right.x, right.y, right.z, left.x, left.y, baseZ, right.x, right.y, baseZ);
-    colors.push(shade, shade * 0.88, shade * 0.68, shade * 0.9, shade * 0.78, shade * 0.58, 0.025, 0.022, 0.018, 0.025, 0.022, 0.018);
-  });
-
-  for (let i = 0; i < samples.length - 1; i += 1) {
-    const a = i * 4;
-    const b = a + 4;
-    indices.push(a, b, a + 1, a + 1, b, b + 1);
-    indices.push(a, a + 2, b, b, a + 2, b + 2);
-    indices.push(a + 1, b + 1, a + 3, a + 3, b + 1, b + 3);
-  }
-
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
-  geometry.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
-  geometry.setIndex(indices);
-  geometry.computeVertexNormals();
-  return geometry;
-}
-
 function createRibbonLayer() {
   state.ribbonGroup = new THREE.Group();
-  state.ribbonGroup.name = "authored-ribbon-layer";
+  state.ribbonGroup.name = "disabled-stroke-layer";
   state.ribbonGroup.visible = false;
   state.world.add(state.ribbonGroup);
-  if (!state.hasAuthoredData) return;
-
-  const material = new THREE.MeshStandardMaterial({
-    vertexColors: true,
-    roughness: 0.78,
-    metalness: 0,
-    transparent: true,
-    opacity: 0.82,
-    side: THREE.DoubleSide,
-  });
-
-  state.data.strokes.forEach((stroke) => {
-    const mesh = new THREE.Mesh(createRibbonGeometry(stroke), material.clone());
-    mesh.userData.strokeId = stroke.id;
-    state.ribbonGroup.add(mesh);
-
-    const points = stroke.path.map(toVector3);
-    const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
-    const line = new THREE.Line(
-      lineGeometry,
-      new THREE.LineBasicMaterial({ color: 0xd8b96c, transparent: true, opacity: 0.34 })
-    );
-    state.ribbonGroup.add(line);
-  });
 }
 
 function createQiLayer() {
@@ -702,7 +648,7 @@ function setScene(nextScene, immediate = false) {
 
 function updateLayerVisibility() {
   const scene = state.currentScene;
-  if (state.ribbonGroup) state.ribbonGroup.visible = state.hasAuthoredData && ["ride", "qi", "void"].includes(scene);
+  if (state.ribbonGroup) state.ribbonGroup.visible = false;
   if (state.qiGroup) state.qiGroup.visible = state.hasAuthoredData && scene === "qi";
   if (state.voidGroup) state.voidGroup.visible = state.hasAuthoredData && scene === "void";
 }
@@ -858,13 +804,29 @@ function particleMixForScene(scene, elapsed) {
   if (scene === "enter") {
     return { destination: state.targets, amount: 1, lift: smoothstep(0.08, 1, elapsed / 2800) * 0.74, spread: 0.12, fade: 0.98 };
   }
-  if (scene === "ride") return { destination: state.targets, amount: 1, lift: 0.82, spread: 0.08, fade: state.hasAuthoredData ? 0.58 : 0.96 };
-  if (scene === "qi") return { destination: state.targets, amount: 1, lift: 0.58, spread: 0.22, fade: state.hasAuthoredData ? 0.52 : 0.92 };
+  if (scene === "ride") return { destination: state.targets, amount: 1, lift: 0.64, spread: 0.1, fade: 1 };
+  if (scene === "qi") return { destination: state.targets, amount: 1, lift: 0.54, spread: 0.2, fade: 0.96 };
   if (scene === "void") {
     const amount = smoothstep(0.06, 1, elapsed / 3200);
     return { destination: state.voidTargets, amount, lift: 0.08, spread: 0.5, fade: state.hasAuthoredData ? 0.22 : 0.48 };
   }
   return { destination: state.targets, amount: 1, lift: 0, spread: 0.03, fade: 0.78 };
+}
+
+function readingWaveStrength(index, seconds) {
+  if (!["ride", "qi"].includes(state.currentScene)) return 0;
+  const i = index * 3;
+  const x = state.targets[i];
+  const y = state.targets[i + 1];
+  const height = Math.max(0.001, state.readingWaveRange.maxY - state.readingWaveRange.minY);
+  const rightToLeft = THREE.MathUtils.clamp((SCROLL_WIDTH * 0.5 - x) / SCROLL_WIDTH, 0, 1);
+  const topToBottom = THREE.MathUtils.clamp((state.readingWaveRange.maxY - y) / height, 0, 1);
+  const readingOrder = rightToLeft * 0.82 + topToBottom * 0.18;
+  const speed = state.currentScene === "ride" ? 0.12 : 0.16;
+  const head = (seconds * speed) % 1.18 - 0.09;
+  const core = Math.exp(-Math.pow(readingOrder - head, 2) / 0.0026);
+  const tail = Math.exp(-Math.pow(readingOrder - (head - 0.075), 2) / 0.012) * 0.36;
+  return Math.min(1, core + tail);
 }
 
 function updateParticleColors(seconds) {
@@ -877,12 +839,14 @@ function updateParticleColors(seconds) {
   for (let i = 0; i < colors.length; i += 3) {
     const index = i / 3;
     const x = state.anchors[index];
-    const wave = flowScene ? Math.exp(-Math.pow(x - waveX, 2) / 4.8) : 0;
+    const oldQiWave = flowScene ? Math.exp(-Math.pow(x - waveX, 2) / 4.8) : 0;
+    const readingWave = readingWaveStrength(index, seconds);
+    const wave = Math.max(oldQiWave * 0.35, readingWave);
     const dim = voidScene ? 0.46 : 1;
-    const pulse = 1 + wave * 0.82 + Math.sin(seconds * 1.8 + index * 0.013) * 0.025;
-    colors[i] = base[i] * pulse * dim + wave * 0.18;
-    colors[i + 1] = base[i + 1] * pulse * dim + wave * 0.13;
-    colors[i + 2] = base[i + 2] * pulse * dim + wave * 0.04;
+    const pulse = 1 + wave * 1.85 + Math.sin(seconds * 1.8 + index * 0.013) * 0.025;
+    colors[i] = base[i] * pulse * dim + wave * 0.46;
+    colors[i + 1] = base[i + 1] * pulse * dim + wave * 0.32;
+    colors[i + 2] = base[i + 2] * pulse * dim + wave * 0.1;
   }
 
   state.particleGeometry.attributes.color.needsUpdate = true;
@@ -894,14 +858,18 @@ function updateParticles(elapsed, seconds) {
 
   for (let i = 0; i < positions.length; i += 3) {
     const index = i / 3;
+    const readingWave = readingWaveStrength(index, seconds);
     const sourceX = state.galaxy[i] + Math.sin(seconds * 0.16 + index * 0.17) * 0.22;
     const sourceY = state.galaxy[i + 1] + Math.cos(seconds * 0.13 + index * 0.19) * 0.18;
     const sourceZ = state.galaxy[i + 2];
-    const flowPush = state.currentScene === "qi" ? Math.sin(seconds * 1.25 + state.anchors[index] * 1.4) * 0.22 : 0;
+    const flowPush =
+      state.currentScene === "qi" ? Math.sin(seconds * 1.25 + state.anchors[index] * 1.4) * 0.16 :
+      state.currentScene === "ride" ? readingWave * 0.24 :
+      0;
     const drift = Math.sin(seconds * 0.72 + index * 0.051) * mix.spread;
     const destinationX = mix.destination[i] + drift * 0.11 + flowPush;
-    const destinationY = mix.destination[i + 1] + Math.cos(seconds * 0.5 + index * 0.043) * mix.spread * 0.06;
-    const destinationZ = mix.destination[i + 2] + mix.lift * (0.24 + state.density[index] * 0.74);
+    const destinationY = mix.destination[i + 1] + Math.cos(seconds * 0.5 + index * 0.043) * mix.spread * 0.06 - readingWave * 0.04;
+    const destinationZ = mix.destination[i + 2] + mix.lift * (0.24 + state.density[index] * 0.74) + readingWave * (0.78 + state.density[index] * 1.05);
     const targetX = THREE.MathUtils.lerp(sourceX, destinationX, mix.amount);
     const targetY = THREE.MathUtils.lerp(sourceY, destinationY, mix.amount);
     const targetZ = THREE.MathUtils.lerp(sourceZ, destinationZ, mix.amount);
@@ -917,7 +885,8 @@ function updateParticles(elapsed, seconds) {
   const targetSize =
     state.currentScene === "galaxy" ? 0.026 :
     state.currentScene === "assemble" ? 0.031 :
-    state.currentScene === "ride" ? 0.025 :
+    state.currentScene === "ride" ? 0.038 :
+    state.currentScene === "qi" ? 0.034 :
     state.currentScene === "void" ? 0.022 :
     state.currentScene === "return" ? 0.027 :
     0.029;
@@ -965,18 +934,10 @@ function updateCamera(elapsed) {
 
   if (state.currentScene === "ride") {
     const t = (elapsed / 5600) % 1;
-    const authoredPath = state.hasAuthoredData ? state.data.strokes[Math.floor(t * state.data.strokes.length) % state.data.strokes.length]?.path : null;
-    if (authoredPath?.length >= 2) {
-      const curve = new THREE.CatmullRomCurve3(authoredPath.map(toVector3), false, "catmullrom", 0.35);
-      const point = curve.getPointAt((t * state.data.strokes.length) % 1);
-      const tangent = curve.getTangentAt((t * state.data.strokes.length) % 1);
-      targetPosition.set(point.x + 0.4, point.y - 0.7, point.z + 4.2);
-      targetLook.set(point.x + tangent.x * 1.2, point.y + tangent.y * 1.2, point.z + 0.3);
-    } else {
-      const x = THREE.MathUtils.lerp(13.2, -13.2, t);
-      targetPosition.set(x, -0.8 + Math.sin(t * Math.PI * 2) * 0.28, 5.8 + Math.sin(t * Math.PI) * 0.95);
-      targetLook.set(x - 1.2, -0.08, 0.3);
-    }
+    const x = THREE.MathUtils.lerp(13.4, -13.4, t);
+    const y = THREE.MathUtils.lerp(state.readingWaveRange.maxY * 0.36, state.readingWaveRange.minY * 0.42, t);
+    targetPosition.set(x, y - 0.72 + Math.sin(t * Math.PI * 2) * 0.22, 6.1 + Math.sin(t * Math.PI) * 0.7);
+    targetLook.set(x - 2.1, y - 0.04, 0.55);
   }
 
   if (state.currentScene === "qi") {
