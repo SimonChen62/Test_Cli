@@ -3,57 +3,49 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>QiVerse Lite · CalliLens</title>
-    <link rel="stylesheet" href="./styles.css?v=1" />
+    <title>QiVerse - &#x58a8;&#x6c14;&#x661f;&#x6cb3;</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="./styles.css?v=3" />
   </head>
   <body>
-    <main class="shell">
-      <header class="topbar">
-        <a href="../web/" class="backLink">返回 CalliLens</a>
-        <div>
-          <p class="eyebrow">QiVerse Lite</p>
-          <h1>墨气之境</h1>
-        </div>
-        <button id="xrButton" class="ghostButton" type="button">检测 XR</button>
-      </header>
+    <main class="cinemaShell">
+      <canvas id="qiverseCanvas" aria-label="QiVerse &#x58a8;&#x6c14;&#x661f;&#x6cb3;&#x52a8;&#x753b;"></canvas>
 
-      <section class="stageLayout">
-        <section class="viewerPanel" aria-label="QiVerse Three.js 体验">
-          <canvas id="qiverseCanvas"></canvas>
-          <div id="stageHint" class="stageHint">Original：先看原作，再进入墨迹。</div>
-        </section>
+      <a class="backLink" href="../web/">&#x8fd4;&#x56de; CalliLens</a>
+      <button id="xrButton" class="xrButton" type="button">Desktop</button>
 
-        <aside class="controlPanel" aria-label="体验控制">
-          <p class="eyebrow">Experience State Machine</p>
-          <h2 id="stepTitle">Original · 静墨</h2>
-          <p id="stepText" class="stepText">
-            面前是一幅原作。先观察整体势态，再触发入墨体验。
-          </p>
-
-          <div class="stepButtons" role="tablist" aria-label="QiVerse 阶段">
-            <button class="stepButton active" type="button" data-step="original">Original</button>
-            <button class="stepButton" type="button" data-step="enter">Enter Ink</button>
-            <button class="stepButton" type="button" data-step="ride">Ride Stroke</button>
-            <button class="stepButton" type="button" data-step="qi">Follow Qi</button>
-            <button class="stepButton" type="button" data-step="void">Walk Void</button>
-            <button class="stepButton" type="button" data-step="return">Return</button>
-          </div>
-
-          <div class="actionRow">
-            <button id="playButton" class="primaryButton" type="button">播放体验链</button>
-            <button id="resetButton" class="ghostButton" type="button">重置视角</button>
-          </div>
-
-          <section class="conceptCard">
-            <p class="eyebrow">解释边界</p>
-            <p>
-              当前版本是 expert-informed interpretive visualization：
-              用人工数据和图像特征做解释性可视化，不声称自动识别真实笔顺、真伪或书法水平。
-            </p>
-          </section>
-        </aside>
+      <section id="launchPanel" class="launchPanel" aria-label="&#x5f00;&#x59cb;&#x4f53;&#x9a8c;">
+        <p class="eyebrow">QiVerse cinematic prototype</p>
+        <h1>&#x58a8;&#x6c14;&#x661f;&#x6cb3;</h1>
+        <p class="launchCopy">
+          &#x661f;&#x70b9;&#x5148;&#x6563;&#x843d;&#x6210;&#x5b87;&#x5b99;&#xff0c;&#x518d;&#x7f13;&#x6162;&#x805a;&#x6210;&#x8d75;&#x5b5f;&#x982b;&#x300a;&#x5149;&#x798f;&#x91cd;&#x5efa;&#x5854;&#x8bb0;&#x300b;&#x7684;&#x58a8;&#x8ff9;&#x957f;&#x5377;&#x3002;
+          &#x955c;&#x5934;&#x968f;&#x540e;&#x8d34;&#x8fd1;&#x58a8;&#x8ff9;&#x5185;&#x90e8;&#xff0c;&#x6cbf;&#x70b9;&#x9635;&#x7a7f;&#x884c;&#xff0c;&#x8ffd;&#x968f;&#x6c14;&#x8109;&#xff0c;&#x8fdb;&#x5165;&#x7559;&#x767d;&#xff0c;&#x6700;&#x540e;&#x56de;&#x5230;&#x539f;&#x4f5c;&#x3002;
+        </p>
+        <button id="startButton" class="startButton" type="button">&#x5f00;&#x59cb;&#x5165;&#x58a8;</button>
       </section>
+
+      <section class="captionPanel" aria-live="polite">
+        <p id="sceneKicker" class="sceneKicker">Scene 0</p>
+        <h2 id="sceneTitle">Silence / &#x9759;&#x58a8;</h2>
+        <p id="sceneText">&#x9760;&#x8fd1;&#x4e4b;&#x524d;&#xff0c;&#x58a8;&#x53ea;&#x662f;&#x8fdc;&#x5904;&#x7684;&#x661f;&#x5c18;&#x3002;</p>
+      </section>
+
+      <div class="timeline" aria-label="&#x4f53;&#x9a8c;&#x7ae0;&#x8282;">
+        <button class="chapter active" type="button" data-scene="galaxy">&#x661f;&#x5c18;</button>
+        <button class="chapter" type="button" data-scene="assemble">&#x6210;&#x5b57;</button>
+        <button class="chapter" type="button" data-scene="enter">&#x5165;&#x58a8;</button>
+        <button class="chapter" type="button" data-scene="ride">&#x5fa1;&#x7b14;</button>
+        <button class="chapter" type="button" data-scene="qi">&#x8ffd;&#x52bf;</button>
+        <button class="chapter" type="button" data-scene="void">&#x5165;&#x767d;</button>
+        <button class="chapter" type="button" data-scene="return">&#x56de;&#x770b;</button>
+      </div>
+
+      <div class="controlStrip">
+        <button id="playButton" type="button">&#x64ad;&#x653e;&#x5b8c;&#x6574;&#x65c5;&#x7a0b;</button>
+        <button id="pauseButton" type="button">&#x6682;&#x505c;</button>
+        <button id="resetButton" type="button">&#x91cd;&#x7f6e;</button>
+      </div>
     </main>
-    <script type="module" src="./qiverse.js?v=1"></script>
+    <script type="module" charset="utf-8" src="./qiverse.js?v=4"></script>
   </body>
 </html>
