@@ -3542,7 +3542,7 @@ els.adminLoginForm?.addEventListener("submit", async (event) => {
     if (!response.ok) throw new Error("管理员口令不正确，或后端没有启动。");
     setAdminLoggedIn(true);
   } catch (error) {
-    els.adminLoginError.textContent = `${error.message} 演示默认口令是 callilens-admin。`;
+    els.adminLoginError.textContent = error.message;
     els.adminLoginError.hidden = false;
   }
 });
