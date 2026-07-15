@@ -85,7 +85,6 @@ button,
 .userBadgeButton,
 .userRecordsHeader,
 .adminTabs,
-.uploadSteps,
 .spaceLabel,
 .glyphPanel h2 {
   -webkit-user-select: none;
@@ -576,22 +575,6 @@ h3 {
 
 .adminResult {
   white-space: pre-wrap;
-}
-
-.uploadSteps {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
-  margin: 18px 0;
-}
-
-.uploadSteps span {
-  border: 1px solid rgba(232, 218, 191, 0.22);
-  border-radius: 8px;
-  background: rgba(255, 249, 236, 0.08);
-  color: var(--paper);
-  padding: 12px;
-  text-align: center;
 }
 
 .adminToolbar {
@@ -1545,8 +1528,7 @@ button:disabled {
   }
 
   .entryReveal,
-  .workCard,
-  .uploadSteps {
+  .workCard {
     grid-template-columns: 1fr;
   }
 
