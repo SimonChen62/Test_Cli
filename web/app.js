@@ -149,6 +149,17 @@ const state = {
   user: null,
   authMode: "login",
   userRecordsOpen: false,
+  adminGuide: {
+    workId: "",
+    work: null,
+    official: null,
+    draft: null,
+    guideText: "",
+    annotations: [],
+    editingIndex: -1,
+    currentBox: null,
+    drag: null,
+  },
 };
 
 const els = {
@@ -190,6 +201,24 @@ const els = {
   adminLogout: document.querySelector("#adminLogoutButton"),
   adminRefreshWorks: document.querySelector("#adminRefreshWorksButton"),
   adminWorksList: document.querySelector("#adminWorksList"),
+  adminAnnotationCard: document.querySelector("#adminAnnotationCard"),
+  adminAnnotationTitle: document.querySelector("#adminAnnotationTitle"),
+  adminAnnotationStatus: document.querySelector("#adminAnnotationStatus"),
+  adminAnnotationClose: document.querySelector("#adminAnnotationCloseButton"),
+  adminGenerateGuide: document.querySelector("#adminGenerateGuideButton"),
+  adminUseAiDraft: document.querySelector("#adminUseAiDraftButton"),
+  adminSaveGuide: document.querySelector("#adminSaveGuideButton"),
+  adminGuideTextInput: document.querySelector("#adminGuideTextInput"),
+  adminAnnotationCanvas: document.querySelector("#adminAnnotationCanvas"),
+  adminAnnotationImage: document.querySelector("#adminAnnotationImage"),
+  adminAnnotationDraftBox: document.querySelector("#adminAnnotationDraftBox"),
+  adminAnnotationForm: document.querySelector("#adminAnnotationForm"),
+  adminAnnotationType: document.querySelector("#adminAnnotationType"),
+  adminAnnotationLabel: document.querySelector("#adminAnnotationLabel"),
+  adminAnnotationFormal: document.querySelector("#adminAnnotationFormal"),
+  adminAnnotationPerception: document.querySelector("#adminAnnotationPerception"),
+  adminAnnotationAesthetic: document.querySelector("#adminAnnotationAesthetic"),
+  adminAnnotationList: document.querySelector("#adminAnnotationList"),
   adminRefreshRecords: document.querySelector("#adminRefreshRecordsButton"),
   adminRecordsList: document.querySelector("#adminRecordsList"),
   llmForm: document.querySelector("#llmForm"),
@@ -520,6 +549,22 @@ async function loadGeneratedWorkData(workId) {
   const metaResponse = await fetch(`../data/${workId}/work-info.json`);
   if (!metaResponse.ok) throw new Error(`无法加载作品数据：${workId}`);
   const meta = await metaResponse.json();
+  let officialGuide = null;
+  try {
+    const officialResponse = await fetch(`../data/${workId}/annotation.json?t=${Date.now()}`, { cache: "no-store" });
+    if (officialResponse.ok) officialGuide = await officialResponse.json();
+  } catch {
+    officialGuide = null;
+  }
+  if (officialGuide?.annotations?.length) {
+    return {
+      ...officialGuide,
+      workId,
+      title: officialGuide.title || meta.title,
+      style: officialGuide.style || meta.script_type || meta.style || "书法作品",
+      guideKind: "admin_confirmed",
+    };
+  }
   let aiGuide = null;
   try {
     const guideResponse = await fetch(`../data/${workId}/ai-guide-draft.json?t=${Date.now()}`, { cache: "no-store" });
@@ -764,9 +809,12 @@ function guideKind() {
 function renderGuidePanelHeader() {
   const kind = guideKind();
   if (!els.guidePanelTitle || !els.guidePanelNote) return;
-  if (kind === "manual") {
+  if (kind === "manual" || kind === "admin_confirmed") {
     els.guidePanelTitle.textContent = "人工精选导览";
-    els.guidePanelNote.textContent = "用于默认作品，来自项目整理的人工观察点。";
+    els.guidePanelNote.textContent =
+      kind === "admin_confirmed"
+        ? "用于上传作品，来自管理员确认后的正式观察点。"
+        : "用于默认作品，来自项目整理的人工观察点。";
     return;
   }
   if (kind === "ai_candidate") {
@@ -2811,14 +2859,32 @@ function renderAdminWorksList() {
     meta.textContent = [work.artist, work.dynasty, work.script_type, work.museum].filter(Boolean).join(" · ") || "管理员作品资料";
     info.append(title, meta);
 
+    const actions = document.createElement("div");
+    actions.className = "adminWorkActions";
+
+    const generate = document.createElement("button");
+    generate.className = "secondaryButton";
+    generate.type = "button";
+    generate.textContent = "生成候选";
+    generate.disabled = work.id === "work_003";
+    generate.addEventListener("click", () => generateAiGuideForWork(work.id));
+
+    const annotate = document.createElement("button");
+    annotate.className = "secondaryButton";
+    annotate.type = "button";
+    annotate.textContent = work.id === "work_003" ? "默认只读" : "框选标注";
+    annotate.disabled = work.id === "work_003";
+    annotate.addEventListener("click", () => openAdminAnnotationWorkbench(work.id));
+
     const button = document.createElement("button");
     button.className = "secondaryButton dangerButton";
     button.type = "button";
-    button.textContent = work.id === "work_003" ? "默认作品保留" : "删除";
+    button.textContent = work.id === "work_003" ? "保留" : "删除";
     button.disabled = work.id === "work_003";
     button.addEventListener("click", () => deleteAdminWork(work.id, work.title || work.id));
 
-    row.append(info, button);
+    actions.append(generate, annotate, button);
+    row.append(info, actions);
     els.adminWorksList.append(row);
   });
 }
@@ -2827,6 +2893,313 @@ async function refreshAdminWorks() {
   await loadWorksIndex();
   renderWorkCards();
   renderAdminWorksList();
+}
+
+function setAdminAnnotationStatus(message) {
+  if (els.adminAnnotationStatus) els.adminAnnotationStatus.textContent = message;
+}
+
+function cloneGuideAnnotations(items) {
+  return JSON.parse(JSON.stringify(items || []));
+}
+
+async function openAdminAnnotationWorkbench(workId) {
+  if (!workId || workId === "work_003" || !els.adminAnnotationCard) return;
+  els.adminAnnotationCard.hidden = false;
+  setAdminAnnotationStatus("正在读取作品导览状态...");
+  state.adminGuide = {
+    workId,
+    work: null,
+    official: null,
+    draft: null,
+    guideText: "",
+    annotations: [],
+    editingIndex: -1,
+    currentBox: null,
+    drag: null,
+  };
+  try {
+    const response = await fetch(`${API_BASE}/api/admin/works/${encodeURIComponent(workId)}/guide`, { cache: "no-store" });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.detail || `HTTP ${response.status}`);
+    const official = payload.official || null;
+    const draft = payload.draft || null;
+    state.adminGuide.work = payload.work;
+    state.adminGuide.official = official;
+    state.adminGuide.draft = draft;
+    state.adminGuide.guideText = official?.guideText || "";
+    state.adminGuide.annotations = cloneGuideAnnotations(official?.annotations || []);
+    if (els.adminAnnotationTitle) {
+      els.adminAnnotationTitle.textContent = `导览标注：${payload.work?.title || workId}`;
+    }
+    if (els.adminGuideTextInput) {
+      els.adminGuideTextInput.value =
+        official?.guideText || payload.work?.description || "请写一段面向普通观众的作品导览说明。";
+    }
+    if (els.adminAnnotationImage) {
+      els.adminAnnotationImage.src = `../data/${workId}/original.png?t=${Date.now()}`;
+    }
+    setAdminAnnotationStatus(
+      official
+        ? "已加载管理员正式导览。你可以继续修改后重新保存。"
+        : draft
+          ? "已找到 AI 候选草稿。可点击“载入 AI 候选到编辑区”，再人工确认保存。"
+          : "尚未生成 AI 候选。你可以直接拖框手动标注，或先生成 AI 候选。",
+    );
+    renderAdminAnnotationList();
+    renderAdminDraftBox(null);
+    resetAdminAnnotationForm();
+    els.adminAnnotationCard.scrollIntoView({ behavior: "smooth", block: "start" });
+  } catch (error) {
+    setAdminAnnotationStatus(`读取失败：${error.message}`);
+  }
+}
+
+async function generateAiGuideForWork(workId = state.adminGuide.workId) {
+  if (!workId || workId === "work_003") return;
+  if (els.uploadResult) {
+    els.uploadResult.hidden = false;
+    els.uploadResult.textContent = `正在为 ${workId} 生成 AI 候选导览...`;
+  }
+  if (els.adminAnnotationCard && state.adminGuide.workId === workId) {
+    setAdminAnnotationStatus("正在生成 AI 候选导览...");
+  }
+  try {
+    const response = await fetch(`${API_BASE}/api/admin/works/${encodeURIComponent(workId)}/generate-ai-guide`, {
+      method: "POST",
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.detail || `HTTP ${response.status}`);
+    if (els.uploadResult) els.uploadResult.textContent = `AI 候选导览已生成：${workId}`;
+    await refreshAdminWorks();
+    await openAdminAnnotationWorkbench(workId);
+  } catch (error) {
+    if (els.uploadResult) els.uploadResult.textContent = `生成失败：${error.message}`;
+    setAdminAnnotationStatus(`生成失败：${error.message}`);
+  }
+}
+
+function useAiDraftInEditor() {
+  const draft = state.adminGuide.draft;
+  if (!draft) {
+    setAdminAnnotationStatus("当前作品还没有 AI 候选草稿，请先生成候选。");
+    return;
+  }
+  state.adminGuide.annotations = cloneGuideAnnotations(draft.annotations || []);
+  if (els.adminGuideTextInput) {
+    els.adminGuideTextInput.value = draft.guideText || "";
+  }
+  state.adminGuide.editingIndex = -1;
+  state.adminGuide.currentBox = null;
+  resetAdminAnnotationForm();
+  renderAdminDraftBox(null);
+  renderAdminAnnotationList();
+  setAdminAnnotationStatus("AI 候选已载入编辑区。请逐条修改、删除或重新框选，确认后再保存为正式导览。");
+}
+
+function resetAdminAnnotationForm() {
+  state.adminGuide.editingIndex = -1;
+  if (els.adminAnnotationType) els.adminAnnotationType.value = "brush_ink";
+  if (els.adminAnnotationLabel) els.adminAnnotationLabel.value = "";
+  if (els.adminAnnotationFormal) els.adminAnnotationFormal.value = "";
+  if (els.adminAnnotationPerception) els.adminAnnotationPerception.value = "";
+  if (els.adminAnnotationAesthetic) els.adminAnnotationAesthetic.value = "";
+}
+
+function fillAdminAnnotationForm(item, index) {
+  state.adminGuide.editingIndex = index;
+  state.adminGuide.currentBox = { ...(item.box || {}) };
+  if (els.adminAnnotationType) els.adminAnnotationType.value = item.type || "brush_ink";
+  if (els.adminAnnotationLabel) els.adminAnnotationLabel.value = item.label || "";
+  if (els.adminAnnotationFormal) els.adminAnnotationFormal.value = item.formal || "";
+  if (els.adminAnnotationPerception) els.adminAnnotationPerception.value = item.perception || "";
+  if (els.adminAnnotationAesthetic) els.adminAnnotationAesthetic.value = item.aesthetic || "";
+  renderAdminDraftBox(state.adminGuide.currentBox);
+  setAdminAnnotationStatus("正在编辑观察点。可直接改文字，或在图上重新拖框。");
+}
+
+function adminConceptByType(type) {
+  return { qi_flow: "气脉", void_solid: "虚实", brush_ink: "笔墨" }[type] || "观察";
+}
+
+function saveAdminAnnotationFromForm(event) {
+  event.preventDefault();
+  if (!state.adminGuide.workId) return;
+  const box = state.adminGuide.currentBox;
+  if (!box) {
+    setAdminAnnotationStatus("请先在作品图上拖出一个框选区域。");
+    return;
+  }
+  const type = els.adminAnnotationType?.value || "brush_ink";
+  const label = els.adminAnnotationLabel?.value.trim() || "未命名观察点";
+  const annotation = {
+    id:
+      state.adminGuide.editingIndex >= 0
+        ? state.adminGuide.annotations[state.adminGuide.editingIndex].id
+        : `manual_${Date.now()}`,
+    type,
+    label,
+    evidenceLayers: ["original", "inkDensity", "strokeWidth"],
+    box,
+    formal: els.adminAnnotationFormal?.value.trim() || "管理员已框选该区域，请结合原图观察可见形式证据。",
+    perception: els.adminAnnotationPerception?.value.trim() || "该区域可作为观众观察作品视觉节奏的入口。",
+    aesthetic: els.adminAnnotationAesthetic?.value.trim() || "该解释来自管理员确认，不自动判断书法水平、真伪或真实笔顺。",
+    reflection: {
+      concept: adminConceptByType(type),
+      prompt: "你在这个区域重新注意到了什么？",
+      expertFeedback: "请回到原图，用可见证据描述你的观察。",
+    },
+  };
+  if (state.adminGuide.editingIndex >= 0) {
+    state.adminGuide.annotations[state.adminGuide.editingIndex] = annotation;
+  } else {
+    state.adminGuide.annotations.push(annotation);
+  }
+  resetAdminAnnotationForm();
+  state.adminGuide.currentBox = null;
+  renderAdminDraftBox(null);
+  renderAdminAnnotationList();
+  setAdminAnnotationStatus("观察点已加入编辑区。保存为正式导览后，前台作品页才会作为正式导览展示。");
+}
+
+function renderAdminAnnotationList() {
+  if (!els.adminAnnotationList) return;
+  els.adminAnnotationList.replaceChildren();
+  if (!state.adminGuide.annotations.length) {
+    const empty = document.createElement("p");
+    empty.className = "adminEmpty";
+    empty.textContent = "编辑区还没有观察点。可以拖框手动添加，或载入 AI 候选后修改。";
+    els.adminAnnotationList.append(empty);
+    return;
+  }
+  state.adminGuide.annotations.forEach((item, index) => {
+    const row = document.createElement("div");
+    row.className = "adminAnnotationItem";
+    const info = document.createElement("div");
+    const title = document.createElement("strong");
+    title.textContent = `${index + 1}. ${item.label || "未命名观察点"}`;
+    const detail = document.createElement("p");
+    const box = item.box || {};
+    detail.textContent = `${adminConceptByType(item.type)} / x=${box.x ?? "-"} y=${box.y ?? "-"} w=${box.width ?? "-"} h=${box.height ?? "-"}`;
+    info.append(title, detail);
+
+    const actions = document.createElement("div");
+    actions.className = "adminWorkActions";
+    const edit = document.createElement("button");
+    edit.className = "secondaryButton";
+    edit.type = "button";
+    edit.textContent = "编辑";
+    edit.addEventListener("click", () => fillAdminAnnotationForm(item, index));
+    const remove = document.createElement("button");
+    remove.className = "secondaryButton dangerButton";
+    remove.type = "button";
+    remove.textContent = "删除";
+    remove.addEventListener("click", () => {
+      state.adminGuide.annotations.splice(index, 1);
+      renderAdminAnnotationList();
+    });
+    actions.append(edit, remove);
+    row.append(info, actions);
+    els.adminAnnotationList.append(row);
+  });
+}
+
+async function saveAdminOfficialGuide() {
+  const workId = state.adminGuide.workId;
+  if (!workId) return;
+  if (!state.adminGuide.annotations.length) {
+    setAdminAnnotationStatus("请至少添加一个观察点后再保存正式导览。");
+    return;
+  }
+  setAdminAnnotationStatus("正在保存正式导览...");
+  try {
+    const response = await fetch(`${API_BASE}/api/admin/works/${encodeURIComponent(workId)}/annotations`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        guide_text: els.adminGuideTextInput?.value.trim() || "",
+        annotations: state.adminGuide.annotations,
+      }),
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.detail || `HTTP ${response.status}`);
+    setAdminAnnotationStatus("正式导览已保存。前台打开该作品时会优先展示管理员确认导览。");
+    await refreshAdminWorks();
+  } catch (error) {
+    setAdminAnnotationStatus(`保存失败：${error.message}`);
+  }
+}
+
+function boxFromPointerEvent(event) {
+  if (!els.adminAnnotationCanvas) return null;
+  const rect = els.adminAnnotationCanvas.getBoundingClientRect();
+  if (!rect.width || !rect.height) return null;
+  return {
+    x: clamp(((event.clientX - rect.left) / rect.width) * 100, 0, 100),
+    y: clamp(((event.clientY - rect.top) / rect.height) * 100, 0, 100),
+  };
+}
+
+function normalizedBoxFromPoints(start, end) {
+  const x = Math.min(start.x, end.x);
+  const y = Math.min(start.y, end.y);
+  const width = Math.abs(end.x - start.x);
+  const height = Math.abs(end.y - start.y);
+  if (width < 0.4 || height < 0.4) return null;
+  return {
+    x: Number(x.toFixed(2)),
+    y: Number(y.toFixed(2)),
+    width: Number(width.toFixed(2)),
+    height: Number(height.toFixed(2)),
+  };
+}
+
+function renderAdminDraftBox(box) {
+  if (!els.adminAnnotationDraftBox) return;
+  if (!box) {
+    els.adminAnnotationDraftBox.hidden = true;
+    return;
+  }
+  els.adminAnnotationDraftBox.hidden = false;
+  els.adminAnnotationDraftBox.style.left = `${box.x}%`;
+  els.adminAnnotationDraftBox.style.top = `${box.y}%`;
+  els.adminAnnotationDraftBox.style.width = `${box.width}%`;
+  els.adminAnnotationDraftBox.style.height = `${box.height}%`;
+}
+
+function startAdminBoxDrag(event) {
+  if (!state.adminGuide.workId || event.button !== 0) return;
+  const start = boxFromPointerEvent(event);
+  if (!start) return;
+  state.adminGuide.drag = { start };
+  state.adminGuide.currentBox = null;
+  renderAdminDraftBox({ x: start.x, y: start.y, width: 0.6, height: 0.6 });
+  els.adminAnnotationCanvas?.setPointerCapture(event.pointerId);
+}
+
+function moveAdminBoxDrag(event) {
+  if (!state.adminGuide.drag) return;
+  const end = boxFromPointerEvent(event);
+  if (!end) return;
+  const box = normalizedBoxFromPoints(state.adminGuide.drag.start, end);
+  if (box) renderAdminDraftBox(box);
+}
+
+function finishAdminBoxDrag(event) {
+  if (!state.adminGuide.drag) return;
+  const end = boxFromPointerEvent(event);
+  const box = end ? normalizedBoxFromPoints(state.adminGuide.drag.start, end) : null;
+  state.adminGuide.drag = null;
+  if (els.adminAnnotationCanvas?.hasPointerCapture(event.pointerId)) {
+    els.adminAnnotationCanvas.releasePointerCapture(event.pointerId);
+  }
+  if (!box) {
+    renderAdminDraftBox(state.adminGuide.currentBox);
+    return;
+  }
+  state.adminGuide.currentBox = box;
+  renderAdminDraftBox(box);
+  setAdminAnnotationStatus("已框选区域。填写右侧内容后点击“添加 / 更新观察点”。");
 }
 
 function appendRecordGroup(title, records, renderItem) {
@@ -3363,6 +3736,17 @@ els.llmTest?.addEventListener("click", testLlmConfig);
 els.uploadWorkForm?.addEventListener("submit", uploadAdminWork);
 els.adminRefreshWorks?.addEventListener("click", refreshAdminWorks);
 els.adminRefreshRecords?.addEventListener("click", loadAdminRecords);
+els.adminAnnotationClose?.addEventListener("click", () => {
+  if (els.adminAnnotationCard) els.adminAnnotationCard.hidden = true;
+});
+els.adminGenerateGuide?.addEventListener("click", () => generateAiGuideForWork());
+els.adminUseAiDraft?.addEventListener("click", useAiDraftInEditor);
+els.adminSaveGuide?.addEventListener("click", saveAdminOfficialGuide);
+els.adminAnnotationForm?.addEventListener("submit", saveAdminAnnotationFromForm);
+els.adminAnnotationCanvas?.addEventListener("pointerdown", startAdminBoxDrag);
+els.adminAnnotationCanvas?.addEventListener("pointermove", moveAdminBoxDrag);
+els.adminAnnotationCanvas?.addEventListener("pointerup", finishAdminBoxDrag);
+els.adminAnnotationCanvas?.addEventListener("pointercancel", finishAdminBoxDrag);
 els.adminTabs?.forEach((button) => {
   button.addEventListener("click", () => setAdminTab(button.dataset.adminTab));
 });

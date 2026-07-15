@@ -114,6 +114,47 @@
             <div id="adminWorksList" class="adminWorksList" aria-label="管理员作品列表"></div>
           </section>
 
+          <section id="adminAnnotationCard" class="adminCard adminAnnotationCard" hidden>
+            <div class="adminAnnotationHeader">
+              <div>
+                <h3 id="adminAnnotationTitle">导览标注工作台</h3>
+                <p id="adminAnnotationStatus">选择一个上传作品后，可以生成 AI 候选，或直接在图上拖框手动标注。</p>
+              </div>
+              <button id="adminAnnotationCloseButton" class="secondaryButton" type="button">收起</button>
+            </div>
+            <div class="adminAnnotationActions">
+              <button id="adminGenerateGuideButton" class="secondaryButton" type="button">生成 AI 候选导览</button>
+              <button id="adminUseAiDraftButton" class="secondaryButton" type="button">载入 AI 候选到编辑区</button>
+              <button id="adminSaveGuideButton" class="primaryButton" type="button">保存为正式导览</button>
+            </div>
+            <label class="adminGuideTextField">
+              <span>导览总说明</span>
+              <textarea id="adminGuideTextInput" rows="3" placeholder="写给普通观众看的总说明。可以使用 AI 草稿，但保存前请人工确认。"></textarea>
+            </label>
+            <div class="adminAnnotationLayout">
+              <div class="adminAnnotationCanvas" id="adminAnnotationCanvas">
+                <img id="adminAnnotationImage" alt="管理员标注用书法作品原图" />
+                <div id="adminAnnotationDraftBox" class="adminAnnotationDraftBox" hidden></div>
+              </div>
+              <form id="adminAnnotationForm" class="adminAnnotationForm">
+                <label>
+                  <span>类型</span>
+                  <select id="adminAnnotationType">
+                    <option value="brush_ink">笔墨</option>
+                    <option value="void_solid">虚实 / 留白</option>
+                    <option value="qi_flow">气脉 / 势</option>
+                  </select>
+                </label>
+                <label><span>标题</span><input id="adminAnnotationLabel" placeholder="例如：重墨转折、字间留白" /></label>
+                <label><span>形式证据</span><textarea id="adminAnnotationFormal" rows="3"></textarea></label>
+                <label><span>观看感受</span><textarea id="adminAnnotationPerception" rows="3"></textarea></label>
+                <label><span>导览解释</span><textarea id="adminAnnotationAesthetic" rows="3"></textarea></label>
+                <button id="adminAddAnnotationButton" class="secondaryButton" type="submit">添加 / 更新观察点</button>
+              </form>
+            </div>
+            <div id="adminAnnotationList" class="adminAnnotationList"></div>
+          </section>
+
           <section class="adminCard">
             <h3>上传书法作品</h3>
             <form id="uploadWorkForm" class="adminForm">

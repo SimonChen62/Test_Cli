@@ -10,6 +10,20 @@ import numpy as np
 from . import llm_service
 
 
+GUIDE_TYPES = {"qi_flow", "void_solid", "brush_ink"}
+
+
+def _read_json(path: Path, default: Any) -> Any:
+    if not path.exists():
+        return default
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _write_json(path: Path, payload: Any) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
 def _read_gray(path: Path) -> np.ndarray | None:
     data = np.fromfile(str(path), dtype=np.uint8)
     image = cv2.imdecode(data, cv2.IMREAD_GRAYSCALE)
@@ -134,3 +148,87 @@ def create_ai_guide_draft(work_dir: Path, work: dict[str, Any], report: dict[str
         encoding="utf-8",
     )
     return draft
+
+
+def load_guide_state(work_dir: Path) -> dict[str, Any]:
+    official = _read_json(work_dir / "annotation.json", None)
+    draft = _read_json(work_dir / "ai-guide-draft.json", None)
+    return {
+        "has_official": bool(official),
+        "has_ai_draft": bool(draft),
+        "official": official,
+        "draft": draft,
+    }
+
+
+def _normalize_box(box: Any) -> dict[str, float] | None:
+    if not isinstance(box, dict):
+        return None
+    try:
+        x = float(box.get("x", 0))
+        y = float(box.get("y", 0))
+        width = float(box.get("width", 0))
+        height = float(box.get("height", 0))
+    except (TypeError, ValueError):
+        return None
+    width = max(0.2, min(width, 100.0))
+    height = max(0.2, min(height, 100.0))
+    x = max(0.0, min(x, 100.0 - width))
+    y = max(0.0, min(y, 100.0 - height))
+    return {
+        "x": round(x, 2),
+        "y": round(y, 2),
+        "width": round(width, 2),
+        "height": round(height, 2),
+    }
+
+
+def _normalize_annotation(raw: dict[str, Any], index: int) -> dict[str, Any]:
+    guide_type = raw.get("type") if raw.get("type") in GUIDE_TYPES else "brush_ink"
+    label = str(raw.get("label") or f"观察点 {index + 1}").strip()
+    box = _normalize_box(raw.get("box")) or {"x": 8.0, "y": 8.0, "width": 18.0, "height": 18.0}
+    annotation_id = str(raw.get("id") or f"manual_{index + 1:03d}").strip()
+    if not annotation_id:
+        annotation_id = f"manual_{index + 1:03d}"
+    reflection = raw.get("reflection") if isinstance(raw.get("reflection"), dict) else {}
+    concept = str(reflection.get("concept") or {"qi_flow": "气脉", "void_solid": "虚实", "brush_ink": "笔墨"}[guide_type])
+    return {
+        "id": annotation_id,
+        "type": guide_type,
+        "label": label,
+        "evidenceLayers": raw.get("evidenceLayers") or ["original", "inkDensity", "strokeWidth"],
+        "box": box,
+        "formal": str(raw.get("formal") or "管理员已框选该区域，请结合原图观察墨迹、留白或结构变化。").strip(),
+        "perception": str(raw.get("perception") or "该区域可作为观众观察作品视觉节奏的入口。").strip(),
+        "aesthetic": str(raw.get("aesthetic") or "该解释来自管理员确认，不自动判断书法水平、真伪或真实笔顺。").strip(),
+        "reflection": {
+            "concept": concept,
+            "prompt": str(reflection.get("prompt") or "你在这个区域重新注意到了什么？").strip(),
+            "expertFeedback": str(reflection.get("expertFeedback") or "请用可见证据描述，不把候选观察点夸大为唯一结论。").strip(),
+        },
+    }
+
+
+def save_official_guide(work_dir: Path, work: dict[str, Any], guide_text: str, annotations: list[dict[str, Any]]) -> dict[str, Any]:
+    normalized = [_normalize_annotation(item, index) for index, item in enumerate(annotations)]
+    title = work.get("title") or work.get("id") or "上传作品"
+    annotation = {
+        "workId": work.get("id") or work_dir.name,
+        "title": title,
+        "style": work.get("script_type") or work.get("style") or "书法作品",
+        "source": "管理员确认导览。AI 候选如被采用，已经过管理员审核。",
+        "images": {
+            "original": "original.png",
+            "binary": "binary.png",
+            "skeleton": "binary.png",
+            "strokeWidth": "height.png",
+            "inkDensity": "ink_density.png",
+            "voidCandidates": "binary.png",
+        },
+        "guideText": guide_text.strip()
+        or "该作品导览由管理员确认生成。系统只展示可见墨迹、留白和结构观察点，不自动评价书法水平。",
+        "guideKind": "admin_confirmed",
+        "annotations": normalized,
+    }
+    _write_json(work_dir / "annotation.json", annotation)
+    return annotation

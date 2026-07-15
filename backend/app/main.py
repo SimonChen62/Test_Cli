@@ -56,6 +56,11 @@ class ReflectionPayload(BaseModel):
     content: str
 
 
+class GuideSavePayload(BaseModel):
+    guide_text: str = ""
+    annotations: list[dict[str, object]] = []
+
+
 def bearer_token(authorization: str | None) -> str | None:
     if not authorization:
         return None
@@ -279,6 +284,53 @@ def process(work_id: str) -> dict[str, object]:
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return {"work_id": work_id, "report": report}
+
+
+@app.get("/api/admin/works/{work_id}/guide")
+def admin_work_guide(work_id: str) -> dict[str, object]:
+    work = work_service.get_work(work_id)
+    if not work:
+        raise HTTPException(status_code=404, detail="作品不存在")
+    target = work_service.work_dir(work_id)
+    return {"work_id": work_id, "work": work, **guide_service.load_guide_state(target)}
+
+
+@app.post("/api/admin/works/{work_id}/generate-ai-guide")
+def generate_admin_ai_guide(work_id: str) -> dict[str, object]:
+    work = work_service.get_work(work_id)
+    if not work:
+        raise HTTPException(status_code=404, detail="作品不存在")
+    target = work_service.work_dir(work_id)
+    if not target.exists():
+        raise HTTPException(status_code=404, detail="作品目录不存在")
+    report_path = target / "processing-report.json"
+    if not report_path.exists():
+        try:
+            report = image_service.process_work_dir(target)
+        except Exception as exc:  # noqa: BLE001
+            raise HTTPException(status_code=400, detail=f"图像处理失败：{exc}") from exc
+    else:
+        report = work_service.read_json(report_path, {})
+    draft = guide_service.create_ai_guide_draft(target, work, report)
+    work["guide_status"] = "ai_draft"
+    work_service.upsert_work(work)
+    work_service.write_json(target / "work-info.json", work)
+    return {"work_id": work_id, "draft": draft, "message": "AI 候选导览草稿已生成"}
+
+
+@app.post("/api/admin/works/{work_id}/annotations")
+def save_admin_annotations(work_id: str, payload: GuideSavePayload) -> dict[str, object]:
+    work = work_service.get_work(work_id)
+    if not work:
+        raise HTTPException(status_code=404, detail="作品不存在")
+    if not payload.annotations:
+        raise HTTPException(status_code=400, detail="请至少添加一个观察点")
+    target = work_service.work_dir(work_id)
+    annotation = guide_service.save_official_guide(target, work, payload.guide_text, payload.annotations)
+    work["guide_status"] = "manual_confirmed"
+    work_service.upsert_work(work)
+    work_service.write_json(target / "work-info.json", work)
+    return {"work_id": work_id, "annotation": annotation, "message": "正式导览已保存"}
 
 
 @app.post("/api/admin/upload-work")
