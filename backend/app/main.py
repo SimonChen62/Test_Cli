@@ -16,6 +16,7 @@ from .services.paths import DATA_DIR, KNOWLEDGE_DIR
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 WEB_DIR = PROJECT_ROOT / "web"
+QIVERSE_DIR = PROJECT_ROOT / "qiverse"
 
 app = FastAPI(title="CalliLens API", version="2.0.0")
 
@@ -28,6 +29,8 @@ app.add_middleware(
 )
 
 app.mount("/data", StaticFiles(directory=str(DATA_DIR)), name="data")
+app.mount("/web", StaticFiles(directory=str(WEB_DIR), html=True), name="web_static")
+app.mount("/qiverse", StaticFiles(directory=str(QIVERSE_DIR), html=True), name="qiverse")
 
 
 ADMIN_PASSWORD = "callilens-admin"
