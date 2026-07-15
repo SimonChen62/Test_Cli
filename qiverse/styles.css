@@ -94,6 +94,7 @@ a {
 }
 
 .launchPanel.hidden {
+  display: none;
   opacity: 0;
   visibility: hidden;
   transform: translate(-50%, 18px);

@@ -1,68 +1,7 @@
 {
-  "id": "work_003_qiverse_cinematic",
+  "id": "work_003_qiverse_character_constellation",
   "sourceWorkId": "work_003",
-  "title": "赵孟頫《光福重建塔记》QiVerse 电影体验",
-  "image": "../data/work_003/original.png",
-  "description": "基于老师 QiVerse / InkVerse 文档的前端电影式体验数据。第一版以原图墨迹采样、解释性气脉和留白区域为主，不声称自动识别真实笔顺或判断书法水平。",
-  "qiLinks": [
-    {
-      "id": "qi_1",
-      "points": [
-        [-0.34, 0.12],
-        [-0.16, 0.23],
-        [0.08, 0.16],
-        [0.32, -0.05]
-      ],
-      "strength": 0.72,
-      "note": "形断势连：墨迹断开，但观看时仍能感到走势延续。"
-    },
-    {
-      "id": "qi_2",
-      "points": [
-        [0.42, -0.1],
-        [0.18, -0.24],
-        [-0.08, -0.2],
-        [-0.29, -0.34]
-      ],
-      "strength": 0.48,
-      "note": "用淡金墨粒表现弱气脉，避免画成粗箭头。"
-    },
-    {
-      "id": "qi_3",
-      "points": [
-        [-0.52, -0.04],
-        [-0.28, -0.13],
-        [0.04, -0.08],
-        [0.36, 0.12]
-      ],
-      "strength": 0.56,
-      "note": "跨越字间空白，表现长卷阅读时的连续节奏。"
-    }
-  ],
-  "voidRegions": [
-    {
-      "id": "void_inner",
-      "label": "字内留白",
-      "center": [-0.28, -0.08],
-      "size": [0.22, 0.18],
-      "depth": 0.26,
-      "note": "较窄的空腔，强调墨迹围合出的呼吸空间。"
-    },
-    {
-      "id": "void_between",
-      "label": "字间留白",
-      "center": [0.18, -0.18],
-      "size": [0.34, 0.24],
-      "depth": 0.38,
-      "note": "字与字之间的通道，表现疏密和停顿。"
-    },
-    {
-      "id": "void_line",
-      "label": "行间留白",
-      "center": [0.02, 0.34],
-      "size": [0.78, 0.18],
-      "depth": 0.18,
-      "note": "开放的行间区域，用于引导观众从看墨转向看白。"
-    }
-  ]
+  "title": "赵孟頫《光福重建塔记》QiVerse 星字长卷",
+  "heightImage": "data/work_003/height.png",
+  "description": "本体验不显示纸面背景，不恢复真实笔顺，也不自动判断气韵。它读取整卷 height.png，将可见墨迹转成星点粒子，让整幅作品以星字长卷的方式重新出现。"
 }
