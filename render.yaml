@@ -7,8 +7,6 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.1
-      - key: CALLILENS_LLM_ENABLED
-        value: false
       - key: DATABASE_URL
         fromDatabase:
           name: callilens-db
