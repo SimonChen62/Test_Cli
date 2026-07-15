@@ -144,9 +144,33 @@ def search(question: str, work_id: str = "work_003", limit: int = 5) -> list[Chu
     return [chunk for _, chunk in scored[:limit]]
 
 
+def _is_evaluation_boundary_question(question: str) -> bool:
+    normalized = re.sub(r"\s+", "", question.lower())
+    evaluation_terms = ("好坏", "水平", "评分", "打分", "评价", "评判", "判断", "审美判断")
+    calligraphy_terms = ("书法", "作品", "字", "气韵", "神采")
+    return any(term in normalized for term in evaluation_terms) and any(term in normalized for term in calligraphy_terms)
+
+
 def answer(question: str, work_id: str = "work_003", ask_mode: str = "local", llm_available: bool = False) -> dict[str, object]:
     ask_mode = ask_mode if ask_mode in {"local", "ai_rag", "ai_free"} else "local"
     ai_requested = ask_mode in {"ai_rag", "ai_free"}
+    if _is_evaluation_boundary_question(question):
+        return {
+            "answer": (
+                "不能。当前系统不自动判断书法好坏、不给作品打分，也不声称识别真实气韵或神采。\n\n"
+                "它做的是数字导览：基于本地资料解释作者、作品背景和书法术语；基于 OpenCV/Three.js "
+                "展示可见墨迹、浮雕高度、留白和气脉线索。审美判断仍应由观众、老师或专家结合语境来完成。"
+            ),
+            "sources": [
+                {
+                    "title": "项目边界说明",
+                    "source": "项目知识库",
+                    "url": "",
+                    "work_id": "global",
+                }
+            ],
+            "mode": "local_rag",
+        }
     chunks = search(question, work_id=work_id)
     if not chunks:
         if ask_mode == "ai_free" and llm_available:

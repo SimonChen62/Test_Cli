@@ -42,6 +42,13 @@ class RagServiceTest(unittest.TestCase):
         self.assertIn("start-demo.ps1", result["answer"])
         self.assertIn("127.0.0.1:5190", result["answer"])
 
+    def test_refuses_calligraphy_quality_judgement(self):
+        result = rag_service.answer("这个项目能不能判断书法好坏？", "work_003")
+
+        self.assertIn("不能", result["answer"])
+        self.assertIn("不自动判断书法好坏", result["answer"])
+        self.assertEqual(result["sources"][0]["title"], "项目边界说明")
+
 
 class WorkServiceTest(unittest.TestCase):
     def test_loads_default_work(self):
