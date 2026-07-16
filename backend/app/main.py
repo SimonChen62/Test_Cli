@@ -277,6 +277,68 @@ def test_llm_config() -> dict[str, object]:
     }
 
 
+def draft_work_from_form(
+    title: str,
+    artist: str,
+    dynasty: str,
+    date: str,
+    script_type: str,
+    museum: str,
+    description: str,
+    background: str,
+    source_url: str,
+    tags: str,
+) -> dict[str, object]:
+    return {
+        "id": "draft_upload",
+        "title": title.strip() or "未命名上传作品",
+        "artist": artist.strip(),
+        "dynasty": dynasty.strip(),
+        "date": date.strip(),
+        "script_type": script_type.strip(),
+        "museum": museum.strip(),
+        "description": description.strip(),
+        "background": background.strip(),
+        "source_url": source_url.strip(),
+        "source": "管理员正在填写的上传资料",
+        "tags": [item.strip() for item in tags.split(",") if item.strip()],
+    }
+
+
+@app.post("/api/admin/question-draft")
+def create_upload_question_draft(
+    title: str = Form(""),
+    artist: str = Form(""),
+    dynasty: str = Form(""),
+    date: str = Form(""),
+    script_type: str = Form(""),
+    museum: str = Form(""),
+    description: str = Form(""),
+    background: str = Form(""),
+    source_url: str = Form(""),
+    tags: str = Form(""),
+) -> dict[str, object]:
+    work = draft_work_from_form(title, artist, dynasty, date, script_type, museum, description, background, source_url, tags)
+    return {"work_id": None, **guide_service.create_question_draft(None, work)}
+
+
+@app.post("/api/admin/appreciation-draft")
+def create_upload_appreciation_draft(
+    title: str = Form(""),
+    artist: str = Form(""),
+    dynasty: str = Form(""),
+    date: str = Form(""),
+    script_type: str = Form(""),
+    museum: str = Form(""),
+    description: str = Form(""),
+    background: str = Form(""),
+    source_url: str = Form(""),
+    tags: str = Form(""),
+) -> dict[str, object]:
+    work = draft_work_from_form(title, artist, dynasty, date, script_type, museum, description, background, source_url, tags)
+    return {"work_id": None, **guide_service.create_appreciation_draft(None, work)}
+
+
 @app.post("/api/process/{work_id}")
 def process(work_id: str) -> dict[str, object]:
     target = work_service.work_dir(work_id)

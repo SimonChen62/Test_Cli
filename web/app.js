@@ -3068,16 +3068,15 @@ async function deleteAdminWork(workId, title) {
 async function generateAdminQuestionDraft() {
   if (!els.uploadWorkForm || !els.adminQuestionDraftResult) return;
   els.adminQuestionDraftResult.hidden = false;
-  if (!state.adminEditingWorkId) {
-    els.adminQuestionDraftResult.textContent = "请先在上方作品列表点击“编辑”，再为该作品生成推荐问题草稿。";
-    return;
-  }
   els.adminGenerateQuestions.disabled = true;
   els.adminQuestionDraftResult.textContent = "正在生成推荐问题草稿...";
   try {
-    const response = await fetch(`${API_BASE}/api/admin/works/${state.adminEditingWorkId}/question-draft`, {
-      method: "POST",
-    });
+    const response = state.adminEditingWorkId
+      ? await fetch(`${API_BASE}/api/admin/works/${state.adminEditingWorkId}/question-draft`, { method: "POST" })
+      : await fetch(`${API_BASE}/api/admin/question-draft`, {
+          method: "POST",
+          body: new FormData(els.uploadWorkForm),
+        });
     const payload = await response.json();
     if (!response.ok) throw new Error(payload.detail || `HTTP ${response.status}`);
     const questions = Array.isArray(payload.questions) ? payload.questions : [];
@@ -3086,8 +3085,9 @@ async function generateAdminQuestionDraft() {
       ? `\n资料不足提醒：缺少${payload.missing_fields.join("、")}。`
       : "";
     const source = payload.provider === "local_rag" ? "本地模板" : `AI：${payload.provider}`;
+    const saveAction = state.adminEditingWorkId ? "保存修改" : "上传作品";
     els.adminQuestionDraftResult.textContent =
-      `已生成草稿来源：${source}。请检查问题是否适合当前作品，确认后点击“保存修改”。${missing}`;
+      `已生成草稿来源：${source}。请检查问题是否适合当前作品，确认后点击“${saveAction}”。${missing}`;
   } catch (error) {
     els.adminQuestionDraftResult.textContent = `生成失败：${error.message}`;
   } finally {
@@ -3324,21 +3324,21 @@ function clearManualAnnotations() {
 async function generateAdminAppreciationDraft() {
   if (!els.uploadWorkForm || !els.adminAppreciationDraftResult) return;
   els.adminAppreciationDraftResult.hidden = false;
-  if (!state.adminEditingWorkId) {
-    els.adminAppreciationDraftResult.textContent = "新上传作品还没有作品 ID，不能生成 AI 全文赏析草稿。你可以先手写导览并框选上传；上传完成后再点“编辑”生成 AI 草稿。";
-    return;
-  }
   els.adminGenerateAppreciation.disabled = true;
   els.adminAppreciationDraftResult.textContent = "正在生成全文赏析草稿...";
   try {
-    const response = await fetch(`${API_BASE}/api/admin/works/${state.adminEditingWorkId}/appreciation-draft`, {
-      method: "POST",
-    });
+    const response = state.adminEditingWorkId
+      ? await fetch(`${API_BASE}/api/admin/works/${state.adminEditingWorkId}/appreciation-draft`, { method: "POST" })
+      : await fetch(`${API_BASE}/api/admin/appreciation-draft`, {
+          method: "POST",
+          body: new FormData(els.uploadWorkForm),
+        });
     const payload = await response.json();
     if (!response.ok) throw new Error(payload.detail || `HTTP ${response.status}`);
     els.uploadWorkForm.elements["manual_guide_text"].value = payload.guideText || "";
     const source = payload.provider === "local_rag" ? "本地模板" : `AI：${payload.provider}`;
-    els.adminAppreciationDraftResult.textContent = `已生成全文赏析草稿来源：${source}。请修改确认后点击“保存修改”。`;
+    const saveAction = state.adminEditingWorkId ? "保存修改" : "上传作品";
+    els.adminAppreciationDraftResult.textContent = `已生成全文赏析草稿来源：${source}。请修改确认后点击“${saveAction}”。`;
   } catch (error) {
     els.adminAppreciationDraftResult.textContent = `生成失败：${error.message}`;
   } finally {

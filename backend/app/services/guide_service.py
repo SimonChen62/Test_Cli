@@ -76,7 +76,7 @@ def _parse_question_list(text: str, fallback: list[str]) -> list[str]:
     return questions[:8] or fallback
 
 
-def create_question_draft(work_dir: Path, work: dict[str, Any]) -> dict[str, Any]:
+def create_question_draft(work_dir: Path | None, work: dict[str, Any]) -> dict[str, Any]:
     fallback_questions = _local_question_suggestions(work)
     context = _work_context(work)
     fallback = "\n".join(f"{index}. {question}" for index, question in enumerate(fallback_questions, start=1))
@@ -95,17 +95,18 @@ def create_question_draft(work_dir: Path, work: dict[str, Any]) -> dict[str, Any
         "missing_fields": _missing_quality_fields(work),
         "warning": "这是推荐提问草稿，需管理员确认保存后才会展示给用户。",
     }
-    (work_dir / "question-draft.json").write_text(
-        json.dumps(draft, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-    )
+    if work_dir is not None:
+        (work_dir / "question-draft.json").write_text(
+            json.dumps(draft, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
     return draft
 
 
-def create_appreciation_draft(work_dir: Path, work: dict[str, Any]) -> dict[str, Any]:
+def create_appreciation_draft(work_dir: Path | None, work: dict[str, Any]) -> dict[str, Any]:
     report = {}
-    report_path = work_dir / "processing-report.json"
-    if report_path.exists():
+    report_path = work_dir / "processing-report.json" if work_dir is not None else None
+    if report_path and report_path.exists():
         try:
             report = json.loads(report_path.read_text(encoding="utf-8"))
         except json.JSONDecodeError:
@@ -131,10 +132,11 @@ def create_appreciation_draft(work_dir: Path, work: dict[str, Any]) -> dict[str,
         "missing_fields": _missing_quality_fields(work),
         "warning": "这是全文赏析草稿，需管理员确认保存后才会展示给用户。",
     }
-    (work_dir / "appreciation-draft.json").write_text(
-        json.dumps(draft, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-    )
+    if work_dir is not None:
+        (work_dir / "appreciation-draft.json").write_text(
+            json.dumps(draft, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
     return draft
 
 

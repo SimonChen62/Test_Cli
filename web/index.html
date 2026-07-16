@@ -125,18 +125,25 @@
               <label><span>专属推荐提问</span><input name="quick_questions" placeholder="用逗号分隔，例如：作者是谁？,此作背景是什么？（留空则显示通用示例）" /></label>
               <div class="adminInlineActions">
                 <button id="adminGenerateQuestionsButton" class="secondaryButton" type="button">AI 生成推荐问题草稿</button>
-                <span>先编辑已有作品，再生成草稿；确认后点击保存才会展示给用户。</span>
+                <span>可在上传前根据当前表单生成；确认后点击上传或保存才会展示给用户。</span>
               </div>
               <p id="adminQuestionDraftResult" class="adminResult" hidden></p>
+              <div class="manualAnnotationHeader compactHeader">
+                <div>
+                  <h4>全文赏析导览</h4>
+                  <p>可手写，也可先用 AI 根据当前表单生成草稿后修改。</p>
+                </div>
+                <button id="adminGenerateAppreciationButton" class="secondaryButton" type="button">AI 生成全文赏析草稿</button>
+              </div>
+              <label><span>全文赏析导览</span><textarea name="manual_guide_text" rows="4" placeholder="可手写，也可先用 AI 生成草稿后修改。"></textarea></label>
+              <p id="adminAppreciationDraftResult" class="adminResult" hidden></p>
               <section id="manualAnnotationEditor" class="manualAnnotationEditor" hidden>
                 <div class="manualAnnotationHeader">
                   <div>
                     <h4>人工框选导览点</h4>
                     <p>上传时选择图片后即可框选；编辑已有作品时也可修改。最多保存 5 个点，保存后用户端显示为管理员人工标注导览。</p>
                   </div>
-                  <button id="adminGenerateAppreciationButton" class="secondaryButton" type="button">AI 生成全文赏析草稿</button>
                 </div>
-                <label><span>全文赏析导览</span><textarea name="manual_guide_text" rows="4" placeholder="可手写，也可先用 AI 生成草稿后修改。"></textarea></label>
                 <input name="manual_annotations_json" type="hidden" />
                 <div class="manualAnnotationStage" id="manualAnnotationStage">
                   <img id="manualAnnotationImage" alt="人工框选预览" />
@@ -151,7 +158,6 @@
                   <button id="manualAnnotationClearButton" class="secondaryButton" type="button">清空标注</button>
                 </div>
                 <div id="manualAnnotationList" class="manualAnnotationList"></div>
-                <p id="adminAppreciationDraftResult" class="adminResult" hidden></p>
               </section>
               <label class="inlineCheck">
                 <input name="generate_ai_guide" type="checkbox" value="true" />
