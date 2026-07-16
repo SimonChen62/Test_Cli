@@ -3,24 +3,24 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>QiVerse - &#x58a8;&#x6c14;&#x661f;&#x6cb3;</title>
+    <title>QiVerse - &#x58a8;&#x7c92;&#x957f;&#x5377;</title>
     <link rel="icon" href="data:," />
     <link rel="stylesheet" href="./styles.css?v=4" />
   </head>
   <body>
     <main class="cinemaShell">
-      <canvas id="qiverseCanvas" aria-label="QiVerse &#x58a8;&#x6c14;&#x661f;&#x6cb3;&#x52a8;&#x753b;"></canvas>
+      <canvas id="qiverseCanvas" aria-label="QiVerse &#x58a8;&#x7c92;&#x957f;&#x5377;&#x52a8;&#x753b;"></canvas>
 
       <a class="backLink" href="../web/">&#x8fd4;&#x56de; CalliLens</a>
       <button id="xrButton" class="xrButton" type="button">Desktop</button>
 
       <section id="launchPanel" class="launchPanel" aria-label="&#x5f00;&#x59cb;&#x4f53;&#x9a8c;">
         <p class="eyebrow">QiVerse cinematic prototype</p>
-        <h1>&#x58a8;&#x6c14;&#x661f;&#x6cb3;</h1>
+        <h1>&#x58a8;&#x7c92;&#x957f;&#x5377;</h1>
         <p class="launchCopy">
-          &#x4e0d;&#x518d;&#x663e;&#x793a;&#x7eb8;&#x9762;&#x80cc;&#x666f;&#xff0c;&#x4e5f;&#x4e0d;&#x8d34;&#x539f;&#x56fe;&#x3002;
-          &#x7cfb;&#x7edf;&#x76f4;&#x63a5;&#x8bfb;&#x53d6;&#x6574;&#x5377;&#x58a8;&#x8ff9;&#x9ad8;&#x5ea6;&#x56fe;&#xff0c;&#x8ba9;&#x661f;&#x70b9;&#x7ec4;&#x6210;&#x6bcf;&#x4e00;&#x4e2a;&#x5b57;&#x3002;
-          &#x955c;&#x5934;&#x5728;&#x661f;&#x5b57;&#x957f;&#x5377;&#x4e2d;&#x7a7f;&#x884c;&#xff0c;&#x901a;&#x8fc7;&#x7c92;&#x5b50;&#x6d41;&#x52a8;&#x548c;&#x5b57;&#x95f4;&#x6697;&#x5904;&#x8868;&#x73b0;&#x8d8b;&#x52bf;&#x4e0e;&#x7559;&#x767d;&#x3002;
+          &#x7cfb;&#x7edf;&#x8bfb;&#x53d6;&#x6574;&#x5377;&#x58a8;&#x8ff9;&#x9ad8;&#x5ea6;&#x56fe;&#xff0c;&#x628a;&#x4f5c;&#x54c1;&#x62c6;&#x6210;&#x7ec6;&#x5bc6;&#x58a8;&#x7c92;&#x518d;&#x91cd;&#x65b0;&#x805a;&#x5408;&#x3002;
+          &#x58a8;&#x8ff9;&#x8d8a;&#x91cd;&#xff0c;&#x7c92;&#x5b50;&#x8d8a;&#x5bc6;&#x3001;&#x8d8a;&#x4eae;&#x3001;&#x8d8a;&#x5411;&#x524d;&#x3002;
+          &#x6700;&#x540e;&#x56de;&#x5230;&#x539f;&#x4f5c;&#x56fe;&#x50cf;&#xff0c;&#x907f;&#x514d;&#x628a;&#x89c6;&#x89c9;&#x6548;&#x679c;&#x8bef;&#x8bf4;&#x6210;&#x771f;&#x5b9e;&#x7b14;&#x987a;&#x6216;&#x4e66;&#x6cd5;&#x5224;&#x65ad;&#x3002;
         </p>
         <button id="startButton" class="startButton" type="button">&#x5f00;&#x59cb;&#x5165;&#x58a8;</button>
       </section>
@@ -28,18 +28,11 @@
       <section class="captionPanel" aria-live="polite">
         <p id="sceneKicker" class="sceneKicker">Scene 0</p>
         <h2 id="sceneTitle">Silence / &#x9759;&#x58a8;</h2>
-        <p id="sceneText">&#x9760;&#x8fd1;&#x4e4b;&#x524d;&#xff0c;&#x58a8;&#x53ea;&#x662f;&#x8fdc;&#x5904;&#x7684;&#x661f;&#x5c18;&#x3002;</p>
-      </section>
-
-      <section id="reflectionPanel" class="reflectionPanel" hidden>
-        <p class="sceneKicker">Return Reflection</p>
-        <h2>&#x56de;&#x770b;&#x539f;&#x4f5c;</h2>
-        <p id="reflectionNote">&#x9009;&#x62e9;&#x4e00;&#x4e2a;&#x4f60;&#x56de;&#x770b;&#x539f;&#x4f5c;&#x65f6;&#x6700;&#x5148;&#x6ce8;&#x610f;&#x5230;&#x7684;&#x5173;&#x952e;&#x8bcd;&#x3002;</p>
-        <div id="reflectionTags" class="reflectionTags"></div>
+        <p id="sceneText">&#x9760;&#x8fd1;&#x4e4b;&#x524d;&#xff0c;&#x58a8;&#x53ea;&#x662f;&#x6563;&#x5f00;&#x7684;&#x7c92;&#x5b50;&#x3002;</p>
       </section>
 
       <div class="timeline" aria-label="&#x4f53;&#x9a8c;&#x7ae0;&#x8282;">
-        <button class="chapter active" type="button" data-scene="galaxy">&#x661f;&#x5c18;</button>
+        <button class="chapter active" type="button" data-scene="galaxy">&#x6563;&#x58a8;</button>
         <button class="chapter" type="button" data-scene="assemble">&#x6210;&#x5b57;</button>
         <button class="chapter" type="button" data-scene="enter">&#x5165;&#x58a8;</button>
         <button class="chapter" type="button" data-scene="ride">&#x6e38;&#x5377;</button>
@@ -54,6 +47,6 @@
         <button id="resetButton" type="button">&#x91cd;&#x7f6e;</button>
       </div>
     </main>
-    <script type="module" charset="utf-8" src="./qiverse.js?v=9"></script>
+    <script type="module" charset="utf-8" src="./qiverse.js?v=10"></script>
   </body>
 </html>

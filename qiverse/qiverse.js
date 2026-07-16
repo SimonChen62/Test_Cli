@@ -14,14 +14,11 @@ const backLink = document.querySelector(".backLink");
 const launchTitle = document.querySelector("#launchPanel h1");
 const launchCopy = document.querySelector(".launchCopy");
 const chapterButtons = Array.from(document.querySelectorAll(".chapter"));
-const reflectionPanel = document.querySelector("#reflectionPanel");
-const reflectionTags = document.querySelector("#reflectionTags");
-const reflectionNote = document.querySelector("#reflectionNote");
 
 const sceneOrder = ["galaxy", "assemble", "enter", "ride", "qi", "void", "return"];
 const journeyDurations = [0, 4200, 8200, 12400, 16600, 20800, 25000];
 const SCROLL_WIDTH = 31.5;
-const MAX_PARTICLES = 72000;
+const MAX_PARTICLES = 125000;
 const routeParams = new URLSearchParams(window.location.search);
 const requestedWorkId = routeParams.get("work") || "work_003";
 const API_BASE =
@@ -30,54 +27,54 @@ const API_BASE =
     ? `${window.location.protocol}//${window.location.hostname}:8000`
     : `${window.location.protocol}//${window.location.host}`);
 
-const baseSceneCopy = {
+const sceneCopy = {
   galaxy: {
     kicker: "Scene 0",
-    title: "Stardust / 星尘",
-    text: "先不出现纸面，也不直接贴原图。整幅书法被拆成散落星尘，等待重新成字。",
+    title: "Ink Particles / 散墨",
+    text: "先不显示纸面，只保留从作品墨迹中采样出来的细密墨粒，等待重新聚合。",
     camera: [0, 0.2, 38],
     target: [0, 0, 0],
   },
   assemble: {
     kicker: "Scene 1",
-    title: "Character Constellation / 星字长卷",
-    text: "星点从远处归位，沿作品墨迹高度图组成整幅长卷。墨迹越重，星点越密、越亮、越向前。",
+    title: "Dense Ink Scroll / 墨粒成卷",
+    text: "墨粒从散布状态归位，沿整卷墨迹高度图组成每一个字。墨迹越重，粒子越密、越亮、越向前。",
     camera: [0, -0.12, 31],
     target: [0, 0, 0],
   },
   enter: {
     kicker: "Scene 2",
     title: "Enter the Ink / 入墨",
-    text: "镜头靠近字群。这里看到的是墨迹本身的星光骨架，重墨和飞白在空间高度上被拉开。",
+    text: "镜头靠近字群。这里看到的是墨迹深浅形成的粒子厚度，不声称恢复真实笔顺。",
     camera: [12.8, -0.55, 7.6],
     target: [10.6, -0.1, 0.3],
   },
   ride: {
     kicker: "Scene 3",
-    title: "Ride the Scroll / 游卷",
-    text: "不再伪造单笔笔画。系统让阅读波从右上向左下扫过整幅墨迹，波经过处星点发亮、抬高，表现长卷阅读时的流动感。",
+    title: "Travel the Scroll / 游卷",
+    text: "镜头沿长卷横向移动，像在字阵内部穿行。它不是恢复真实笔顺，而是把阅读时的流动感做成空间运动。",
     camera: [8, -0.75, 6.2],
     target: [6.7, -0.05, 0.2],
   },
   qi: {
     kicker: "Scene 4",
-    title: "Follow the Qi / 追势",
-    text: "淡金粒子沿 QiLink 路径跨过墨迹断口。它提示“墨断，势未必断”，但不声称自动判断气韵。",
+    title: "Reading Wave / 追势",
+    text: "发光阅读波沿整卷墨迹从右向左掠过，用整体节奏提示观看路径，不画假的单条气脉线。",
     camera: [1.4, -0.8, 9.6],
     target: [0.1, -0.04, 0.15],
   },
   void: {
     kicker: "Scene 5",
-    title: "Walk into the Void / 入白",
-    text: "墨迹淡出，字内、字间、行间留白被翻转成可见空间。空白不是剩余背景，而在组织呼吸。",
+    title: "Between Characters / 入白",
+    text: "入白不是画框，也不是假空洞。镜头穿过字与字、笔画与笔画之间的暗处，让空白作为通道出现。",
     camera: [-5.5, -0.35, 6.1],
     target: [-5.2, -0.15, 0.05],
   },
   return: {
     kicker: "Scene 6",
     title: "Return / 回看",
-    text: "所有空间效果压回长卷。选择一个反思标签，再回到原作看同一处笔墨。",
-    camera: [0, 0.1, 33],
+    text: "镜头拉远，粒子逐渐变密并淡入原作图像，最后回到作品本身。",
+    camera: [0, 0.1, 27],
     target: [0, 0, 0],
   },
 };
@@ -89,8 +86,6 @@ const state = {
   sceneStartedAt: performance.now(),
   autoTimers: [],
   data: null,
-  workInfo: null,
-  hasAuthoredData: false,
   renderer: null,
   threeScene: null,
   world: null,
@@ -107,13 +102,8 @@ const state = {
   colors: null,
   density: null,
   anchors: null,
-  backgroundStars: null,
-  readingWaveRange: { minY: -1, maxY: 1 },
-  ribbonGroup: null,
-  qiGroup: null,
-  voidGroup: null,
-  qiSystems: [],
-  reflectionChoice: "",
+  readOrder: null,
+  originalPlane: null,
   clock: new THREE.Clock(),
   cameraTarget: new THREE.Vector3(),
   pointer: { active: false, x: 0, y: 0, yaw: 0, pitch: 0 },
@@ -147,12 +137,6 @@ function resolveAssetPath(path) {
   return `../${path.replace(/\\/g, "/")}`;
 }
 
-async function fetchJson(url) {
-  const response = await fetch(url, { cache: "no-store" });
-  if (!response.ok) throw new Error(`${response.status}`);
-  return response.json();
-}
-
 function makeParticleTexture() {
   const textureCanvas = document.createElement("canvas");
   textureCanvas.width = 64;
@@ -180,7 +164,12 @@ function loadImage(src) {
   });
 }
 
-async function loadWorkInfo() {
+async function loadOptionalImage(src) {
+  if (!src) return null;
+  return loadImage(src).catch(() => null);
+}
+
+async function loadData() {
   let work = null;
   try {
     const response = await fetch(`${API_BASE}/api/works/${encodeURIComponent(requestedWorkId)}`, { cache: "no-store" });
@@ -190,76 +179,39 @@ async function loadWorkInfo() {
   }
 
   if (!work) {
-    try {
-      const index = await fetchJson("../data/works.json");
+    const indexResponse = await fetch("../data/works.json", { cache: "no-store" });
+    if (indexResponse.ok) {
+      const index = await indexResponse.json();
       work = (index.works || []).find((item) => item.id === requestedWorkId) || null;
-    } catch {
-      work = null;
     }
   }
-  return work;
-}
 
-function normalizeQiverseData(raw, work) {
-  const data = raw || {};
-  const workTitle = data.workTitle || work?.title || requestedWorkId;
-  return {
-    ...data,
-    id: data.id || `${requestedWorkId}_qiverse`,
-    sourceWorkId: data.sourceWorkId || requestedWorkId,
-    title: data.title || `${workTitle} QiVerse 墨气之境`,
-    workTitle,
-    artist: data.artist || work?.artist || "",
-    heightImage: data.heightImage || `data/${requestedWorkId}/height.png`,
-    fallbackImage: data.fallbackImage || `data/${requestedWorkId}/ink_density.png`,
+  if (!work && requestedWorkId === "work_003") {
+    const response = await fetch("./calligraphy-work.json", { cache: "no-store" });
+    if (!response.ok) throw new Error(`无法加载 QiVerse 数据：${response.status}`);
+    state.data = await response.json();
+    return;
+  }
+
+  if (!work) throw new Error(`无法加载作品：${requestedWorkId}`);
+
+  state.data = {
+    id: `${requestedWorkId}_qiverse_character_constellation`,
+    sourceWorkId: requestedWorkId,
+    title: `${work.title || requestedWorkId} · QiVerse 墨粒长卷`,
+    workTitle: work.title || requestedWorkId,
+    artist: work.artist || "",
+    heightImage: `data/${requestedWorkId}/height.png`,
+    originalImage: `data/${requestedWorkId}/original.png`,
+    fallbackImage: `data/${requestedWorkId}/ink_density.png`,
     description:
-      data.description ||
-      "QiVerse 会读取当前作品的 OpenCV 高度图，让星点按这件作品的墨迹重新组成长卷。该作品暂无人工 stroke、QiLink、Void 标注，因此不显示假的专家导览。",
-    strokes: Array.isArray(data.strokes) ? data.strokes : [],
-    qiLinks: Array.isArray(data.qiLinks) ? data.qiLinks : [],
-    voidRegions: Array.isArray(data.voidRegions) ? data.voidRegions : [],
-    reflectionPrompts: Array.isArray(data.reflectionPrompts) ? data.reflectionPrompts : ["运动感", "节奏", "留白", "墨色", "其他"],
+      work.description ||
+      "QiVerse 会读取当前作品的 OpenCV 高度图，让墨粒按该作品的墨迹重新组成长卷；不恢复真实笔顺，也不自动评价书法水平。",
   };
 }
 
-async function loadData() {
-  const work = await loadWorkInfo();
-  state.workInfo = work;
-
-  let qiverseData = null;
-  if (requestedWorkId === "work_003") {
-    qiverseData = await fetchJson("./calligraphy-work.json");
-  } else {
-    const declaredPath = work?.qiverse_work || work?.qiverseData || work?.qiverse_data_path;
-    if (declaredPath) {
-      const dataPath = declaredPath === true ? `data/${requestedWorkId}/qiverse-work.json` : declaredPath;
-      try {
-        qiverseData = await fetchJson(resolveAssetPath(dataPath));
-      } catch {
-        qiverseData = null;
-      }
-    }
-  }
-
-  if (!qiverseData && !work) throw new Error(`无法加载作品：${requestedWorkId}`);
-
-  state.data = normalizeQiverseData(qiverseData, work);
-  state.hasAuthoredData =
-    state.data.strokes.length >= 5 &&
-    state.data.qiLinks.length >= 3 &&
-    state.data.voidRegions.length >= 3;
-}
-
-function sceneCopyFor(scene) {
-  const copy = { ...baseSceneCopy[scene] };
-  if (!state.hasAuthoredData && ["ride", "qi", "void"].includes(scene)) {
-    copy.text = "该作品暂无人工 QiVerse 标注。当前只显示由 OpenCV 高度图生成的星点长卷，不伪装成真实笔画、气脉或留白分析。";
-  }
-  return copy;
-}
-
 function sampleScrollHeightMap(image, maxPoints = MAX_PARTICLES) {
-  const sampleWidth = 2600;
+  const sampleWidth = 3000;
   const sampleHeight = Math.max(160, Math.round(sampleWidth / (image.width / image.height)));
   const sampler = document.createElement("canvas");
   sampler.width = sampleWidth;
@@ -270,9 +222,10 @@ function sampleScrollHeightMap(image, maxPoints = MAX_PARTICLES) {
 
   const pixels = context.getImageData(0, 0, sampleWidth, sampleHeight).data;
   const candidates = [];
+  const stride = 1;
 
-  for (let y = 0; y < sampleHeight; y += 1) {
-    for (let x = 0; x < sampleWidth; x += 1) {
+  for (let y = 0; y < sampleHeight; y += stride) {
+    for (let x = 0; x < sampleWidth; x += stride) {
       const index = (y * sampleWidth + x) * 4;
       const r = pixels[index];
       const g = pixels[index + 1];
@@ -280,8 +233,8 @@ function sampleScrollHeightMap(image, maxPoints = MAX_PARTICLES) {
       const alpha = pixels[index + 3] / 255;
       const brightness = ((r + g + b) / 765) * alpha;
 
-      if (brightness < 0.08) continue;
-      const keepChance = 0.12 + Math.pow(brightness, 0.72) * 0.42;
+      if (brightness < 0.05) continue;
+      const keepChance = 0.22 + Math.pow(brightness, 0.72) * 0.62;
       if (random() <= keepChance) candidates.push({ x, y, density: brightness });
     }
   }
@@ -305,38 +258,26 @@ function sampleScrollHeightMap(image, maxPoints = MAX_PARTICLES) {
   });
 }
 
-function createBackgroundStars() {
-  const count = 1100;
-  const positions = new Float32Array(count * 3);
-  const colors = new Float32Array(count * 3);
+function createOriginalPlane(image) {
+  if (!image) return;
+  const texture = new THREE.Texture(image);
+  texture.needsUpdate = true;
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = Math.min(8, state.renderer.capabilities.getMaxAnisotropy?.() || 1);
 
-  for (let i = 0; i < count; i += 1) {
-    const p = i * 3;
-    positions[p] = randomRange(-32, 32);
-    positions[p + 1] = randomRange(-12, 12);
-    positions[p + 2] = randomRange(-26, -4);
-    const warm = random();
-    colors[p] = 0.34 + warm * 0.42;
-    colors[p + 1] = 0.32 + warm * 0.32;
-    colors[p + 2] = 0.34 + warm * 0.28;
-  }
-
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-  geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-  const material = new THREE.PointsMaterial({
-    size: 0.028,
-    map: makeParticleTexture(),
-    vertexColors: true,
+  const scrollHeight = SCROLL_WIDTH / (image.width / image.height);
+  const geometry = new THREE.PlaneGeometry(SCROLL_WIDTH, scrollHeight, 1, 1);
+  const material = new THREE.MeshBasicMaterial({
+    map: texture,
     transparent: true,
-    opacity: 0.36,
+    opacity: 0,
     depthWrite: false,
-    alphaTest: 0.01,
-    blending: THREE.AdditiveBlending,
+    toneMapped: false,
   });
 
-  state.backgroundStars = new THREE.Points(geometry, material);
-  state.threeScene.add(state.backgroundStars);
+  state.originalPlane = new THREE.Mesh(geometry, material);
+  state.originalPlane.position.z = -0.08;
+  state.world.add(state.originalPlane);
 }
 
 function createParticleField(samples) {
@@ -350,6 +291,7 @@ function createParticleField(samples) {
   const baseColors = new Float32Array(count * 3);
   const density = new Float32Array(count);
   const anchors = new Float32Array(count);
+  const readOrder = new Float32Array(count);
 
   samples.forEach((sample, index) => {
     const i = index * 3;
@@ -379,6 +321,7 @@ function createParticleField(samples) {
 
     density[index] = sample.density;
     anchors[index] = target.x;
+    readOrder[index] = THREE.MathUtils.clamp((SCROLL_WIDTH * 0.5 - target.x) / SCROLL_WIDTH * 0.86 + (0.5 - target.y / 4) * 0.14, 0, 1);
     const gold = sample.density;
     baseColors[i] = 0.62 + gold * 0.34;
     baseColors[i + 1] = 0.5 + gold * 0.32;
@@ -393,7 +336,7 @@ function createParticleField(samples) {
   geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
 
   const material = new THREE.PointsMaterial({
-    size: 0.032,
+    size: 0.024,
     map: makeParticleTexture(),
     vertexColors: true,
     transparent: true,
@@ -412,159 +355,19 @@ function createParticleField(samples) {
   state.colors = colors;
   state.density = density;
   state.anchors = anchors;
-  state.readingWaveRange = samples.reduce(
-    (range, sample) => ({
-      minY: Math.min(range.minY, sample.target.y),
-      maxY: Math.max(range.maxY, sample.target.y),
-    }),
-    { minY: Infinity, maxY: -Infinity }
-  );
+  state.readOrder = readOrder;
   state.particleGeometry = geometry;
   state.particleMaterial = material;
   state.particleSystem = new THREE.Points(geometry, material);
   state.world.add(state.particleSystem);
 }
 
-function toVector3(point) {
-  return new THREE.Vector3(point[0], point[1], point[2] || 0);
-}
-
-function resampleStroke(stroke, samples = 34) {
-  const path = stroke.path.map(toVector3);
-  const curve = new THREE.CatmullRomCurve3(path, false, "catmullrom", 0.35);
-  const points = [];
-  for (let i = 0; i < samples; i += 1) {
-    const t = i / (samples - 1);
-    const width = sampleArray(stroke.width, t, 0.25);
-    const ink = sampleArray(stroke.inkDensity, t, 0.7);
-    points.push({ point: curve.getPointAt(t), width, ink, t });
-  }
-  return points;
-}
-
-function sampleArray(values, t, fallback) {
-  if (!Array.isArray(values) || !values.length) return fallback;
-  if (values.length === 1) return Number(values[0]) || fallback;
-  const scaled = THREE.MathUtils.clamp(t, 0, 1) * (values.length - 1);
-  const low = Math.floor(scaled);
-  const high = Math.min(values.length - 1, low + 1);
-  const amount = scaled - low;
-  return THREE.MathUtils.lerp(Number(values[low]) || fallback, Number(values[high]) || fallback, amount);
-}
-
-function strokeNormal(points, index) {
-  const prev = points[Math.max(0, index - 1)].point;
-  const next = points[Math.min(points.length - 1, index + 1)].point;
-  const tangent = next.clone().sub(prev).normalize();
-  return new THREE.Vector3(-tangent.y, tangent.x, 0).normalize();
-}
-
-function createRibbonLayer() {
-  state.ribbonGroup = new THREE.Group();
-  state.ribbonGroup.name = "disabled-stroke-layer";
-  state.ribbonGroup.visible = false;
-  state.world.add(state.ribbonGroup);
-}
-
-function createQiLayer() {
-  state.qiGroup = new THREE.Group();
-  state.qiGroup.name = "authored-qi-layer";
-  state.qiGroup.visible = false;
-  state.world.add(state.qiGroup);
-  state.qiSystems = [];
-  if (!state.hasAuthoredData) return;
-
-  state.data.qiLinks.forEach((link, linkIndex) => {
-    const curve = new THREE.CatmullRomCurve3(link.path.map(toVector3), false, "catmullrom", 0.45);
-    const linePoints = curve.getPoints(80);
-    const line = new THREE.Line(
-      new THREE.BufferGeometry().setFromPoints(linePoints),
-      new THREE.LineBasicMaterial({ color: 0xd6b46a, transparent: true, opacity: 0.34 })
-    );
-    state.qiGroup.add(line);
-
-    const count = 120;
-    const positions = new Float32Array(count * 3);
-    const colors = new Float32Array(count * 3);
-    const offsets = new Float32Array(count);
-    for (let i = 0; i < count; i += 1) {
-      offsets[i] = (i / count + linkIndex * 0.17) % 1;
-      colors[i * 3] = 1;
-      colors[i * 3 + 1] = 0.78;
-      colors[i * 3 + 2] = 0.38;
-    }
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-    const material = new THREE.PointsMaterial({
-      size: 0.08,
-      map: makeParticleTexture(),
-      vertexColors: true,
-      transparent: true,
-      opacity: 0.92,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-    });
-    const points = new THREE.Points(geometry, material);
-    state.qiGroup.add(points);
-    state.qiSystems.push({ curve, geometry, positions, offsets, phase: linkIndex * 0.23 });
-  });
-}
-
-function createVoidLayer() {
-  state.voidGroup = new THREE.Group();
-  state.voidGroup.name = "authored-void-layer";
-  state.voidGroup.visible = false;
-  state.world.add(state.voidGroup);
-  if (!state.hasAuthoredData) return;
-
-  state.data.voidRegions.forEach((region) => {
-    const shape = new THREE.Shape();
-    region.polygon.forEach((point, index) => {
-      if (index === 0) shape.moveTo(point[0], point[1]);
-      else shape.lineTo(point[0], point[1]);
-    });
-    shape.closePath();
-
-    const geometry = new THREE.ExtrudeGeometry(shape, {
-      depth: Math.max(0.12, region.depth || 1.6),
-      bevelEnabled: true,
-      bevelSize: 0.04,
-      bevelThickness: 0.08,
-      bevelSegments: 3,
-    });
-    geometry.translate(0, 0, 0.08);
-    const breath = THREE.MathUtils.clamp(region.breathIndex || 0.5, 0, 1);
-    const material = new THREE.MeshBasicMaterial({
-      color: region.type === "interLine" ? 0xf5efe0 : region.type === "interCharacter" ? 0xe8d3a0 : 0xdac178,
-      transparent: true,
-      opacity: 0.12 + breath * 0.13,
-      side: THREE.DoubleSide,
-      depthWrite: false,
-    });
-    const mesh = new THREE.Mesh(geometry, material);
-    mesh.userData.region = region;
-    state.voidGroup.add(mesh);
-
-    const outlinePoints = region.polygon.map((point) => new THREE.Vector3(point[0], point[1], region.depth + 0.18));
-    outlinePoints.push(outlinePoints[0].clone());
-    const outline = new THREE.Line(
-      new THREE.BufferGeometry().setFromPoints(outlinePoints),
-      new THREE.LineBasicMaterial({ color: 0xf1d79c, transparent: true, opacity: 0.46 })
-    );
-    state.voidGroup.add(outline);
-  });
-}
-
 async function init() {
   await loadData();
   document.title = `${state.data.workTitle || state.data.title || "QiVerse"} - QiVerse`;
-  if (launchTitle) launchTitle.textContent = state.data.workTitle || "墨气星河";
+  if (launchTitle) launchTitle.textContent = state.data.workTitle || "墨粒长卷";
   if (launchCopy) {
-    const mode = state.hasAuthoredData
-      ? "已加载人工 stroke、QiLink 与 voidRegion 数据。"
-      : "该作品暂无人工 QiVerse 标注，将只展示由高度图生成的星点长卷。";
-    launchCopy.textContent = `${state.data.description} 当前作品：${state.data.sourceWorkId || requestedWorkId}。${mode}`;
+    launchCopy.textContent = `${state.data.description || "系统读取当前作品的 OpenCV 高度图，让墨粒按这件作品的墨迹重新组成长卷。"} 当前作品：${state.data.sourceWorkId || requestedWorkId}`;
   }
   if (backLink) backLink.href = `../web/?view=demo&work=${encodeURIComponent(state.data.sourceWorkId || requestedWorkId)}`;
 
@@ -575,33 +378,28 @@ async function init() {
     if (!state.data.fallbackImage) throw error;
     heightImage = await loadImage(resolveAssetPath(state.data.fallbackImage));
   }
+  const originalImage = await loadOptionalImage(resolveAssetPath(state.data.originalImage || `data/${requestedWorkId}/original.png`));
 
   state.threeScene = new THREE.Scene();
   state.threeScene.background = new THREE.Color(0x050506);
   state.camera = new THREE.PerspectiveCamera(46, 1, 0.1, 180);
-  state.camera.position.set(...baseSceneCopy.galaxy.camera);
+  state.camera.position.set(...sceneCopy.galaxy.camera);
   state.camera.lookAt(0, 0, 0);
 
   state.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
   state.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   state.renderer.xr.enabled = true;
 
-  const ambient = new THREE.AmbientLight(0xffffff, 0.32);
-  const key = new THREE.DirectionalLight(0xf3d38f, 0.98);
+  const ambient = new THREE.AmbientLight(0xffffff, 0.28);
+  const key = new THREE.DirectionalLight(0xf3d38f, 0.92);
   key.position.set(-5, -5, 8);
-  const rim = new THREE.PointLight(0xd8b96c, 0.9, 26);
-  rim.position.set(0, -5, 6);
-  state.threeScene.add(ambient, key, rim);
+  state.threeScene.add(ambient, key);
 
   state.world = new THREE.Group();
   state.threeScene.add(state.world);
 
-  createBackgroundStars();
+  createOriginalPlane(originalImage);
   createParticleField(sampleScrollHeightMap(heightImage));
-  createRibbonLayer();
-  createQiLayer();
-  createVoidLayer();
-  renderReflectionTags();
 
   resize();
   bindEvents();
@@ -627,7 +425,7 @@ function openSceneFromQuery() {
 function setScene(nextScene, immediate = false) {
   state.currentScene = nextScene;
   state.sceneStartedAt = performance.now();
-  const copy = sceneCopyFor(nextScene);
+  const copy = sceneCopy[nextScene];
   sceneKicker.textContent = copy.kicker;
   sceneTitle.textContent = copy.title;
   sceneText.textContent = copy.text;
@@ -636,55 +434,11 @@ function setScene(nextScene, immediate = false) {
     button.classList.toggle("active", button.dataset.scene === nextScene);
   });
 
-  updateLayerVisibility();
-  updateReflectionPanel();
-
   if (immediate) {
     state.camera.position.set(...copy.camera);
     state.cameraTarget.set(...copy.target);
     state.camera.lookAt(state.cameraTarget);
   }
-}
-
-function updateLayerVisibility() {
-  const scene = state.currentScene;
-  if (state.ribbonGroup) state.ribbonGroup.visible = false;
-  if (state.qiGroup) state.qiGroup.visible = state.hasAuthoredData && scene === "qi";
-  if (state.voidGroup) state.voidGroup.visible = state.hasAuthoredData && scene === "void";
-}
-
-function renderReflectionTags() {
-  if (!reflectionTags) return;
-  reflectionTags.replaceChildren();
-  state.data.reflectionPrompts.forEach((tag) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.textContent = tag;
-    button.addEventListener("click", () => saveReflectionChoice(tag));
-    reflectionTags.append(button);
-  });
-}
-
-function saveReflectionChoice(tag) {
-  state.reflectionChoice = tag;
-  const key = `callilens-qiverse-reflection:${state.data.sourceWorkId || requestedWorkId}`;
-  const payload = {
-    workId: state.data.sourceWorkId || requestedWorkId,
-    tag,
-    at: new Date().toISOString(),
-    source: "qiverse-return",
-  };
-  localStorage.setItem(key, JSON.stringify(payload));
-  updateReflectionPanel();
-}
-
-function updateReflectionPanel() {
-  if (!reflectionPanel) return;
-  reflectionPanel.hidden = state.currentScene !== "return";
-  if (!reflectionNote) return;
-  reflectionNote.textContent = state.reflectionChoice
-    ? `已记录：${state.reflectionChoice}。回到 CalliLens 后可以继续写详细反思。`
-    : "选择一个你回看原作时最先注意到的关键词。";
 }
 
 function clearJourneyTimers() {
@@ -804,52 +558,54 @@ function particleMixForScene(scene, elapsed) {
   if (scene === "enter") {
     return { destination: state.targets, amount: 1, lift: smoothstep(0.08, 1, elapsed / 2800) * 0.74, spread: 0.12, fade: 0.98 };
   }
-  if (scene === "ride") return { destination: state.targets, amount: 1, lift: 0.64, spread: 0.1, fade: 1 };
-  if (scene === "qi") return { destination: state.targets, amount: 1, lift: 0.54, spread: 0.2, fade: 0.96 };
+  if (scene === "ride") return { destination: state.targets, amount: 1, lift: 0.82, spread: 0.08, fade: 0.96 };
+  if (scene === "qi") return { destination: state.targets, amount: 1, lift: 0.58, spread: 0.22, fade: 0.92 };
   if (scene === "void") {
     const amount = smoothstep(0.06, 1, elapsed / 3200);
-    return { destination: state.voidTargets, amount, lift: 0.08, spread: 0.5, fade: state.hasAuthoredData ? 0.22 : 0.48 };
+    return { destination: state.voidTargets, amount, lift: 0.08, spread: 0.5, fade: 0.48 };
   }
-  return { destination: state.targets, amount: 1, lift: 0, spread: 0.03, fade: 0.78 };
+  return { destination: state.targets, amount: 1, lift: 0, spread: 0.02, fade: 0.64 };
 }
 
-function readingWaveStrength(index, seconds) {
-  if (!["ride", "qi"].includes(state.currentScene)) return 0;
-  const i = index * 3;
-  const x = state.targets[i];
-  const y = state.targets[i + 1];
-  const height = Math.max(0.001, state.readingWaveRange.maxY - state.readingWaveRange.minY);
-  const rightToLeft = THREE.MathUtils.clamp((SCROLL_WIDTH * 0.5 - x) / SCROLL_WIDTH, 0, 1);
-  const topToBottom = THREE.MathUtils.clamp((state.readingWaveRange.maxY - y) / height, 0, 1);
-  const readingOrder = rightToLeft * 0.82 + topToBottom * 0.18;
-  const speed = state.currentScene === "ride" ? 0.12 : 0.16;
-  const head = (seconds * speed) % 1.18 - 0.09;
-  const core = Math.exp(-Math.pow(readingOrder - head, 2) / 0.0026);
-  const tail = Math.exp(-Math.pow(readingOrder - (head - 0.075), 2) / 0.012) * 0.36;
-  return Math.min(1, core + tail);
+function getReadingProgress(elapsed) {
+  if (state.currentScene === "ride") return (elapsed / 6200) % 1;
+  if (state.currentScene === "qi") return (elapsed / 7600) % 1;
+  return -1;
 }
 
-function updateParticleColors(seconds) {
+function updateParticleColors(seconds, elapsed) {
   const colors = state.colors;
   const base = state.baseColors;
   const waveX = SCROLL_WIDTH * 0.48 - ((seconds * 2.6) % SCROLL_WIDTH);
   const flowScene = state.currentScene === "qi";
+  const readingScene = ["ride", "qi"].includes(state.currentScene);
+  const readingProgress = getReadingProgress(elapsed);
   const voidScene = state.currentScene === "void";
 
   for (let i = 0; i < colors.length; i += 3) {
     const index = i / 3;
     const x = state.anchors[index];
-    const oldQiWave = flowScene ? Math.exp(-Math.pow(x - waveX, 2) / 4.8) : 0;
-    const readingWave = readingWaveStrength(index, seconds);
-    const wave = Math.max(oldQiWave * 0.35, readingWave);
+    const spatialWave = flowScene ? Math.exp(-Math.pow(x - waveX, 2) / 4.8) * 0.32 : 0;
+    const readingDelta = readingScene ? state.readOrder[index] - readingProgress : 4;
+    const readingHead = Math.exp(-Math.pow(readingDelta, 2) / 0.0009);
+    const readingAfterglow = readingDelta < 0 && readingDelta > -0.08 ? (1 + readingDelta / 0.08) * 0.45 : 0;
+    const wave = spatialWave + readingHead * 1.15 + readingAfterglow;
     const dim = voidScene ? 0.46 : 1;
-    const pulse = 1 + wave * 1.85 + Math.sin(seconds * 1.8 + index * 0.013) * 0.025;
-    colors[i] = base[i] * pulse * dim + wave * 0.46;
-    colors[i + 1] = base[i + 1] * pulse * dim + wave * 0.32;
-    colors[i + 2] = base[i + 2] * pulse * dim + wave * 0.1;
+    const pulse = 1 + wave * 0.88 + Math.sin(seconds * 1.8 + index * 0.013) * 0.025;
+    colors[i] = base[i] * pulse * dim + wave * 0.18;
+    colors[i + 1] = base[i + 1] * pulse * dim + wave * 0.13;
+    colors[i + 2] = base[i + 2] * pulse * dim + wave * 0.04;
   }
 
   state.particleGeometry.attributes.color.needsUpdate = true;
+}
+
+function updateOriginalPlane(elapsed) {
+  if (!state.originalPlane) return;
+  const targetOpacity = state.currentScene === "return"
+    ? smoothstep(0.08, 0.88, elapsed / 3200) * 0.92
+    : 0;
+  state.originalPlane.material.opacity += (targetOpacity - state.originalPlane.material.opacity) * 0.06;
 }
 
 function updateParticles(elapsed, seconds) {
@@ -858,18 +614,14 @@ function updateParticles(elapsed, seconds) {
 
   for (let i = 0; i < positions.length; i += 3) {
     const index = i / 3;
-    const readingWave = readingWaveStrength(index, seconds);
     const sourceX = state.galaxy[i] + Math.sin(seconds * 0.16 + index * 0.17) * 0.22;
     const sourceY = state.galaxy[i + 1] + Math.cos(seconds * 0.13 + index * 0.19) * 0.18;
     const sourceZ = state.galaxy[i + 2];
-    const flowPush =
-      state.currentScene === "qi" ? Math.sin(seconds * 1.25 + state.anchors[index] * 1.4) * 0.16 :
-      state.currentScene === "ride" ? readingWave * 0.24 :
-      0;
+    const flowPush = state.currentScene === "qi" ? Math.sin(seconds * 1.25 + state.anchors[index] * 1.4) * 0.22 : 0;
     const drift = Math.sin(seconds * 0.72 + index * 0.051) * mix.spread;
     const destinationX = mix.destination[i] + drift * 0.11 + flowPush;
-    const destinationY = mix.destination[i + 1] + Math.cos(seconds * 0.5 + index * 0.043) * mix.spread * 0.06 - readingWave * 0.04;
-    const destinationZ = mix.destination[i + 2] + mix.lift * (0.24 + state.density[index] * 0.74) + readingWave * (0.78 + state.density[index] * 1.05);
+    const destinationY = mix.destination[i + 1] + Math.cos(seconds * 0.5 + index * 0.043) * mix.spread * 0.06;
+    const destinationZ = mix.destination[i + 2] + mix.lift * (0.24 + state.density[index] * 0.74);
     const targetX = THREE.MathUtils.lerp(sourceX, destinationX, mix.amount);
     const targetY = THREE.MathUtils.lerp(sourceY, destinationY, mix.amount);
     const targetZ = THREE.MathUtils.lerp(sourceZ, destinationZ, mix.amount);
@@ -880,94 +632,49 @@ function updateParticles(elapsed, seconds) {
   }
 
   state.particleGeometry.attributes.position.needsUpdate = true;
-  updateParticleColors(seconds);
+  updateParticleColors(seconds, elapsed);
 
   const targetSize =
-    state.currentScene === "galaxy" ? 0.026 :
-    state.currentScene === "assemble" ? 0.031 :
-    state.currentScene === "ride" ? 0.038 :
-    state.currentScene === "qi" ? 0.034 :
-    state.currentScene === "void" ? 0.022 :
-    state.currentScene === "return" ? 0.027 :
-    0.029;
+    state.currentScene === "galaxy" ? 0.019 :
+    state.currentScene === "assemble" ? 0.027 :
+    state.currentScene === "enter" ? 0.026 :
+    state.currentScene === "ride" ? 0.022 :
+    state.currentScene === "void" ? 0.019 :
+    state.currentScene === "return" ? 0.021 :
+    0.024;
   state.particleMaterial.size += (targetSize - state.particleMaterial.size) * 0.045;
   state.particleMaterial.opacity += (mix.fade - state.particleMaterial.opacity) * 0.05;
-}
-
-function updateQiSystems(seconds) {
-  if (!state.qiSystems.length) return;
-  state.qiSystems.forEach((system) => {
-    for (let i = 0; i < system.offsets.length; i += 1) {
-      const t = (system.offsets[i] + seconds * 0.13 + system.phase) % 1;
-      const point = system.curve.getPointAt(t);
-      const p = i * 3;
-      system.positions[p] = point.x;
-      system.positions[p + 1] = point.y;
-      system.positions[p + 2] = point.z + Math.sin(seconds * 2.8 + i * 0.2) * 0.05;
-    }
-    system.geometry.attributes.position.needsUpdate = true;
-  });
-}
-
-function updateAuthoredLayers(seconds) {
-  if (state.ribbonGroup) {
-    const targetOpacity = state.ribbonGroup.visible ? (state.currentScene === "void" ? 0.18 : 0.82) : 0;
-    state.ribbonGroup.children.forEach((child, index) => {
-      if (child.material?.opacity !== undefined) {
-        child.material.opacity += (targetOpacity - child.material.opacity) * 0.08;
-      }
-      child.position.z = Math.sin(seconds * 0.9 + index * 0.7) * 0.018;
-    });
-  }
-  if (state.voidGroup) {
-    state.voidGroup.children.forEach((child, index) => {
-      child.scale.z = 1 + Math.sin(seconds * 1.4 + index) * 0.04;
-    });
-  }
-  updateQiSystems(seconds);
+  updateOriginalPlane(elapsed);
 }
 
 function updateCamera(elapsed) {
-  const copy = sceneCopyFor(state.currentScene);
+  const copy = sceneCopy[state.currentScene];
   const targetPosition = new THREE.Vector3(...copy.camera);
   const targetLook = new THREE.Vector3(...copy.target);
 
   if (state.currentScene === "ride") {
     const t = (elapsed / 5600) % 1;
-    const x = THREE.MathUtils.lerp(13.4, -13.4, t);
-    const y = THREE.MathUtils.lerp(state.readingWaveRange.maxY * 0.36, state.readingWaveRange.minY * 0.42, t);
-    targetPosition.set(x, y - 0.72 + Math.sin(t * Math.PI * 2) * 0.22, 6.1 + Math.sin(t * Math.PI) * 0.7);
-    targetLook.set(x - 2.1, y - 0.04, 0.55);
+    const x = THREE.MathUtils.lerp(13.2, -13.2, t);
+    targetPosition.set(
+      x,
+      -0.8 + Math.sin(t * Math.PI * 2) * 0.28,
+      5.8 + Math.sin(t * Math.PI) * 0.95,
+    );
+    targetLook.set(x - 1.2, -0.08, 0.3);
   }
 
   if (state.currentScene === "qi") {
-    const t = (elapsed / 5200) % 1;
-    if (state.hasAuthoredData && state.data.qiLinks.length) {
-      const link = state.data.qiLinks[Math.floor(t * state.data.qiLinks.length) % state.data.qiLinks.length];
-      const curve = new THREE.CatmullRomCurve3(link.path.map(toVector3), false, "catmullrom", 0.45);
-      const localT = (t * state.data.qiLinks.length) % 1;
-      const point = curve.getPointAt(localT);
-      targetPosition.set(point.x + 0.2, point.y - 0.9, point.z + 5.0);
-      targetLook.set(point.x, point.y, point.z);
-    } else {
-      const x = THREE.MathUtils.lerp(12.5, -12.5, t);
-      targetPosition.x = x;
-      targetLook.x = x - 1.8;
-    }
+    const t = (elapsed / 6200) % 1;
+    const x = THREE.MathUtils.lerp(12.5, -12.5, t);
+    targetPosition.set(x, -0.62 + Math.sin(t * Math.PI * 2) * 0.18, 6.2);
+    targetLook.set(x - 1.8, -0.04, 0.34);
   }
 
   if (state.currentScene === "void") {
     const t = (elapsed / 5400) % 1;
-    if (state.hasAuthoredData && state.data.voidRegions.length) {
-      const region = state.data.voidRegions[Math.floor(t * state.data.voidRegions.length) % state.data.voidRegions.length];
-      const center = region.polygon.reduce((acc, point) => acc.add(new THREE.Vector3(point[0], point[1], 0)), new THREE.Vector3()).multiplyScalar(1 / region.polygon.length);
-      targetPosition.set(center.x + Math.sin(t * Math.PI * 2) * 0.9, center.y - 0.7, 4.6 + (region.depth || 1.6) * 0.28);
-      targetLook.set(center.x, center.y, 0.7);
-    } else {
-      const x = THREE.MathUtils.lerp(5.8, -9.4, t);
-      targetPosition.set(x, -0.28 + Math.sin(t * Math.PI * 2) * 0.18, 5.4);
-      targetLook.set(x - 0.5, -0.06, 0);
-    }
+    const x = THREE.MathUtils.lerp(5.8, -9.4, t);
+    targetPosition.set(x, -0.28 + Math.sin(t * Math.PI * 2) * 0.18, 5.4);
+    targetLook.set(x - 0.5, -0.06, 0);
   }
 
   if (state.currentScene === "galaxy") {
@@ -995,11 +702,9 @@ function animate() {
   const seconds = now * 0.001;
 
   updateParticles(elapsed, seconds);
-  updateAuthoredLayers(seconds);
   updateCamera(elapsed);
 
   state.world.rotation.z = Math.sin(seconds * 0.055) * 0.01;
-  if (state.backgroundStars) state.backgroundStars.rotation.z += 0.00006;
   state.renderer.render(state.threeScene, state.camera);
 }
 
