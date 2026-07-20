@@ -31,6 +31,22 @@
         <p id="sceneText">&#x9760;&#x8fd1;&#x4e4b;&#x524d;&#xff0c;&#x58a8;&#x53ea;&#x662f;&#x6563;&#x5f00;&#x7684;&#x7c92;&#x5b50;&#x3002;</p>
       </section>
 
+      <div id="focusHud" class="focusHud" hidden>&#x6eda;&#x8f6e;&#x5de1;&#x5b57;</div>
+      <section id="focusOverlay" class="focusOverlay" hidden aria-label="&#x5355;&#x5b57;&#x653e;&#x5927;&#x8499;&#x7248;">
+        <div class="focusBackdrop"></div>
+        <div class="focusFrame">
+          <button id="focusCloseButton" class="focusCloseButton" type="button" aria-label="&#x9000;&#x51fa;&#x5355;&#x5b57;&#x8499;&#x7248;">&times;</button>
+          <div class="focusGlyphShell">
+            <canvas id="focusGlyphCanvas" aria-label="&#x5355;&#x5b57;&#x7c92;&#x5b50;&#x8499;&#x7248;"></canvas>
+            <img id="focusGlyphImage" alt="&#x5355;&#x5b57;&#x653e;&#x5927;&#x8499;&#x7248;" hidden />
+          </div>
+          <div class="focusSideNote">
+            <strong id="focusGlyphTitle">&#x5355;&#x5b57;&#x663e;&#x5f71;</strong>
+            <span id="focusGlyphNote">&#x6eda;&#x8f6e;&#x5207;&#x6362;&#x5355;&#x5b57;</span>
+          </div>
+        </div>
+      </section>
+
       <div class="timeline" aria-label="&#x4f53;&#x9a8c;&#x7ae0;&#x8282;">
         <button class="chapter active" type="button" data-scene="galaxy">&#x6563;&#x58a8;</button>
         <button class="chapter" type="button" data-scene="assemble">&#x6210;&#x5b57;</button>
@@ -47,6 +63,6 @@
         <button id="resetButton" type="button">&#x91cd;&#x7f6e;</button>
       </div>
     </main>
-    <script type="module" charset="utf-8" src="./qiverse.js?v=10"></script>
+    <script type="module" charset="utf-8" src="./qiverse.js?v=16"></script>
   </body>
 </html>
