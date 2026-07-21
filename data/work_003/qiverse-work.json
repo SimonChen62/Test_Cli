@@ -1,0 +1,159 @@
+{
+  "schemaVersion": "1.0",
+  "source": "QiVerse T03 unified calligraphy stroke model. The stroke paths are copied from the tuned enter-glyph-paths.json paths without changing or adding path points.",
+  "work": {
+    "id": "work_003_qiverse_character_constellation",
+    "sourceWorkId": "work_003",
+    "title": "赵孟頫《光福重建塔记》QiVerse 星字长卷",
+    "heightImage": "data/work_003/height.png",
+    "description": "读取整卷 height.png，将可见墨迹转成星点粒子；入墨阶段直接放大原作右上角第一个字，并叠加解释性笔画骨架。",
+    "boundary": [
+      "星点来自原作图像的墨迹高度图采样。",
+      "笔画骨架是解释性路径，不代表真实历史笔顺恢复。",
+      "系统不评价书法水平、不判断真伪。"
+    ]
+  },
+  "renderHints": {
+    "enterGlyphId": "guang",
+    "baseStrokeRadius": 0.062,
+    "baseStrokeOpacity": 0.82,
+    "strokeColor": "#c96b4d"
+  },
+  "glyphs": [
+    {
+      "id": "guang",
+      "character": "光",
+      "label": "右上角第一字「光」",
+      "image": "data/work_003/height.png",
+      "bounds": {
+        "x": 2688,
+        "y": 0,
+        "width": 82,
+        "height": 70
+      },
+      "coordinate": "normalized within bounds, origin top-left",
+      "strokes": [
+        {
+          "id": "guang-left-dot",
+          "label": "左点",
+          "path": [[0.3042, 0.3056], [0.3308, 0.3522], [0.3475, 0.4122]],
+          "width": [0.72, 0.68, 0.58],
+          "inkDensity": [0.72, 0.68, 0.55],
+          "curvature": 0.32,
+          "speedProxy": 0.68,
+          "flyingWhite": 0.08,
+          "turningPoints": [1],
+          "pausePoints": [2]
+        },
+        {
+          "id": "guang-center-vertical",
+          "label": "中竖",
+          "path": [[0.4373, 0.063], [0.4333, 0.1896], [0.4293, 0.3564]],
+          "width": [0.9, 0.92, 0.86],
+          "inkDensity": [0.88, 0.9, 0.78],
+          "curvature": 0.18,
+          "speedProxy": 0.56,
+          "flyingWhite": 0.04,
+          "turningPoints": [],
+          "pausePoints": [2]
+        },
+        {
+          "id": "guang-right-dot",
+          "label": "右撇点",
+          "path": [[0.5866, 0.1811], [0.5399, 0.2611], [0.4932, 0.3478]],
+          "width": [0.78, 0.72, 0.64],
+          "inkDensity": [0.76, 0.72, 0.62],
+          "curvature": 0.34,
+          "speedProxy": 0.72,
+          "flyingWhite": 0.1,
+          "turningPoints": [1],
+          "pausePoints": [2]
+        },
+        {
+          "id": "guang-cross",
+          "label": "横势",
+          "path": [[0.2602, 0.5731], [0.3624, 0.482], [0.4869, 0.3948], [0.6173, 0.2742]],
+          "width": [1.08, 1.18, 1.12, 0.98],
+          "inkDensity": [0.82, 0.9, 0.88, 0.74],
+          "curvature": 0.38,
+          "speedProxy": 0.46,
+          "flyingWhite": 0.06,
+          "turningPoints": [1, 2],
+          "pausePoints": [0, 3]
+        },
+        {
+          "id": "guang-left-leg",
+          "label": "左下长撇",
+          "path": [[0.4517, 0.4197], [0.405, 0.5063], [0.325, 0.613], [0.2383, 0.6931]],
+          "width": [1.0, 0.98, 0.86, 0.7],
+          "inkDensity": [0.86, 0.82, 0.74, 0.62],
+          "curvature": 0.42,
+          "speedProxy": 0.64,
+          "flyingWhite": 0.12,
+          "turningPoints": [1, 2],
+          "pausePoints": [3]
+        },
+        {
+          "id": "guang-right-leg-hook",
+          "label": "右下竖弯钩",
+          "path": [[0.489, 0.502], [0.489, 0.622], [0.509, 0.7354], [0.609, 0.762], [0.689, 0.7087]],
+          "width": [0.92, 0.96, 0.9, 0.84, 0.72],
+          "inkDensity": [0.82, 0.86, 0.82, 0.76, 0.66],
+          "curvature": 0.46,
+          "speedProxy": 0.52,
+          "flyingWhite": 0.08,
+          "turningPoints": [2, 3],
+          "pausePoints": [4]
+        }
+      ]
+    }
+  ],
+  "qiLinks": [
+    {
+      "id": "qi-center-vertical-to-left-dot",
+      "label": "中竖之后，气势回到左上点",
+      "fromStrokeId": "guang-center-vertical",
+      "toStrokeId": "guang-left-dot",
+      "path": [[0.4293, 0.3564], [0.385, 0.325], [0.3042, 0.3056]],
+      "intensity": 0.82,
+      "rhythm": 0.56
+    },
+    {
+      "id": "qi-left-dot-to-right-dot",
+      "label": "左上点之后，转向右上点",
+      "fromStrokeId": "guang-left-dot",
+      "toStrokeId": "guang-right-dot",
+      "path": [[0.3475, 0.4122], [0.42, 0.28], [0.51, 0.18], [0.5866, 0.1811]],
+      "intensity": 0.88,
+      "rhythm": 0.62
+    },
+    {
+      "id": "qi-right-dot-to-cross-start",
+      "label": "右上点之后，气回到横的起笔处",
+      "fromStrokeId": "guang-right-dot",
+      "toStrokeId": "guang-cross",
+      "path": [[0.4932, 0.3478], [0.41, 0.43], [0.33, 0.52], [0.2602, 0.5731]],
+      "intensity": 0.84,
+      "rhythm": 0.58
+    },
+    {
+      "id": "qi-cross-to-left-leg",
+      "label": "横从左往右后，下接左下长撇",
+      "fromStrokeId": "guang-cross",
+      "toStrokeId": "guang-left-leg",
+      "path": [[0.6173, 0.2742], [0.56, 0.32], [0.49, 0.37], [0.4517, 0.4197]],
+      "intensity": 0.94,
+      "rhythm": 0.52
+    },
+    {
+      "id": "qi-left-leg-to-right-hook",
+      "label": "撇势出去后，向上回收至竖弯钩的竖上端",
+      "fromStrokeId": "guang-left-leg",
+      "toStrokeId": "guang-right-leg-hook",
+      "path": [[0.2383, 0.6931], [0.315, 0.64], [0.405, 0.555], [0.489, 0.502]],
+      "intensity": 1.0,
+      "rhythm": 0.5
+    }
+  ],
+  "voidRegions": []
+}

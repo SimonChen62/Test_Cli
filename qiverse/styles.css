@@ -94,6 +94,7 @@ a {
 }
 
 .launchPanel.hidden {
+  display: none;
   opacity: 0;
   visibility: hidden;
   transform: translate(-50%, 18px);
@@ -133,6 +134,29 @@ h1 {
   color: var(--muted);
   font-size: 15px;
   line-height: 1.72;
+}
+
+.inkAwakeningPrompt {
+  display: grid;
+  gap: 4px;
+  width: fit-content;
+  max-width: 100%;
+  margin: 16px 0 10px;
+  border-left: 2px solid rgba(201, 169, 104, 0.72);
+  background: linear-gradient(90deg, rgba(201, 169, 104, 0.13), rgba(244, 239, 228, 0.03));
+  padding: 10px 14px;
+}
+
+.inkAwakeningPrompt span {
+  color: var(--paper);
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.inkAwakeningPrompt small {
+  color: rgba(244, 239, 228, 0.58);
+  font-size: 13px;
 }
 
 .startButton {
@@ -210,6 +234,219 @@ h1 {
   padding: 9px 11px;
 }
 
+.controlStrip button.hidden {
+  display: none;
+}
+
+.pathPanel {
+  position: fixed;
+  top: 96px;
+  right: 22px;
+  z-index: 8;
+  width: min(260px, calc(100vw - 44px));
+  border: 1px solid rgba(201, 169, 104, 0.22);
+  border-radius: 10px;
+  background: linear-gradient(145deg, rgba(12, 11, 9, 0.72), rgba(28, 24, 18, 0.44));
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(18px);
+  padding: 14px 14px 12px;
+}
+
+.pathPanelEyebrow {
+  margin: 0 0 12px;
+  color: var(--gold);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.selectedStrokeCard {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 8px;
+  align-items: center;
+  margin-bottom: 12px;
+  border: 1px solid rgba(244, 239, 228, 0.12);
+  border-radius: 8px;
+  background: rgba(244, 239, 228, 0.06);
+  padding: 9px 10px;
+}
+
+.selectedStrokeCard span {
+  color: rgba(244, 239, 228, 0.5);
+  font-size: 12px;
+}
+
+.selectedStrokeCard strong {
+  grid-column: 1 / 2;
+  color: var(--paper);
+  font-size: 14px;
+}
+
+.selectedStrokeCard button {
+  grid-column: 2 / 3;
+  grid-row: 1 / 3;
+  border: 1px solid rgba(201, 169, 104, 0.28);
+  border-radius: 6px;
+  background: rgba(201, 169, 104, 0.08);
+  color: rgba(244, 239, 228, 0.72);
+  cursor: pointer;
+  padding: 5px 7px;
+  font-size: 12px;
+}
+
+.pathControl {
+  display: block;
+  margin-top: 12px;
+  color: rgba(244, 239, 228, 0.88);
+  font-size: 13px;
+}
+
+.pathControl span {
+  font-weight: 700;
+}
+
+.pathControl small {
+  float: right;
+  color: rgba(244, 239, 228, 0.5);
+  font-size: 12px;
+}
+
+.pathControl input[type="range"] {
+  display: block;
+  width: 100%;
+  margin-top: 9px;
+  accent-color: var(--gold);
+}
+
+.reverseRange {
+  direction: rtl;
+}
+
+.ridePrompt {
+  position: fixed;
+  left: 22px;
+  top: 82px;
+  z-index: 8;
+  display: grid;
+  min-width: min(360px, calc(100vw - 44px));
+  max-width: min(460px, calc(100vw - 44px));
+  gap: 4px;
+  border: 1px solid rgba(201, 169, 104, 0.28);
+  border-radius: 12px;
+  background: linear-gradient(145deg, rgba(10, 9, 8, 0.72), rgba(37, 31, 23, 0.48));
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(18px);
+  padding: 11px 15px;
+  pointer-events: none;
+}
+
+.ridePrompt.hidden {
+  display: none;
+}
+
+.ridePrompt strong {
+  color: var(--gold);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+}
+
+.ridePrompt span {
+  color: rgba(244, 239, 228, 0.92);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.ridePrompt small {
+  color: rgba(244, 239, 228, 0.62);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.rideStartButton {
+  position: fixed;
+  left: 22px;
+  top: 184px;
+  z-index: 8;
+  min-width: 112px;
+  border-color: rgba(201, 169, 104, 0.42);
+  border-radius: 999px;
+  background: rgba(201, 169, 104, 0.18);
+  color: var(--paper);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(18px);
+  cursor: pointer;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  padding: 10px 18px;
+}
+
+.rideStartButton.hidden {
+  display: none;
+}
+
+.qiPrompt {
+  position: fixed;
+  left: 22px;
+  top: 82px;
+  z-index: 8;
+  display: grid;
+  min-width: min(360px, calc(100vw - 44px));
+  max-width: min(480px, calc(100vw - 44px));
+  gap: 4px;
+  border: 1px solid rgba(201, 169, 104, 0.26);
+  border-radius: 12px;
+  background: linear-gradient(145deg, rgba(10, 9, 8, 0.7), rgba(31, 27, 18, 0.48));
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(18px);
+  padding: 11px 15px;
+  pointer-events: none;
+}
+
+.qiPrompt.hidden {
+  display: none;
+}
+
+.qiPrompt strong {
+  color: var(--gold);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+}
+
+.qiPrompt span {
+  color: rgba(244, 239, 228, 0.92);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.qiPrompt small {
+  color: rgba(244, 239, 228, 0.62);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.qiStartButton {
+  position: fixed;
+  left: 22px;
+  top: 184px;
+  z-index: 8;
+  min-width: 156px;
+  border-color: rgba(201, 169, 104, 0.42);
+  border-radius: 999px;
+  background: rgba(201, 169, 104, 0.16);
+  color: var(--paper);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(18px);
+  cursor: pointer;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 10px 18px;
+}
+
+.qiStartButton.hidden {
+  display: none;
+}
+
 @media (max-width: 760px) {
   .timeline {
     top: auto;
@@ -224,6 +461,32 @@ h1 {
   .controlStrip {
     right: 12px;
     bottom: 12px;
+  }
+
+  .pathPanel {
+    top: 12px;
+    right: 12px;
+    width: 220px;
+  }
+
+  .ridePrompt {
+    left: 12px;
+    top: 122px;
+  }
+
+  .rideStartButton {
+    left: 12px;
+    top: 224px;
+  }
+
+  .qiPrompt {
+    left: 12px;
+    top: 122px;
+  }
+
+  .qiStartButton {
+    left: 12px;
+    top: 224px;
   }
 
   .captionPanel {
