@@ -159,6 +159,11 @@ function randomRange(min, max) {
   return min + random() * (max - min);
 }
 
+function randomSigned(index, salt = 0) {
+  const value = Math.sin(index * 12.9898 + salt * 78.233) * 43758.5453;
+  return (value - Math.floor(value)) * 2 - 1;
+}
+
 function smoothstep(edge0, edge1, value) {
   const t = THREE.MathUtils.clamp((value - edge0) / (edge1 - edge0), 0, 1);
   return t * t * (3 - 2 * t);
@@ -1240,6 +1245,8 @@ function updateParticles(elapsed, seconds) {
   const focusAge = focusActive ? performance.now() - state.focusChangedAt : 0;
   const focusProgress = smoothstep(0.04, 1, focusAge / 920);
   const focusBurst = focusActive ? Math.sin(Math.PI * THREE.MathUtils.clamp(focusAge / 760, 0, 1)) : 0;
+  const assembleScene = state.currentScene === "assemble";
+  const assembleProgress = assembleScene ? THREE.MathUtils.clamp(elapsed / 4300, 0, 1) : 1;
 
   for (let i = 0; i < positions.length; i += 3) {
     const index = i / 3;
@@ -1252,6 +1259,24 @@ function updateParticles(elapsed, seconds) {
     let destinationY = mix.destination[i + 1] + Math.cos(seconds * 0.5 + index * 0.043) * mix.spread * 0.06;
     let destinationZ = mix.destination[i + 2] + mix.lift * (0.24 + state.density[index] * 0.74);
     let amount = mix.amount;
+
+    if (assembleScene) {
+      const order = state.readOrder[index];
+      const localProgress = smoothstep(0.02, 0.18, assembleProgress - order * 0.76);
+      const fall = 1 - localProgress;
+      const columnSweep = Math.exp(-Math.pow(assembleProgress - order * 0.9, 2) / 0.0019);
+      const stagingX = state.targets[i] + randomSigned(index, 17) * 0.42 + (1 - order) * 0.55;
+      const stagingY = state.targets[i + 1] + 1.25 + order * 0.52 + randomSigned(index, 31) * 0.38;
+      const stagingZ = 4.6 + randomSigned(index, 43) * 1.2;
+      destinationX = THREE.MathUtils.lerp(stagingX, destinationX, localProgress) + columnSweep * 0.08;
+      destinationY = THREE.MathUtils.lerp(stagingY, destinationY, localProgress) - columnSweep * 0.05;
+      destinationZ = THREE.MathUtils.lerp(stagingZ, destinationZ + columnSweep * (0.9 + state.density[index] * 1.2), localProgress);
+      amount = THREE.MathUtils.clamp(localProgress + smoothstep(0.8, 1, assembleProgress) * 0.12, 0, 1);
+      if (fall > 0.01) {
+        destinationX = THREE.MathUtils.lerp(sourceX, destinationX, 0.78);
+        destinationY += Math.sin(seconds * 0.9 + order * 12) * 0.08 * fall;
+      }
+    }
 
     if (focusActive) {
       const inFocus = isParticleInFocus(index);
