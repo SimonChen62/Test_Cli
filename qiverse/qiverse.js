@@ -753,8 +753,14 @@ function updateFocusGlyphCanvas(seconds) {
   const settle = smoothstep(0.08, 1, age / 1320);
   const collision = Math.sin(Math.PI * THREE.MathUtils.clamp(age / 760, 0, 1));
   const burst = 1 - smoothstep(0.02, 1, age / 620);
+
+  const flowPeriod = 3.6;
+  const flowHead = ((seconds / flowPeriod) % 1) * 860 - 70;
+  const flowWidth = 58;
+
   context.save();
-  context.globalCompositeOperation = "lighter";
+  context.globalCompositeOperation = "source-over";
+
   canvasState.particles.forEach((particle, index) => {
     const pull = 0.011 + settle * 0.032;
     const shake = Math.sin(seconds * 12 + particle.phase + index * 0.003) * (1 - settle) * 4.2;
@@ -770,24 +776,77 @@ function updateFocusGlyphCanvas(seconds) {
     particle.x += particle.vx;
     particle.y += particle.vy;
 
-    const alpha = 0.14 + particle.density * 0.5;
-    const radius = particle.size * (0.68 + settle * 0.44);
-    const glow = particle.density > 0.58 ? 1 : 0;
-    if (collision > 0.18 && index % 3 === 0) {
-      context.beginPath();
-      context.strokeStyle = `rgba(255, 224, 146, ${0.08 + collision * 0.18})`;
-      context.lineWidth = 0.7 + particle.density * 0.9;
-      context.moveTo(particle.x - particle.vx * 1.55, particle.y - particle.vy * 1.55);
-      context.lineTo(particle.x + shake, particle.y - shake * 0.35);
-      context.stroke();
-    }
+    particle.drawX = particle.x + shake;
+    particle.drawY = particle.y - shake * 0.35;
+  });
+
+  context.globalAlpha = 0.72;
+  canvasState.particles.forEach((particle) => {
+    const density = THREE.MathUtils.clamp(particle.density, 0, 1);
+    const baseAlpha = 0.11 + density * 0.16;
+    const radius = Math.max(0.62, particle.size * (0.52 + settle * 0.3));
     context.beginPath();
-    context.fillStyle = glow
-      ? `rgba(255, 235, 174, ${Math.min(0.68, alpha + collision * 0.1)})`
-      : `rgba(228, 202, 136, ${alpha})`;
-    context.arc(particle.x + shake, particle.y - shake * 0.35, radius, 0, Math.PI * 2);
+    context.fillStyle = `rgba(72, 55, 31, ${baseAlpha})`;
+    context.arc(particle.drawX, particle.drawY, radius + 0.65, 0, Math.PI * 2);
     context.fill();
   });
+
+  context.globalAlpha = 1;
+  canvasState.particles.forEach((particle, index) => {
+    const density = THREE.MathUtils.clamp(particle.density, 0, 1);
+    const flowAxis = particle.ty + particle.tx * 0.18;
+    const flow = Math.max(0, 1 - Math.abs(flowAxis - flowHead) / flowWidth);
+    const flowEase = flow * flow * (3 - 2 * flow);
+    const alpha = Math.min(0.38, 0.12 + density * 0.23 + flowEase * 0.08);
+    const radius = Math.max(0.65, particle.size * (0.5 + settle * 0.28 + flowEase * 0.12));
+
+    context.beginPath();
+    context.fillStyle = flowEase > 0.1
+      ? `rgba(255, 225, 132, ${alpha})`
+      : `rgba(206, 174, 98, ${alpha})`;
+    context.arc(particle.drawX, particle.drawY, radius, 0, Math.PI * 2);
+    context.fill();
+
+    if (flowEase > 0.34 && index % 2 === 0) {
+      context.beginPath();
+      context.strokeStyle = `rgba(255, 214, 107, ${0.1 + flowEase * 0.16})`;
+      context.lineWidth = 0.45 + density * 0.45;
+      context.moveTo(particle.drawX - particle.vx * 1.8, particle.drawY - particle.vy * 1.8);
+      context.lineTo(particle.drawX + particle.vx * 0.5, particle.drawY + particle.vy * 0.5);
+      context.stroke();
+    }
+  });
+
+  context.globalCompositeOperation = "lighter";
+  canvasState.particles.forEach((particle, index) => {
+    const density = THREE.MathUtils.clamp(particle.density, 0, 1);
+    const flowAxis = particle.ty + particle.tx * 0.18;
+    const flow = Math.max(0, 1 - Math.abs(flowAxis - flowHead) / flowWidth);
+    const flowEase = flow * flow * (3 - 2 * flow);
+    if (flowEase < 0.5 || index % 3 !== 0) return;
+    context.beginPath();
+    context.fillStyle = `rgba(255, 238, 170, ${Math.min(0.28, flowEase * (0.1 + density * 0.16))})`;
+    context.arc(particle.drawX, particle.drawY, 0.95 + density * 0.65, 0, Math.PI * 2);
+    context.fill();
+  });
+
+  if (collision > 0.12) {
+    context.globalCompositeOperation = "source-over";
+    context.globalAlpha = 0.08 + collision * 0.08;
+    context.strokeStyle = "rgba(255, 215, 128, 0.65)";
+    context.lineWidth = 1;
+    context.beginPath();
+    canvasState.particles.forEach((particle, index) => {
+      if (index % 42 !== 0) return;
+      if (index % 84 === 0) {
+        context.moveTo(particle.drawX, particle.drawY);
+      } else {
+        context.lineTo(particle.drawX, particle.drawY);
+      }
+    });
+    context.stroke();
+  }
+
   context.restore();
 }
 
