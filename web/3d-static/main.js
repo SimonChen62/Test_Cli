@@ -93,15 +93,41 @@ function loadImage(url) {
 function getScrollSize(manifest, records) {
   const sourceMap = manifest?.sourceMap || {};
   const sourceSize = manifest?.sourceSize || {};
+  const bounds = getScrollBounds(records);
   const width =
     Number(sourceMap.sourceWidth) ||
     Number(sourceSize.width) ||
-    Math.max(FALLBACK_SCROLL_SIZE.width, ...records.map((item) => item.scroll_x + item.width));
+    bounds.width;
   const height =
     Number(sourceMap.sourceHeight) ||
     Number(sourceSize.height) ||
-    Math.max(FALLBACK_SCROLL_SIZE.height, ...records.map((item) => item.scroll_y + item.height));
+    bounds.height;
   return { width, height };
+}
+
+function getScrollBounds(records) {
+  const boxes = records
+    .map((record) => ({
+      x: Number(record.scroll_x) || 0,
+      y: Number(record.scroll_y) || 0,
+      width: Math.max(1, Number(record.width) || 1),
+      height: Math.max(1, Number(record.height) || 1),
+    }))
+    .filter((box) => box.width > 0 && box.height > 0);
+  if (!boxes.length) return { x: 0, y: 0, width: FALLBACK_SCROLL_SIZE.width, height: FALLBACK_SCROLL_SIZE.height };
+  const minX = Math.min(...boxes.map((box) => box.x));
+  const minY = Math.min(...boxes.map((box) => box.y));
+  const maxX = Math.max(...boxes.map((box) => box.x + box.width));
+  const maxY = Math.max(...boxes.map((box) => box.y + box.height));
+  const rawWidth = Math.max(1, maxX - minX);
+  const rawHeight = Math.max(1, maxY - minY);
+  const padding = Math.max(18, Math.round(Math.min(rawWidth, rawHeight) * 0.08));
+  return {
+    x: Math.max(0, minX - padding),
+    y: Math.max(0, minY - padding),
+    width: rawWidth + padding * 2,
+    height: rawHeight + padding * 2,
+  };
 }
 
 function makeTexture(canvasTextureSource, colorSpace) {
@@ -122,6 +148,7 @@ async function buildScrollAtlases(records, scrollSize) {
   const atlasWidth = Math.max(2048, Math.min(MAX_ATLAS_WIDTH, maxTextureSize));
   const atlasScale = atlasWidth / scrollSize.width;
   const atlasHeight = Math.max(256, Math.round(scrollSize.height * atlasScale));
+  const bounds = getScrollBounds(records);
 
   const colorCanvas = document.createElement("canvas");
   colorCanvas.width = atlasWidth;
@@ -151,8 +178,8 @@ async function buildScrollAtlases(records, scrollSize) {
         loadImage(assetUrl(record.img_path)),
         loadImage(assetUrl(record.height_path || record.img_path)),
       ]);
-      const x = Math.round(record.scroll_x * atlasScale);
-      const y = Math.round(record.scroll_y * atlasScale);
+      const x = Math.round((Number(record.scroll_x || 0) - bounds.x) * atlasScale);
+      const y = Math.round((Number(record.scroll_y || 0) - bounds.y) * atlasScale);
       const width = Math.max(1, Math.round(record.width * atlasScale));
       const height = Math.max(1, Math.round(record.height * atlasScale));
       colorContext.drawImage(maskImage, x, y, width, height);

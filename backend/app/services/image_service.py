@@ -251,6 +251,7 @@ def process_work_dir(work_dir: Path) -> dict[str, object]:
         "source": "OpenCV 本地图像处理",
         "width": width_px,
         "height": height_px,
+        "sourceSize": {"width": width_px, "height": height_px},
         "ink_pixels": int(np.count_nonzero(mask)),
         "ink_ratio": round(float(np.count_nonzero(mask)) / float(width_px * height_px), 4),
         "outputs": ["thumbnail.png", "mask.png", "height.png", "binary.png", "ink_density.png", *scroll_outputs],
@@ -263,6 +264,7 @@ def process_work_dir(work_dir: Path) -> dict[str, object]:
     floating = {
         "type": "floating_scroll",
         "scroll_size": {"width": width_px, "height": height_px},
+        "sourceSize": {"width": width_px, "height": height_px},
         "paper_texture": "original.png",
         "mask": "mask.png",
         "height": "height.png",

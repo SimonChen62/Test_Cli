@@ -1788,16 +1788,43 @@ function fullScrollAssetUrl(path) {
   return `../${path.replace(/\\/g, "/").replace(/^\//, "")}`;
 }
 
-function fullScrollSize(records) {
+function fullScrollBounds(records) {
   if (records.length === 1 && records[0].source === "floating_relief") {
     return {
-      width: Math.max(1, records[0].width || 1),
-      height: Math.max(1, records[0].height || 1),
+      x: 0,
+      y: 0,
+      width: Math.max(1, Number(records[0].width) || 1),
+      height: Math.max(1, Number(records[0].height) || 1),
     };
   }
-  const width = Math.max(18332, ...records.map((record) => record.scroll_x + record.width));
-  const height = Math.max(2100, ...records.map((record) => record.scroll_y + record.height));
-  return { width, height };
+  const boxes = records
+    .map((record) => ({
+      x: Number(record.scroll_x) || 0,
+      y: Number(record.scroll_y) || 0,
+      width: Math.max(1, Number(record.width) || 1),
+      height: Math.max(1, Number(record.height) || 1),
+    }))
+    .filter((box) => box.width > 0 && box.height > 0);
+  if (!boxes.length) return { x: 0, y: 0, width: 1, height: 1 };
+
+  const minX = Math.min(...boxes.map((box) => box.x));
+  const minY = Math.min(...boxes.map((box) => box.y));
+  const maxX = Math.max(...boxes.map((box) => box.x + box.width));
+  const maxY = Math.max(...boxes.map((box) => box.y + box.height));
+  const rawWidth = Math.max(1, maxX - minX);
+  const rawHeight = Math.max(1, maxY - minY);
+  const padding = Math.max(18, Math.round(Math.min(rawWidth, rawHeight) * 0.08));
+  return {
+    x: Math.max(0, minX - padding),
+    y: Math.max(0, minY - padding),
+    width: rawWidth + padding * 2,
+    height: rawHeight + padding * 2,
+  };
+}
+
+function fullScrollSize(records) {
+  const bounds = fullScrollBounds(records);
+  return { width: bounds.width, height: bounds.height };
 }
 
 function makeSpaceCanvasTexture(THREE, canvas, color = false) {
@@ -1816,6 +1843,7 @@ function makeSpaceCanvasTexture(THREE, canvas, color = false) {
 async function buildFullScrollAsset(THREE) {
   const records = state.fullScrollRecords;
   const rendererLimit = state.space.renderer?.capabilities?.maxTextureSize || 4096;
+  const bounds = fullScrollBounds(records);
   const scrollSize = fullScrollSize(records);
   const atlasWidth = Math.min(8192, Math.max(2048, rendererLimit));
   const atlasScale = atlasWidth / scrollSize.width;
@@ -1847,8 +1875,8 @@ async function buildFullScrollAsset(THREE) {
           loadImageCanvas(fullScrollAssetUrl(record.img_path)),
           loadImageCanvas(fullScrollAssetUrl(record.height_path || record.img_path)),
         ]);
-        const x = Math.round(record.scroll_x * atlasScale);
-        const y = Math.round(record.scroll_y * atlasScale);
+        const x = Math.round((Number(record.scroll_x || 0) - bounds.x) * atlasScale);
+        const y = Math.round((Number(record.scroll_y || 0) - bounds.y) * atlasScale);
         const width = Math.max(1, Math.round(record.width * atlasScale));
         const itemHeight = Math.max(1, Math.round(record.height * atlasScale));
         colorContext.drawImage(mask.canvas, x, y, width, itemHeight);
