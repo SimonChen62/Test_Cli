@@ -870,6 +870,8 @@ function openFocusOverlay() {
     focusGlyph(1);
     return;
   }
+  state.focusIndex = THREE.MathUtils.clamp(state.focusIndex, 0, state.glyphRegions.length - 1);
+  state.focusRegion = state.glyphRegions[state.focusIndex];
   state.focusActive = true;
   state.focusChangedAt = performance.now();
   updateFocusParticleTargets();
