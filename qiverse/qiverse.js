@@ -136,6 +136,7 @@ const state = {
   },
   wheelAccumulator: 0,
   lastWheelFocusAt: 0,
+  cameraZoom: 1,
   originalPlane: null,
   clock: new THREE.Clock(),
   cameraTarget: new THREE.Vector3(),
@@ -956,6 +957,15 @@ function handleFocusWheel(event) {
   focusGlyph(direction);
 }
 
+function handleSceneWheel(event) {
+  const focusMode = state.currentScene === "return" && state.focusActive && !focusOverlay?.hidden;
+  if (focusMode) return;
+  event.preventDefault();
+  const delta = THREE.MathUtils.clamp(event.deltaY, -140, 140);
+  const zoomFactor = Math.exp(delta * 0.0016);
+  state.cameraZoom = THREE.MathUtils.clamp(state.cameraZoom * zoomFactor, 0.58, 1.82);
+}
+
 async function init() {
   await loadData();
   document.title = `${state.data.workTitle || state.data.title || "QiVerse"} - QiVerse`;
@@ -1090,6 +1100,7 @@ function bindEvents() {
     pauseButton.textContent = "暂停";
     state.pointer.yaw = 0;
     state.pointer.pitch = 0;
+    state.cameraZoom = 1;
     state.focusActive = false;
     state.focusIndex = -1;
     state.focusRegion = null;
@@ -1132,6 +1143,7 @@ function bindEvents() {
     if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
   });
 
+  canvas.addEventListener("wheel", handleSceneWheel, { passive: false });
   focusOverlay?.addEventListener("wheel", handleFocusWheel, { passive: false });
 
   focusHud?.addEventListener("click", openFocusOverlay);
@@ -1384,6 +1396,7 @@ function updateCamera(elapsed) {
     targetPosition.y += Math.cos(elapsed * 0.00017) * 0.36;
   }
 
+  targetPosition.multiplyScalar(state.cameraZoom);
   targetPosition.x += state.pointer.yaw * 4.2;
   targetPosition.y += state.pointer.pitch * 3.4;
   state.camera.position.lerp(targetPosition, 0.035);
