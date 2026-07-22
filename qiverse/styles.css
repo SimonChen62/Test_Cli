@@ -180,8 +180,15 @@ h1 {
   padding: 8px 11px;
   font-size: 13px;
   line-height: 1.45;
+  cursor: pointer;
   -webkit-user-select: none;
   user-select: none;
+}
+
+.focusHud:hover {
+  border-color: rgba(201, 169, 104, 0.52);
+  background: rgba(24, 21, 15, 0.7);
+  color: var(--paper);
 }
 
 .focusHud[hidden] {

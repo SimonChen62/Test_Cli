@@ -813,9 +813,9 @@ function updateFocusHud() {
   focusHud.hidden = !canFocus;
   if (!canFocus) return;
   if (state.focusActive && state.focusIndex >= 0) {
-    focusHud.textContent = `回看：滚轮巡字 ${String(state.focusIndex + 1).padStart(2, "0")} / ${total}`;
+    focusHud.textContent = `局部字体欣赏 ${String(state.focusIndex + 1).padStart(2, "0")} / ${total}`;
   } else {
-    focusHud.textContent = "回看：滚轮切换单字显影";
+    focusHud.textContent = "局部字体欣赏";
   }
 }
 
@@ -835,10 +835,10 @@ function updateFocusOverlay() {
   } else if (focusGlyphImage && !src) {
     focusGlyphImage.hidden = true;
   }
-  focusGlyphTitle.textContent = `单字显影 ${indexText}`;
+  focusGlyphTitle.textContent = `局部字体欣赏 ${indexText}`;
   focusGlyphNote.textContent = src
-    ? "滚轮切换单字"
-    : "该作品暂无单字蒙版文件，当前仅使用粒子候选区域。";
+    ? "滚轮切换相邻局部，按 Esc 或右上角退出。"
+    : "该作品暂无局部蒙版文件，当前仅使用粒子候选区域。";
   prepareFocusGlyphParticles(src);
 }
 
@@ -864,8 +864,21 @@ function focusGlyph(step) {
   updateFocusOverlay();
 }
 
+function openFocusOverlay() {
+  if (state.currentScene !== "return" || !state.glyphRegions.length) return;
+  if (state.focusIndex < 0) {
+    focusGlyph(1);
+    return;
+  }
+  state.focusActive = true;
+  state.focusChangedAt = performance.now();
+  updateFocusParticleTargets();
+  updateFocusHud();
+  updateFocusOverlay();
+}
+
 function handleFocusWheel(event) {
-  if (!state.glyphRegions.length) return;
+  if (state.currentScene !== "return" || !state.focusActive || !state.glyphRegions.length) return;
   event.preventDefault();
   event.stopPropagation();
   state.wheelAccumulator += event.deltaY;
@@ -874,10 +887,6 @@ function handleFocusWheel(event) {
   const direction = state.wheelAccumulator > 0 ? 1 : -1;
   state.wheelAccumulator = 0;
   state.lastWheelFocusAt = now;
-  clearJourneyTimers();
-  launchPanel.classList.add("hidden");
-  state.running = true;
-  if (state.currentScene !== "return") setScene("return");
   focusGlyph(direction);
 }
 
@@ -1055,10 +1064,9 @@ function bindEvents() {
     if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
   });
 
-  canvas.addEventListener("wheel", handleFocusWheel, { passive: false });
   focusOverlay?.addEventListener("wheel", handleFocusWheel, { passive: false });
-  window.addEventListener("wheel", handleFocusWheel, { passive: false });
 
+  focusHud?.addEventListener("click", openFocusOverlay);
   focusCloseButton?.addEventListener("click", closeFocusOverlay);
   focusOverlay?.addEventListener("click", (event) => {
     if (event.target === focusOverlay || event.target?.classList?.contains("focusBackdrop")) {
