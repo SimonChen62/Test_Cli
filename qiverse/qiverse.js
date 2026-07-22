@@ -22,8 +22,8 @@ const focusGlyphTitle = document.querySelector("#focusGlyphTitle");
 const focusGlyphNote = document.querySelector("#focusGlyphNote");
 const focusCloseButton = document.querySelector("#focusCloseButton");
 
-const sceneOrder = ["galaxy", "assemble", "enter", "ride", "qi", "void", "return"];
-const journeyDurations = [0, 4200, 8200, 12400, 16600, 20800, 25000];
+const sceneOrder = ["galaxy", "assemble", "enter", "ride", "qi", "return"];
+const journeyDurations = [0, 4200, 8200, 12400, 16600, 20800];
 const SCROLL_WIDTH = 31.5;
 const MAX_PARTICLES = 125000;
 const FOCUS_PARTICLES = 7200;
@@ -1005,7 +1005,7 @@ async function init() {
 
 function openSceneFromQuery() {
   const params = new URLSearchParams(window.location.search);
-  const requestedScene = params.get("scene");
+  const requestedScene = params.get("scene") === "void" ? "return" : params.get("scene");
   if (!sceneOrder.includes(requestedScene)) return;
   launchPanel.classList.add("hidden");
   state.running = true;
@@ -1018,6 +1018,8 @@ function openSceneFromQuery() {
 }
 
 function setScene(nextScene, immediate = false) {
+  if (nextScene === "void") nextScene = "return";
+  if (!sceneOrder.includes(nextScene)) nextScene = "galaxy";
   state.currentScene = nextScene;
   state.sceneStartedAt = performance.now();
   const copy = sceneCopy[nextScene];
