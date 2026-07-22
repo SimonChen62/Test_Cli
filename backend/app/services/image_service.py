@@ -99,7 +99,7 @@ def _glyph_mask_rgba(crop: np.ndarray, mask: np.ndarray) -> np.ndarray:
     rgba[..., 0] = ink_tone
     rgba[..., 1] = np.clip(ink_tone * 0.88, 10, 38).astype(np.uint8)
     rgba[..., 2] = np.clip(ink_tone * 0.74, 8, 34).astype(np.uint8)
-    rgba[..., 3] = cv2.GaussianBlur(mask, (0, 0), 0.45)
+    rgba[..., 3] = cv2.GaussianBlur(mask, (0, 0), 1.25)
     return rgba
 
 
@@ -132,131 +132,6 @@ def _sort_scroll_boxes(boxes: list[dict[str, int]]) -> list[dict[str, int]]:
     return sorted(boxes, key=lambda box: (-box["x"], box["y"], box["width"] * box["height"]))
 
 
-def _boolean_runs(active: np.ndarray) -> list[tuple[bool, int, int]]:
-    runs: list[tuple[bool, int, int]] = []
-    index = 0
-    while index < active.size:
-        state = bool(active[index])
-        start = index
-        while index < active.size and bool(active[index]) == state:
-            index += 1
-        runs.append((state, start, index))
-    return runs
-
-
-def _fill_tiny_projection_gaps(active: np.ndarray, max_gap: int) -> np.ndarray:
-    if active.size == 0 or max_gap <= 0:
-        return active
-    closed = active.copy()
-    for state, start, end in _boolean_runs(active):
-        if not state and end - start <= max_gap:
-            closed[start:end] = True
-    return closed
-
-
-def _projection_threshold(values: np.ndarray) -> float:
-    nonzero = values[values > 0]
-    if nonzero.size == 0:
-        return 1.0
-    return max(1.0, min(float(values.max()) * 0.08, float(np.percentile(nonzero, 55)) * 0.55))
-
-
-def _adaptive_gap_threshold(gaps: list[int], min_gap: int, sensitivity: float = 1.0) -> float:
-    usable = np.array([gap for gap in gaps if gap >= min_gap], dtype=np.float32)
-    if usable.size == 0:
-        return float(min_gap)
-    median = float(np.median(usable))
-    p75 = float(np.percentile(usable, 75))
-    p90 = float(np.percentile(usable, 90))
-    return max(float(min_gap), median * 1.55 * sensitivity, p75 * 1.18 * sensitivity, p90 * 0.78 * sensitivity)
-
-
-def _projection_runs(values: np.ndarray, min_gap: int, min_run: int, sensitivity: float = 1.0) -> list[tuple[int, int]]:
-    if values.size == 0:
-        return []
-    values = values.astype(np.float32)
-    if values.size >= 9:
-        values = cv2.GaussianBlur(values.reshape(1, -1), (1, 9), 0).reshape(-1)
-
-    active = values > _projection_threshold(values)
-    active = _fill_tiny_projection_gaps(active, max(1, min_gap // 2))
-
-    ink_runs = [(start, end) for state, start, end in _boolean_runs(active) if state]
-    if not ink_runs:
-        return []
-    if len(ink_runs) == 1:
-        start, end = ink_runs[0]
-        return [(start, end)] if end - start >= min_run else []
-
-    gaps: list[tuple[int, int, int]] = []
-    for left, right in zip(ink_runs, ink_runs[1:]):
-        gap_start = left[1]
-        gap_end = right[0]
-        if gap_end > gap_start:
-            gaps.append((gap_start, gap_end, gap_end - gap_start))
-    split_threshold = _adaptive_gap_threshold([gap for _start, _end, gap in gaps], min_gap, sensitivity=sensitivity)
-
-    split_points: list[int] = []
-    overall_start = ink_runs[0][0]
-    overall_end = ink_runs[-1][1]
-    for gap_start, gap_end, gap in gaps:
-        left_span = gap_start - overall_start
-        right_span = overall_end - gap_end
-        if left_span < min_run or right_span < min_run:
-            continue
-        local_left = next((end - start for start, end in reversed(ink_runs) if end <= gap_start), min_run)
-        local_right = next((end - start for start, end in ink_runs if start >= gap_end), min_run)
-        neighbor_gate = max(float(min_gap), min(local_left, local_right) * 0.32 * sensitivity)
-        if gap >= split_threshold or gap >= neighbor_gate:
-            split_points.append((gap_start + gap_end) // 2)
-
-    if not split_points:
-        return [(overall_start, overall_end)] if overall_end - overall_start >= min_run else []
-
-    runs: list[tuple[int, int]] = []
-    start = overall_start
-    for split in split_points:
-        if split - start >= min_run:
-            runs.append((start, split))
-        start = split
-    if overall_end - start >= min_run:
-        runs.append((start, overall_end))
-    return runs
-
-
-def _split_box_by_projection(ink_mask: np.ndarray, box: tuple[int, int, int, int], scale: float) -> list[tuple[int, int, int, int]]:
-    x, y, width, height = box
-    crop = ink_mask[y : y + height, x : x + width]
-    if crop.size == 0:
-        return [box]
-
-    min_gap = max(4, int(round(5 * scale)))
-    min_run = max(15, int(round(18 * scale)))
-    slender_vertical = height / max(1, width) >= 1.75
-
-    if height > max(86, width * 1.35):
-        row_min_gap = max(3, int(round((3 if slender_vertical else 5) * scale)))
-        row_min_run = max(12, int(round((13 if slender_vertical else 18) * scale)))
-        row_sensitivity = 0.72 if slender_vertical else 1.0
-        row_runs = _projection_runs(
-            np.count_nonzero(crop, axis=1),
-            min_gap=row_min_gap,
-            min_run=row_min_run,
-            sensitivity=row_sensitivity,
-        )
-        if len(row_runs) > 1:
-            split_boxes = [(x, y + start, width, end - start) for start, end in row_runs]
-            return [item for child in split_boxes for item in _split_box_by_projection(ink_mask, child, scale)]
-
-    if width > max(90, height * 1.45):
-        col_runs = _projection_runs(np.count_nonzero(crop, axis=0), min_gap=min_gap, min_run=min_run)
-        if len(col_runs) > 1:
-            split_boxes = [(x + start, y, end - start, height) for start, end in col_runs]
-            return [item for child in split_boxes for item in _split_box_by_projection(ink_mask, child, scale)]
-
-    return [box]
-
-
 def _detect_scroll_boxes(ink_mask: np.ndarray) -> list[dict[str, int]]:
     height, width = ink_mask.shape
     scale = max(1.0, min(width, height) / 1600)
@@ -280,14 +155,7 @@ def _detect_scroll_boxes(ink_mask: np.ndarray) -> list[dict[str, int]]:
         aspect = box_width / max(1, box_height)
         if aspect < 0.12 or aspect > 4.2:
             continue
-        for split_box in _split_box_by_projection(ink_mask, (x, y, box_width, box_height), scale):
-            split_x, split_y, split_width, split_height = split_box
-            if split_width < 14 or split_height < 18:
-                continue
-            split_aspect = split_width / max(1, split_height)
-            if split_aspect < 0.1 or split_aspect > 4.5:
-                continue
-            boxes.append(_pad_box(split_box, width, height, padding=max(5, int(8 * scale))))
+        boxes.append(_pad_box((x, y, box_width, box_height), width, height, padding=max(5, int(8 * scale))))
 
     if boxes:
         return boxes
