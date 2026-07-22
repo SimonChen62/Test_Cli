@@ -1,17 +1,17 @@
 {
+  "source": "OpenCV 本地图像处理",
   "width": 2800,
   "height": 613,
   "ink_pixels": 271361,
   "ink_ratio": 0.1581,
   "outputs": [
-    "binary.png",
-    "skeleton.png",
-    "stroke_width.png",
-    "ink_density.png",
-    "void_candidates.png",
+    "thumbnail.png",
     "mask.png",
     "height.png",
-    "thumbnail.png",
-    "floating_3d_data.json"
+    "binary.png",
+    "ink_density.png",
+    "full_scroll_3d_data.json",
+    "full_scroll_detection_preview.png",
+    "full_scroll_glyphs"
   ]
 }

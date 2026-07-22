@@ -1,0 +1,84 @@
+{
+  "status": "ai_draft",
+  "provider": "doubao",
+  "title": "光福重建塔记 AI候选导览草稿",
+  "guideText": "这件展品为上海博物馆藏元代赵孟頫的行书作品《光福重建塔记》。基于现有公开图像资料可初步观测：该作品墨迹占比约0.134，整体留白占比较高，墨迹区域可见重墨、细线与飞白的相关视觉呈现，整体为行书风格。特别提示：以上仅为基于现有资料的初步描述，所有关于重墨、细线/飞白、留白的细节特征均需现场观展人工确认。",
+  "warning": "AI/算法候选导览，仅用于辅助管理员初筛；不代表专家判断，不自动识别真实笔顺、气脉、真伪或书法水平。",
+  "annotations": [
+    {
+      "id": "ai_brush_1",
+      "type": "brush_ink",
+      "label": "AI候选：重墨区域",
+      "formal": "系统根据墨迹高度图找到一处墨色较重、视觉重量较集中的候选区域。",
+      "perception": "这里可以用来观察重墨、转折或停顿感，但仍需要对照原图复核。",
+      "aesthetic": "这是 AI/算法候选导览，不等同于专家判断；管理员确认前不能作为正式导览。",
+      "concept": "墨色",
+      "box": {
+        "x": 94.76,
+        "y": 66.93,
+        "width": 5.24,
+        "height": 11.75
+      },
+      "evidenceLayers": [
+        "original",
+        "inkDensity",
+        "strokeWidth"
+      ],
+      "reflection": {
+        "concept": "墨色",
+        "prompt": "请对照原图判断这个候选点是否真的适合讲解。",
+        "expertFeedback": "这是 AI 候选草稿，正式展示前需要管理员确认、修改或删除。"
+      }
+    },
+    {
+      "id": "ai_light_1",
+      "type": "brush_ink",
+      "label": "AI候选：细线与飞白",
+      "formal": "系统根据墨迹高度和局部明暗变化找到一处较细、较轻或可能存在飞白的候选区域。",
+      "perception": "这里可以用来观察轻重变化、干湿变化或笔画边缘的细节。",
+      "aesthetic": "AI 只提示可观察的图像线索，不判断真实用笔力度，也不恢复笔顺。",
+      "concept": "飞白",
+      "box": {
+        "x": 89.44,
+        "y": 64.44,
+        "width": 5.37,
+        "height": 9.89
+      },
+      "evidenceLayers": [
+        "original",
+        "inkDensity",
+        "strokeWidth"
+      ],
+      "reflection": {
+        "concept": "飞白",
+        "prompt": "请对照原图判断这个候选点是否真的适合讲解。",
+        "expertFeedback": "这是 AI 候选草稿，正式展示前需要管理员确认、修改或删除。"
+      }
+    },
+    {
+      "id": "ai_void_1",
+      "type": "void_solid",
+      "label": "AI候选：留白关系",
+      "formal": "系统根据墨迹稀疏和周边结构给出一处可观察留白关系的候选区域。",
+      "perception": "这里适合观察疏密、行距、字距或视觉停顿。",
+      "aesthetic": "留白解释仍需要人工判断；AI 只提供可复核的候选入口，不自动评价章法水平。",
+      "concept": "留白",
+      "box": {
+        "x": 87.09,
+        "y": 20.45,
+        "width": 5.17,
+        "height": 11.59
+      },
+      "evidenceLayers": [
+        "original",
+        "inkDensity",
+        "strokeWidth"
+      ],
+      "reflection": {
+        "concept": "留白",
+        "prompt": "请对照原图判断这个候选点是否真的适合讲解。",
+        "expertFeedback": "这是 AI 候选草稿，正式展示前需要管理员确认、修改或删除。"
+      }
+    }
+  ]
+}

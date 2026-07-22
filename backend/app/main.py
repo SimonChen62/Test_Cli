@@ -155,10 +155,9 @@ def admin_user_records() -> dict[str, object]:
 @app.get("/api/works")
 def works() -> dict[str, object]:
     index = work_service.load_works_index()
-    public_works = [w for w in index.get("works", []) if w.get("group_id") is None]
     return {
         "defaultWorkId": index.get("defaultWorkId", "work_003"),
-        "works": public_works
+        "works": index.get("works", [])
     }
 
 
@@ -168,6 +167,38 @@ def work_detail(work_id: str) -> dict[str, object]:
     if not work:
         raise HTTPException(status_code=404, detail="作品不存在")
     return work
+
+
+@app.post("/api/works/{work_id}/qiverse-assets")
+def ensure_qiverse_assets(work_id: str) -> dict[str, object]:
+    work = work_service.get_work(work_id)
+    if not work:
+        raise HTTPException(status_code=404, detail="作品不存在")
+    target = work_service.work_dir(work_id)
+    if not (target / "original.png").exists():
+        raise HTTPException(status_code=404, detail="该作品缺少 original.png，无法生成 QiVerse 单字资源")
+
+    data_file = target / "full_scroll_3d_data.json"
+    glyph_dir = target / "full_scroll_glyphs"
+    has_glyphs = glyph_dir.exists() and any(glyph_dir.glob("*_mask.png"))
+    if data_file.exists() and has_glyphs:
+        return {
+            "work_id": work_id,
+            "status": "ready",
+            "generated": False,
+            "assets": ["full_scroll_3d_data.json", "full_scroll_glyphs"],
+        }
+
+    try:
+        report = image_service.process_work_dir(target)
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=400, detail=f"QiVerse 资源生成失败：{exc}") from exc
+    return {
+        "work_id": work_id,
+        "status": "ready",
+        "generated": True,
+        "assets": report.get("outputs", []),
+    }
 
 
 @app.get("/api/knowledge")

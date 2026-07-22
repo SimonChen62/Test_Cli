@@ -39,6 +39,53 @@
         "行书",
         "长卷"
       ]
+    },
+    {
+      "id": "work_002",
+      "title": "光福重建塔记",
+      "artist": "赵孟頫",
+      "dynasty": "",
+      "date": "元",
+      "script_type": "行书",
+      "museum": "上海博物馆",
+      "description": "赵孟頫 · 元代 · 行书 · 上海博物馆",
+      "background": "",
+      "thumbnail": "thumbnail.png",
+      "status": "ready",
+      "source": "管理员上传",
+      "source_url": "",
+      "tags": [
+        "行书",
+        "长卷"
+      ],
+      "guide_status": "ai_draft"
+    },
+    {
+      "id": "work_004",
+      "title": "黄州寒食帖",
+      "artist": "苏东坡",
+      "dynasty": "北宋",
+      "date": "元丰五年 公元1082年",
+      "script_type": "行草",
+      "museum": "台北故宫博物馆",
+      "description": "两首五言古诗, 前半部分写黄州苦雨, 春光虚度, 后半写居所破败, 仕途失意, 有家难归. 是苏轼被贬谪的写照",
+      "background": "导火索: 乌台诗案, 被构陷文字狱, 后被贬至黄州三年, 寒食节阴雨连绵, 居所破败, 家境贫寒\r\n",
+      "thumbnail": "thumbnail.png",
+      "status": "ready",
+      "source": "管理员上传",
+      "source_url": "",
+      "tags": [
+        "行草 寒食节 苏轼"
+      ],
+      "quick_questions": [
+        "《黄州寒食帖》的作者与所属朝代分别是什么？",
+        "《黄州寒食帖》是采用什么书体创作的？",
+        "《黄州寒食帖》目前馆藏于哪个机构？",
+        "《黄州寒食帖》的作品内容主要讲述了什么？",
+        "苏轼创作《黄州寒食帖》的相关背景是什么？",
+        "《黄州寒食帖》的创作和乌台诗案、苏轼被贬黄州的经历有什么关联？"
+      ],
+      "guide_status": "ai_draft"
     }
   ]
 }
