@@ -303,6 +303,67 @@ h1 {
   font-weight: 700;
 }
 
+.focusEnterButton {
+  border: 1px solid rgba(201, 169, 104, 0.46);
+  border-radius: 999px;
+  background: rgba(201, 169, 104, 0.16);
+  color: var(--paper);
+  cursor: pointer;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 10px 14px;
+}
+
+.focusEnterButton:hover {
+  background: rgba(201, 169, 104, 0.24);
+}
+
+.focusTuneButton {
+  align-self: flex-start;
+  border: 1px solid rgba(244, 239, 228, 0.18);
+  border-radius: 999px;
+  background: rgba(244, 239, 228, 0.08);
+  color: rgba(244, 239, 228, 0.86);
+  cursor: pointer;
+  font-weight: 700;
+  padding: 7px 12px;
+}
+
+.focusTuneButton:hover,
+.focusTuneButton.active {
+  border-color: rgba(201, 169, 104, 0.5);
+  background: rgba(201, 169, 104, 0.18);
+  color: var(--paper);
+}
+
+.focusTunePanel {
+  display: grid;
+  gap: 12px;
+  margin-top: 2px;
+  padding: 12px;
+  border: 1px solid rgba(201, 169, 104, 0.22);
+  border-radius: 12px;
+  background: rgba(8, 8, 7, 0.32);
+}
+
+.focusTunePanel[hidden] {
+  display: none;
+}
+
+.focusTunePanel label {
+  display: grid;
+  gap: 6px;
+  color: rgba(244, 239, 228, 0.72);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.focusTunePanel input[type="range"] {
+  width: min(220px, 38vw);
+  accent-color: var(--gold);
+  cursor: pointer;
+}
+
 .reflectionPanel {
   position: fixed;
   right: 22px;

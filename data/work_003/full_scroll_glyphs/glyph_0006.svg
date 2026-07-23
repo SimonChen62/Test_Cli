@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 186 156" fill="none">
+  <title>? centerline strokes from Photoshop pen paths, locally tuned</title>
+  <g id="ta_centerline_strokes" stroke="#111111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path id="stroke_01" data-source-id="ta-stroke-01" d="M 19.6230 81.0108 L 33.4800 67.0332 L 50.8896 51.5892" />
+    <path id="stroke_02" data-source-id="ta-stroke-02" d="M 37.9998 18.0024 L 44.9934 22.9944 L 40.9944 55.0056 L 40.0086 85.0044 L 40.0086 110.9940" />
+    <path id="stroke_03" data-source-id="ta-stroke-03" d="M 32.9964 126.0012 L 44.9934 101.9928 L 56.0046 78.9984 L 69.0060 58.0008" />
+    <path id="stroke_04" data-source-id="ta-stroke-04" d="M 82.0074 23.9928 L 85.0020 31.9956 L 86.9922 39.0000 L 94.0044 30.9972" />
+    <path id="stroke_05" data-source-id="ta-stroke-05" d="M 124.0062 15.0072 L 129.9954 20.9976 L 120.9930 37.0032 L 112.9950 45.0060 L 102.0024 57.0024" />
+    <path id="stroke_06" data-source-id="ta-stroke-06" d="M 86.9922 69.9972 L 100.9980 64.0068 L 113.9994 55.0056 L 127.0008 47.0028" />
+    <path id="stroke_07" data-source-id="ta-stroke-07" d="M 105.0900 67.0020 L 97.6500 80.3400 L 87.7920 93.2880 L 75.3300 107.3280 L 61.0080 119.9952" />
+    <path id="stroke_08" data-source-id="ta-stroke-08" d="M 108.9960 68.0004 L 124.0062 78.0000 L 137.9934 86.0028 L 150.0090 93.0072 L 166.0050 97.0008" />
+    <path id="stroke_09" data-source-id="ta-stroke-09" d="M 95.9946 101.9928 L 107.0058 97.9992 L 120.0072 96.0024" />
+    <path id="stroke_10" data-source-id="ta-stroke-10" d="M 86.0064 123.0060 L 89.0010 136.0008 L 94.0044 144.0036" />
+    <path id="stroke_11" data-source-id="ta-stroke-11" d="M 95.9946 124.0044 L 129.9954 114.0048 L 137.0076 120.9936 L 133.0086 127.9980 L 127.0008 137.9976 L 124.9920 139.9944" />
+    <path id="stroke_12" data-source-id="ta-stroke-12" d="M 95.0088 144.0036 L 106.0014 140.9928 L 119.0028 139.9944 L 124.0062 142.0068" />
+  </g>
+</svg>

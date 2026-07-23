@@ -21,6 +21,11 @@ const focusGlyphImage = document.querySelector("#focusGlyphImage");
 const focusGlyphTitle = document.querySelector("#focusGlyphTitle");
 const focusGlyphNote = document.querySelector("#focusGlyphNote");
 const focusCloseButton = document.querySelector("#focusCloseButton");
+const focusEnterButton = document.querySelector("#focusEnterButton");
+const focusTuneButton = document.querySelector("#focusTuneButton");
+const focusTunePanel = document.querySelector("#focusTunePanel");
+const focusStrokeWidthSlider = document.querySelector("#focusStrokeWidthSlider");
+const focusStrokeOpacitySlider = document.querySelector("#focusStrokeOpacitySlider");
 
 const sceneOrder = ["galaxy", "assemble", "enter", "ride", "qi", "return"];
 const journeyDurations = [0, 4200, 8200, 12400, 16600, 20800];
@@ -28,6 +33,15 @@ const SCROLL_WIDTH = 31.5;
 const MAX_PARTICLES = 125000;
 const FOCUS_PARTICLES = 7200;
 const FOCUS_GLYPH_PARTICLES = 3300;
+const FOCUS_STROKE_OVERLAY_OFFSET_Y = 22;
+const FOCUS_STROKE_GLYPH_BY_REGION = new Map([
+  ["glyph_0002", "guang"],
+  ["glyph_0003", "fu"],
+  ["glyph_0004", "chong"],
+  ["glyph_0005", "jian"],
+  ["glyph_0006", "ta"],
+  ["glyph_0007", "ji"],
+]);
 const routeParams = new URLSearchParams(window.location.search);
 const requestedWorkId = routeParams.get("work") || "work_003";
 const API_BASE =
@@ -123,6 +137,13 @@ const state = {
   sourceV: null,
   samples: [],
   glyphRegions: [],
+  focusStrokeModel: null,
+  focusStrokeModels: new Map(),
+  focusStrokeOverlayActive: false,
+  focusStrokeOverlayStartedAt: 0,
+  focusStrokeTuningOpen: false,
+  focusStrokeWidthScale: 1,
+  focusStrokeOpacityScale: 1,
   focusActive: false,
   focusIndex: -1,
   focusRegion: null,
@@ -208,6 +229,26 @@ async function loadOptionalImage(src) {
   return loadImage(src).catch(() => null);
 }
 
+function sortGlyphRegionsForReadingOrder(regions) {
+  const columnThreshold = 0.0065;
+  const columns = [];
+  [...regions]
+    .sort((a, b) => b.centerU - a.centerU)
+    .forEach((region) => {
+      let column = columns.find((item) => Math.abs(item.centerU - region.centerU) <= columnThreshold);
+      if (!column) {
+        column = { centerU: region.centerU, regions: [] };
+        columns.push(column);
+      }
+      column.regions.push(region);
+      column.centerU = column.regions.reduce((sum, item) => sum + item.centerU, 0) / column.regions.length;
+    });
+
+  return columns
+    .sort((a, b) => b.centerU - a.centerU)
+    .flatMap((column) => column.regions.sort((a, b) => a.centerV - b.centerV));
+}
+
 async function loadGlyphRegions(workId) {
   const response = await fetch(`../data/${encodeURIComponent(workId)}/full_scroll_3d_data.json`, { cache: "no-store" }).catch(() => null);
   if (!response?.ok) return [];
@@ -245,12 +286,490 @@ async function loadGlyphRegions(workId) {
         heightPath: glyph.height_path ? resolveAssetPath(glyph.height_path) : "",
       };
     })
-    .filter(Boolean)
-    .sort((a, b) => b.centerU - a.centerU || a.centerV - b.centerV);
+    .filter(Boolean);
 
   const strict = regions.filter((region) => region.width >= 70 && region.height >= 70 && region.width * region.height >= 6500);
-  if (strict.length >= 12) return strict;
-  return regions.filter((region) => region.width >= 24 && region.height >= 24 && region.width * region.height >= 900);
+  if (strict.length >= 12) return sortGlyphRegionsForReadingOrder(strict);
+  return sortGlyphRegionsForReadingOrder(regions.filter((region) => region.width >= 24 && region.height >= 24 && region.width * region.height >= 900));
+}
+
+async function loadFocusStrokeModel() {
+  const response = await fetch("../data/work_003/qiverse-work.json", { cache: "no-store" }).catch(() => null);
+  if (!response?.ok) return null;
+  const model = await response.json().catch(() => null);
+  const models = new Map();
+  (model?.glyphs || []).forEach((glyph) => {
+    if (!glyph?.id || !glyph?.strokes?.length) return;
+    const strokeIds = new Set(glyph.strokes.map((stroke) => stroke.id));
+    const glyphQiLinks = glyph.qiLinks || (model.qiLinks || []).filter((link) => strokeIds.has(link.fromStrokeId) && strokeIds.has(link.toStrokeId));
+    models.set(glyph.id, {
+      glyphId: glyph.id,
+      character: glyph.character || glyph.id,
+      bounds: glyph.bounds || { width: 82, height: 70 },
+      strokes: glyph.strokes.map((stroke) => ({
+        id: stroke.id,
+        label: stroke.label || stroke.id,
+        points: stroke.path || stroke.points || [],
+        width: stroke.width || stroke.widthScale || 1,
+        inkDensity: stroke.inkDensity || stroke.inkDensityScale || 1,
+        curvature: Number(stroke.curvature || 0.35),
+      })),
+      qiLinks: glyphQiLinks.map((link) => ({
+        id: link.id,
+        label: link.label || link.id,
+        fromStrokeId: link.fromStrokeId,
+        toStrokeId: link.toStrokeId,
+        points: link.path || link.points || [],
+        intensity: Number(link.intensity || 0.82),
+        rhythm: Number(link.rhythm || 0.55),
+      })),
+    });
+  });
+  state.focusStrokeModels = models;
+  return models.get(model?.renderHints?.enterGlyphId) || models.values().next().value || null;
+}
+
+function getActiveFocusStrokeModel() {
+  const explicitGlyphId = FOCUS_STROKE_GLYPH_BY_REGION.get(state.focusRegion?.id);
+  const fallbackGlyphId = state.focusIndex === 0 ? "guang" : "";
+  const glyphId = explicitGlyphId || fallbackGlyphId;
+  if (!glyphId) return null;
+  return state.focusStrokeModels?.get(glyphId) || (state.focusStrokeModel?.glyphId === glyphId ? state.focusStrokeModel : null);
+}
+
+function focusPathPointToCanvas(point) {
+  const bounds = getActiveFocusStrokeModel()?.bounds || { width: 82, height: 70 };
+  const size = 720;
+  const padding = 82;
+  const drawWidth = size - padding * 2;
+  const drawHeight = drawWidth * (bounds.height / Math.max(1, bounds.width));
+  return {
+    x: padding + point[0] * drawWidth,
+    y: (size - drawHeight) / 2 + point[1] * drawHeight + FOCUS_STROKE_OVERLAY_OFFSET_Y,
+  };
+}
+
+function averageStrokeWidth(stroke) {
+  if (Array.isArray(stroke.width) && stroke.width.length) {
+    return stroke.width.reduce((sum, value) => sum + Number(value || 1), 0) / stroke.width.length;
+  }
+  return Number(stroke.width || 1);
+}
+
+function sampleFocusStrokeValue(value, t, fallback = 1) {
+  if (Array.isArray(value) && value.length) {
+    if (value.length === 1) return Number(value[0]) || fallback;
+    const scaled = THREE.MathUtils.clamp(t, 0, 1) * (value.length - 1);
+    const index = Math.floor(scaled);
+    const next = Math.min(value.length - 1, index + 1);
+    const amount = scaled - index;
+    return THREE.MathUtils.lerp(Number(value[index]) || fallback, Number(value[next]) || fallback, amount);
+  }
+  return Number.isFinite(Number(value)) ? Number(value) : fallback;
+}
+
+function getFocusStrokePlaybackOrder() {
+  const model = getActiveFocusStrokeModel();
+  if (!model?.strokes?.length) return [];
+  const strokeById = new Map(model.strokes.map((stroke) => [stroke.id, stroke]));
+  const orderedIds = [];
+  model.qiLinks?.forEach((link, index) => {
+    if (index === 0 && link.fromStrokeId) orderedIds.push(link.fromStrokeId);
+    if (link.toStrokeId) orderedIds.push(link.toStrokeId);
+  });
+  const unique = orderedIds.filter((id, index) => id && orderedIds.indexOf(id) === index);
+  const ordered = unique.map((id) => strokeById.get(id)).filter(Boolean);
+  model.strokes.forEach((stroke) => {
+    if (!ordered.includes(stroke)) ordered.push(stroke);
+  });
+  return ordered;
+}
+
+function buildVisibleFocusCanvasPoints(rawPoints, progress) {
+  const points = rawPoints.map(focusPathPointToCanvas);
+  const clamped = THREE.MathUtils.clamp(progress, 0, 1);
+  if (points.length < 2 || clamped <= 0) return [];
+  const scaled = clamped * (points.length - 1);
+  const endIndex = Math.floor(scaled);
+  const amount = scaled - endIndex;
+  const visible = points.slice(0, Math.min(points.length, endIndex + 1));
+
+  if (endIndex < points.length - 1) {
+    const a = points[endIndex];
+    const b = points[endIndex + 1];
+    visible.push({
+      x: THREE.MathUtils.lerp(a.x, b.x, amount),
+      y: THREE.MathUtils.lerp(a.y, b.y, amount),
+    });
+  }
+
+  return visible;
+}
+
+function buildFocusRibbonEdges(stroke, progress, lift = 0) {
+  const points = buildVisibleFocusCanvasPoints(stroke.points, progress);
+  if (points.length < 2 || progress <= 0) return null;
+  const left = [];
+  const right = [];
+  const baseHalfWidth = 16;
+  const liftOffset = { x: lift * 10, y: -lift * 26 };
+  const visibleProgress = THREE.MathUtils.clamp(progress, 0, 1);
+
+  for (let index = 0; index < points.length; index += 1) {
+    const point = points[index];
+    const prev = points[Math.max(0, index - 1)];
+    const next = points[Math.min(points.length - 1, index + 1)];
+    const dx = next.x - prev.x;
+    const dy = next.y - prev.y;
+    const length = Math.max(0.001, Math.hypot(dx, dy));
+    const normal = { x: -dy / length, y: dx / length };
+    const t = visibleProgress * (index / Math.max(1, points.length - 1));
+    const widthValue = sampleFocusStrokeValue(stroke.width, t, averageStrokeWidth(stroke));
+    const wobble = Math.sin(t * Math.PI * 4 + stroke.curvature * 3) * 1.4;
+    const halfWidth = baseHalfWidth * widthValue * state.focusStrokeWidthScale;
+    left.push({
+      x: point.x + liftOffset.x + normal.x * (halfWidth + wobble),
+      y: point.y + liftOffset.y + normal.y * (halfWidth + wobble),
+    });
+    right.push({
+      x: point.x + liftOffset.x - normal.x * (halfWidth - wobble * 0.55),
+      y: point.y + liftOffset.y - normal.y * (halfWidth - wobble * 0.55),
+    });
+  }
+
+  return { left, right };
+}
+
+function drawFocusRibbonPolygon(context, edges) {
+  if (!edges?.left?.length || !edges?.right?.length) return;
+  const { left, right } = edges;
+  context.beginPath();
+  context.moveTo(left[0].x, left[0].y);
+  for (let index = 1; index < left.length; index += 1) context.lineTo(left[index].x, left[index].y);
+  for (let index = right.length - 1; index >= 0; index -= 1) context.lineTo(right[index].x, right[index].y);
+  context.closePath();
+}
+
+function drawFocusRibbonStroke(context, stroke, progress, lift = 1, strokeIndex = 0) {
+  const liftedEdges = buildFocusRibbonEdges(stroke, progress, lift);
+  if (!liftedEdges) return;
+  const paperEdges = buildFocusRibbonEdges(stroke, progress, 0);
+  const density = sampleFocusStrokeValue(stroke.inkDensity, 0.55, 0.82);
+  const alpha = THREE.MathUtils.clamp((0.54 + density * 0.22) * state.focusStrokeOpacityScale, 0.16, 0.96);
+  const sideAlpha = THREE.MathUtils.clamp(alpha * (0.18 + lift * 0.32), 0.08, 0.36);
+  context.save();
+  context.globalCompositeOperation = "source-over";
+
+  if (paperEdges && lift > 0.05) {
+    context.fillStyle = `rgba(42, 24, 16, ${sideAlpha})`;
+    context.shadowColor = `rgba(0, 0, 0, ${sideAlpha})`;
+    context.shadowBlur = 12 + lift * 10;
+    context.shadowOffsetX = lift * 10;
+    context.shadowOffsetY = lift * 18;
+    drawFocusRibbonPolygon(context, paperEdges);
+    context.fill();
+  }
+
+  context.shadowOffsetX = 0;
+  context.shadowOffsetY = 0;
+  const inkAlpha = THREE.MathUtils.clamp(alpha * 1.18, 0.5, 0.98);
+  context.fillStyle = `rgba(14, 13, 10, ${inkAlpha})`;
+  context.strokeStyle = `rgba(70, 58, 39, ${Math.min(0.36, inkAlpha * 0.28)})`;
+  context.lineWidth = 1.2;
+  context.shadowColor = `rgba(0, 0, 0, ${Math.min(0.42, inkAlpha * 0.42)})`;
+  context.shadowBlur = 10;
+  drawFocusRibbonPolygon(context, liftedEdges);
+  context.fill();
+  context.stroke();
+  context.restore();
+  drawFocusFlyingWhite(context, stroke, progress, lift, strokeIndex);
+  drawFocusBrushStriations(context, stroke, progress, lift, strokeIndex);
+  drawFocusInkFlow(context, stroke, progress, lift, strokeIndex);
+  drawFocusGoldenInkFlow(context, stroke, progress, lift, strokeIndex);
+  drawFocusBrushHead(context, stroke, progress, lift);
+}
+
+function sampleFocusPathFrame(points, t, lift = 0) {
+  if (!points?.length) return null;
+  const clamped = THREE.MathUtils.clamp(t, 0, 1);
+  if (points.length === 1) {
+    const point = focusPathPointToCanvas(points[0]);
+    return { point, tangent: { x: 1, y: 0 }, normal: { x: 0, y: 1 } };
+  }
+  const scaled = clamped * (points.length - 1);
+  const index = Math.floor(scaled);
+  const next = Math.min(points.length - 1, index + 1);
+  const amount = scaled - index;
+  const a = focusPathPointToCanvas(points[index]);
+  const b = focusPathPointToCanvas(points[next]);
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const length = Math.max(0.001, Math.hypot(dx, dy));
+  const liftOffset = { x: lift * 10, y: -lift * 26 };
+  const point = {
+    x: THREE.MathUtils.lerp(a.x, b.x, amount) + liftOffset.x,
+    y: THREE.MathUtils.lerp(a.y, b.y, amount) + liftOffset.y,
+  };
+  const tangent = { x: dx / length, y: dy / length };
+  const normal = { x: -tangent.y, y: tangent.x };
+  return { point, tangent, normal };
+}
+
+function drawFocusInkFlow(context, stroke, progress, lift = 1, strokeIndex = 0) {
+  const visibleProgress = THREE.MathUtils.clamp(progress, 0, 1);
+  if (!stroke?.points?.length || visibleProgress <= 0.04) return;
+  const now = performance.now();
+  const averageWidth = averageStrokeWidth(stroke);
+  const particleCount = Math.floor(18 + averageWidth * 18);
+  const baseAlpha = THREE.MathUtils.clamp(0.2 * state.focusStrokeOpacityScale, 0.06, 0.34);
+
+  context.save();
+  context.globalCompositeOperation = "lighter";
+  for (let index = 0; index < particleCount; index += 1) {
+    const stream = (index / particleCount + now * 0.00012 + strokeIndex * 0.137) % 1;
+    const t = stream * visibleProgress;
+    const frame = sampleFocusPathFrame(stroke.points, t, lift);
+    if (!frame) continue;
+    const widthValue = sampleFocusStrokeValue(stroke.width, t, averageWidth);
+    const halfWidth = 12 * widthValue * state.focusStrokeWidthScale;
+    const jitterSeed = Math.sin(index * 12.9898 + strokeIndex * 78.233 + now * 0.002);
+    const sideOffset = jitterSeed * halfWidth * 0.46;
+    const forwardPulse = Math.sin(now * 0.006 + index * 1.9) * 0.5 + 0.5;
+    const x = frame.point.x + frame.normal.x * sideOffset + frame.tangent.x * forwardPulse * 3.2;
+    const y = frame.point.y + frame.normal.y * sideOffset + frame.tangent.y * forwardPulse * 3.2;
+    const radius = 0.85 + forwardPulse * 1.2;
+    const alpha = baseAlpha * (0.5 + forwardPulse * 0.55) * (0.35 + visibleProgress * 0.65);
+    context.fillStyle = index % 5 === 0
+      ? `rgba(236, 222, 176, ${alpha * 0.34})`
+      : `rgba(6, 5, 4, ${Math.min(0.52, alpha * 1.65)})`;
+    context.beginPath();
+    context.arc(x, y, radius, 0, Math.PI * 2);
+    context.fill();
+  }
+  context.restore();
+}
+
+function drawFocusGoldenInkFlow(context, stroke, progress, lift = 1, strokeIndex = 0) {
+  const visibleProgress = THREE.MathUtils.clamp(progress, 0, 1);
+  if (!stroke?.points?.length || visibleProgress <= 0.04) return;
+  const now = performance.now();
+  const averageWidth = averageStrokeWidth(stroke);
+  const particleCount = Math.floor(7 + averageWidth * 7);
+  const baseAlpha = THREE.MathUtils.clamp(0.095 * state.focusStrokeOpacityScale, 0.025, 0.17);
+
+  context.save();
+  context.globalCompositeOperation = "lighter";
+  for (let index = 0; index < particleCount; index += 1) {
+    const stream = (index / particleCount + now * 0.00016 + strokeIndex * 0.173) % 1;
+    const t = stream * visibleProgress;
+    const frame = sampleFocusPathFrame(stroke.points, t, lift);
+    if (!frame) continue;
+    const widthValue = sampleFocusStrokeValue(stroke.width, t, averageWidth);
+    const halfWidth = 8 * widthValue * state.focusStrokeWidthScale;
+    const sideWave = Math.sin(index * 7.31 + now * 0.0028 + strokeIndex) * halfWidth * 0.38;
+    const pulse = Math.sin(now * 0.007 + index * 2.2) * 0.5 + 0.5;
+    const x = frame.point.x + frame.normal.x * sideWave + frame.tangent.x * pulse * 2.6;
+    const y = frame.point.y + frame.normal.y * sideWave + frame.tangent.y * pulse * 2.6;
+    const radius = 0.7 + pulse * 0.95;
+    const alpha = baseAlpha * (0.55 + pulse * 0.55) * (0.28 + visibleProgress * 0.72);
+    context.fillStyle = `rgba(238, 211, 142, ${alpha})`;
+    context.beginPath();
+    context.arc(x, y, radius, 0, Math.PI * 2);
+    context.fill();
+  }
+  context.restore();
+}
+
+function drawFocusFlyingWhite(context, stroke, progress, lift = 1, strokeIndex = 0) {
+  const visibleProgress = THREE.MathUtils.clamp(progress, 0, 1);
+  if (!stroke?.points?.length || visibleProgress <= 0.08) return;
+  const now = performance.now();
+  const averageWidth = averageStrokeWidth(stroke);
+  const markCount = Math.floor(14 + averageWidth * 14);
+  const baseAlpha = THREE.MathUtils.clamp(0.105 * state.focusStrokeOpacityScale, 0.025, 0.18);
+
+  context.save();
+  context.globalCompositeOperation = "source-over";
+  context.lineCap = "round";
+  context.lineJoin = "round";
+  for (let index = 0; index < markCount; index += 1) {
+    const rawT = (index + 0.45) / markCount;
+    if (rawT > visibleProgress) continue;
+    const frame = sampleFocusPathFrame(stroke.points, rawT, lift);
+    if (!frame) continue;
+    const widthValue = sampleFocusStrokeValue(stroke.width, rawT, averageWidth);
+    const halfWidth = 15 * widthValue * state.focusStrokeWidthScale;
+    const flicker = Math.sin(index * 8.71 + strokeIndex * 1.9 + now * 0.0014) * 0.5 + 0.5;
+    if (flicker < 0.22) continue;
+    const sideOffset = Math.sin(index * 5.43 + strokeIndex) * halfWidth * 0.82;
+    const length = 8 + flicker * 16;
+    const x = frame.point.x + frame.normal.x * sideOffset;
+    const y = frame.point.y + frame.normal.y * sideOffset;
+    context.strokeStyle = `rgba(236, 229, 206, ${baseAlpha * (0.45 + flicker * 0.75)})`;
+    context.lineWidth = Math.max(0.7, 0.9 * state.focusStrokeWidthScale + flicker * 0.95);
+    context.beginPath();
+    context.moveTo(x - frame.tangent.x * length * 0.45, y - frame.tangent.y * length * 0.45);
+    context.lineTo(x + frame.tangent.x * length * 0.55, y + frame.tangent.y * length * 0.55);
+    context.stroke();
+  }
+  context.restore();
+}
+
+function drawFocusBrushStriations(context, stroke, progress, lift = 1, strokeIndex = 0) {
+  const visibleProgress = THREE.MathUtils.clamp(progress, 0, 1);
+  if (!stroke?.points?.length || visibleProgress <= 0.04) return;
+  const averageWidth = averageStrokeWidth(stroke);
+  const strandCount = Math.max(10, Math.floor(12 + averageWidth * 8));
+  const sampleCount = 30;
+  const baseAlpha = THREE.MathUtils.clamp(0.135 * state.focusStrokeOpacityScale, 0.04, 0.23);
+
+  context.save();
+  context.globalCompositeOperation = "source-over";
+  context.lineCap = "round";
+  context.lineJoin = "round";
+
+  for (let strand = 0; strand < strandCount; strand += 1) {
+    const strandRatio = strandCount === 1 ? 0 : strand / (strandCount - 1);
+    const centered = strandRatio * 2 - 1;
+    const dryGap = Math.abs(centered);
+    const alpha = baseAlpha * (0.95 - dryGap * 0.46) * (strand % 3 === 0 ? 0.72 : 1);
+    if (alpha <= 0.025) continue;
+
+    context.strokeStyle = `rgba(224, 216, 190, ${alpha})`;
+    context.lineWidth = Math.max(0.65, (0.72 + (1 - dryGap) * 0.8) * state.focusStrokeWidthScale);
+    context.beginPath();
+    let hasPoint = false;
+
+    for (let sample = 0; sample <= sampleCount; sample += 1) {
+      const t = (sample / sampleCount) * visibleProgress;
+      const frame = sampleFocusPathFrame(stroke.points, t, lift);
+      if (!frame) continue;
+      const widthValue = sampleFocusStrokeValue(stroke.width, t, averageWidth);
+      const halfWidth = 15.5 * widthValue * state.focusStrokeWidthScale;
+      const hairWave = Math.sin(t * Math.PI * 5 + strand * 0.9 + strokeIndex * 1.7) * halfWidth * 0.07;
+      const drySkip = Math.sin(t * Math.PI * 17 + strand * 2.1 + strokeIndex) > 0.86 && dryGap > 0.38;
+      const x = frame.point.x + frame.normal.x * (centered * halfWidth * 0.86 + hairWave);
+      const y = frame.point.y + frame.normal.y * (centered * halfWidth * 0.86 + hairWave);
+
+      if (drySkip) {
+        if (hasPoint) context.stroke();
+        context.beginPath();
+        hasPoint = false;
+        continue;
+      }
+      if (!hasPoint) {
+        context.moveTo(x, y);
+        hasPoint = true;
+      } else {
+        context.lineTo(x, y);
+      }
+    }
+    if (hasPoint) context.stroke();
+  }
+  context.restore();
+}
+
+function drawFocusBrushHead(context, stroke, progress, lift = 1) {
+  const visibleProgress = THREE.MathUtils.clamp(progress, 0, 1);
+  if (visibleProgress <= 0 || visibleProgress >= 0.995) return;
+  const frame = sampleFocusPathFrame(stroke.points, visibleProgress, lift);
+  if (!frame) return;
+  const widthValue = sampleFocusStrokeValue(stroke.width, visibleProgress, averageStrokeWidth(stroke));
+  const radius = 10 * widthValue * state.focusStrokeWidthScale;
+  context.save();
+  context.globalCompositeOperation = "lighter";
+  context.fillStyle = `rgba(12, 10, 8, ${THREE.MathUtils.clamp(0.38 * state.focusStrokeOpacityScale, 0.14, 0.58)})`;
+  context.strokeStyle = `rgba(236, 216, 158, ${THREE.MathUtils.clamp(0.16 * state.focusStrokeOpacityScale, 0.04, 0.24)})`;
+  context.lineWidth = 1;
+  context.shadowColor = "rgba(238, 208, 130, 0.18)";
+  context.shadowBlur = 16;
+  context.beginPath();
+  context.ellipse(frame.point.x, frame.point.y, radius * 0.78, radius * 0.42, Math.atan2(frame.tangent.y, frame.tangent.x), 0, Math.PI * 2);
+  context.fill();
+  context.stroke();
+  context.restore();
+}
+
+function sampleFocusPath(points, t) {
+  if (!points?.length) return { x: 0, y: 0 };
+  if (points.length === 1) return focusPathPointToCanvas(points[0]);
+  const scaled = THREE.MathUtils.clamp(t, 0, 1) * (points.length - 1);
+  const index = Math.floor(scaled);
+  const next = Math.min(points.length - 1, index + 1);
+  const amount = scaled - index;
+  const a = focusPathPointToCanvas(points[index]);
+  const b = focusPathPointToCanvas(points[next]);
+  return {
+    x: THREE.MathUtils.lerp(a.x, b.x, amount),
+    y: THREE.MathUtils.lerp(a.y, b.y, amount),
+  };
+}
+
+function drawFocusQiLink(context, link, progress, lift = 1) {
+  if (!link?.points?.length || progress <= 0) return;
+  const alpha = THREE.MathUtils.clamp((0.18 + link.intensity * 0.42) * state.focusStrokeOpacityScale, 0.08, 0.78);
+  const liftOffset = { x: lift * 10, y: -lift * 26 };
+  const pointCount = 36;
+  const visibleCount = Math.max(2, Math.ceil(pointCount * THREE.MathUtils.clamp(progress, 0, 1)));
+
+  context.save();
+  context.globalCompositeOperation = "lighter";
+  context.lineCap = "round";
+  context.lineJoin = "round";
+  context.strokeStyle = `rgba(178, 150, 92, ${alpha * 0.34})`;
+  context.lineWidth = 1.5;
+  context.setLineDash([4, 10]);
+  context.beginPath();
+  for (let index = 0; index < visibleCount; index += 1) {
+    const t = index / Math.max(1, pointCount - 1);
+    const point = sampleFocusPath(link.points, t);
+    const x = point.x + liftOffset.x;
+    const y = point.y + liftOffset.y;
+    if (index === 0) context.moveTo(x, y);
+    else context.lineTo(x, y);
+  }
+  context.stroke();
+  context.setLineDash([]);
+
+  const particleCount = 24;
+  for (let index = 0; index < particleCount; index += 1) {
+    const t = (progress - index / particleCount * 0.42 + 1) % 1;
+    if (t > progress + 0.08 && progress < 0.98) continue;
+    const point = sampleFocusPath(link.points, t);
+    const pulse = 0.5 + Math.sin(performance.now() * 0.009 + index * 1.7) * 0.5;
+    const radius = 1.4 + pulse * 1.1;
+    context.fillStyle = `rgba(214, 183, 112, ${alpha * (0.32 + pulse * 0.36)})`;
+    context.beginPath();
+    context.arc(point.x + liftOffset.x, point.y + liftOffset.y, radius, 0, Math.PI * 2);
+    context.fill();
+  }
+  context.restore();
+}
+
+function drawFocusStrokeOverlay(context) {
+  const model = getActiveFocusStrokeModel();
+  if (!state.focusStrokeOverlayActive || !model?.strokes?.length) return;
+  const age = performance.now() - state.focusStrokeOverlayStartedAt;
+  const orderedStrokes = getFocusStrokePlaybackOrder();
+  const strokeById = new Map(orderedStrokes.map((stroke) => [stroke.id, stroke]));
+  const links = model.qiLinks || [];
+  const strokeDuration = 680;
+  const linkDuration = 560;
+  const pause = 120;
+  let cursor = 0;
+
+  orderedStrokes.forEach((stroke, strokeIndex) => {
+    const progress = smoothstep(0, 1, (age - cursor) / strokeDuration);
+    const lift = smoothstep(0.18, 1, progress);
+    drawFocusRibbonStroke(context, stroke, progress, lift, strokeIndex);
+    cursor += strokeDuration + pause;
+
+    const link = links.find((item) => item.fromStrokeId === stroke.id && strokeById.has(item.toStrokeId));
+    if (!link || strokeIndex >= orderedStrokes.length - 1) return;
+    const linkProgress = smoothstep(0, 1, (age - cursor) / linkDuration);
+    drawFocusQiLink(context, link, linkProgress, 1);
+    cursor += linkDuration + pause;
+  });
 }
 
 function buildFallbackGlyphRegions(samples) {
@@ -327,9 +846,7 @@ function buildFallbackGlyphRegions(samples) {
     }
   }
 
-  return regions
-    .sort((a, b) => b.centerU - a.centerU || a.centerV - b.centerV)
-    .slice(0, 360);
+  return sortGlyphRegionsForReadingOrder(regions).slice(0, 360);
 }
 
 async function loadData() {
@@ -853,6 +1370,7 @@ function updateFocusGlyphCanvas(seconds) {
     context.stroke();
   }
 
+  drawFocusStrokeOverlay(context);
   context.restore();
 }
 
@@ -884,6 +1402,27 @@ function updateFocusHud() {
   }
 }
 
+function isFocusStrokeGlyph() {
+  return Boolean(getActiveFocusStrokeModel());
+}
+
+function updateFocusTuneControls(canEnterStroke = isFocusStrokeGlyph()) {
+  if (focusTuneButton) {
+    focusTuneButton.hidden = !canEnterStroke;
+    focusTuneButton.disabled = !canEnterStroke;
+    focusTuneButton.classList.toggle("active", state.focusStrokeTuningOpen && canEnterStroke);
+  }
+  if (focusTunePanel) {
+    focusTunePanel.hidden = !canEnterStroke || !state.focusStrokeTuningOpen;
+  }
+  if (focusStrokeWidthSlider && String(state.focusStrokeWidthScale) !== focusStrokeWidthSlider.value) {
+    focusStrokeWidthSlider.value = String(state.focusStrokeWidthScale);
+  }
+  if (focusStrokeOpacitySlider && String(state.focusStrokeOpacityScale) !== focusStrokeOpacitySlider.value) {
+    focusStrokeOpacitySlider.value = String(state.focusStrokeOpacityScale);
+  }
+}
+
 function updateFocusOverlay() {
   if (!focusOverlay || !focusGlyphTitle || !focusGlyphNote) return;
   const total = state.glyphRegions.length;
@@ -893,6 +1432,9 @@ function updateFocusOverlay() {
 
   const indexText = `${String(state.focusIndex + 1).padStart(2, "0")} / ${total}`;
   const src = state.focusRegion.heightPath || state.focusRegion.imgPath || "";
+  const canEnterStroke = isFocusStrokeGlyph();
+  const activeStrokeModel = getActiveFocusStrokeModel();
+  const activeCharacter = activeStrokeModel?.character || "光";
   if (focusGlyphImage && src && focusGlyphImage.dataset.src !== src) {
     focusGlyphImage.dataset.src = src;
     focusGlyphImage.src = src;
@@ -902,14 +1444,21 @@ function updateFocusOverlay() {
   }
   focusGlyphTitle.textContent = `局部字体欣赏 ${indexText}`;
   focusGlyphNote.textContent = src
-    ? "滚轮切换相邻局部，按 Esc 或右上角退出。"
+    ? (canEnterStroke ? `当前为“${activeCharacter}”字，可点击播放特例笔画动态；滚轮切换相邻局部。` : "滚轮切换相邻局部；只有选中已建模的字时才会出现笔画动态。")
     : "该作品暂无局部蒙版文件，当前仅使用粒子候选区域。";
+  if (focusEnterButton) {
+    focusEnterButton.hidden = !canEnterStroke;
+    focusEnterButton.disabled = !canEnterStroke;
+  }
+  updateFocusTuneControls(canEnterStroke);
   prepareFocusGlyphParticles(src);
 }
 
 function closeFocusOverlay() {
   state.focusActive = false;
   state.focusRegion = null;
+  state.focusStrokeOverlayActive = false;
+  state.focusStrokeTuningOpen = false;
   state.focusGlyphCanvasState.src = "";
   state.focusGlyphCanvasState.particles = [];
   updateFocusHud();
@@ -923,6 +1472,8 @@ function focusGlyph(step) {
   state.focusIndex = next;
   state.focusRegion = state.glyphRegions[next];
   state.focusActive = true;
+  state.focusStrokeOverlayActive = false;
+  state.focusStrokeTuningOpen = false;
   state.focusChangedAt = performance.now();
   updateFocusParticleTargets();
   updateFocusHud();
@@ -938,6 +1489,7 @@ function openFocusOverlay() {
   state.focusIndex = THREE.MathUtils.clamp(state.focusIndex, 0, state.glyphRegions.length - 1);
   state.focusRegion = state.glyphRegions[state.focusIndex];
   state.focusActive = true;
+  state.focusStrokeTuningOpen = false;
   state.focusChangedAt = performance.now();
   updateFocusParticleTargets();
   updateFocusHud();
@@ -1007,6 +1559,7 @@ async function init() {
   state.samples = samples;
   state.glyphRegions = await loadGlyphRegions(state.data.sourceWorkId || requestedWorkId);
   if (!state.glyphRegions.length) state.glyphRegions = buildFallbackGlyphRegions(samples);
+  state.focusStrokeModel = await loadFocusStrokeModel();
   createOriginalPlane(originalImage);
   createParticleField(samples);
   createFocusParticleField();
@@ -1148,6 +1701,32 @@ function bindEvents() {
 
   focusHud?.addEventListener("click", openFocusOverlay);
   focusCloseButton?.addEventListener("click", closeFocusOverlay);
+  focusEnterButton?.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!isFocusStrokeGlyph()) {
+      state.focusStrokeOverlayActive = false;
+      if (focusGlyphNote) focusGlyphNote.textContent = "当前局部没有对应笔画模型，不能播放笔画动画。";
+      return;
+    }
+    const activeStrokeModel = getActiveFocusStrokeModel();
+    state.focusStrokeOverlayActive = true;
+    state.focusStrokeOverlayStartedAt = performance.now();
+    if (focusGlyphNote) focusGlyphNote.textContent = `“${activeStrokeModel?.character || ""}”字笔画从纸面升起，按气脉顺序连接；滚轮切换局部会回到纯粒子字。`;
+  });
+  focusTuneButton?.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!isFocusStrokeGlyph()) return;
+    state.focusStrokeTuningOpen = !state.focusStrokeTuningOpen;
+    updateFocusTuneControls(true);
+  });
+  focusStrokeWidthSlider?.addEventListener("input", (event) => {
+    state.focusStrokeWidthScale = Number(event.target.value) || 1;
+  });
+  focusStrokeOpacitySlider?.addEventListener("input", (event) => {
+    state.focusStrokeOpacityScale = Number(event.target.value) || 1;
+  });
   focusOverlay?.addEventListener("click", (event) => {
     if (event.target === focusOverlay || event.target?.classList?.contains("focusBackdrop")) {
       closeFocusOverlay();

@@ -1,0 +1,3943 @@
+{
+  "schemaVersion": "1.0",
+  "source": "QiVerse T03/T04 focused glyph model. Guang remains manually tuned; Fu, Chong, Jian, Ta, and Ji are converted from Photoshop pen path exports.",
+  "work": {
+    "id": "work_003_qiverse_character_constellation",
+    "sourceWorkId": "work_003",
+    "title": "Zhao Mengfu Guangfu Chongjian Ta Ji - QiVerse",
+    "heightImage": "data/work_003/height.png",
+    "description": "Uses the original scroll particle field as background and overlays focused glyph skeleton/ribbon data in the Return local-appreciation view."
+  },
+  "renderHints": {
+    "enterGlyphId": "guang",
+    "baseStrokeRadius": 0.062,
+    "baseStrokeOpacity": 0.82,
+    "strokeColor": "#c96b4d"
+  },
+  "glyphs": [
+    {
+      "id": "guang",
+      "character": "光",
+      "label": "first character Guang",
+      "image": "data/work_003/height.png",
+      "bounds": {
+        "x": 2688,
+        "y": 0,
+        "width": 82,
+        "height": 70
+      },
+      "coordinate": "normalized within bounds, origin top-left",
+      "strokes": [
+        {
+          "id": "guang-left-dot",
+          "label": "left dot",
+          "path": [
+            [
+              0.2375,
+              0.3348
+            ],
+            [
+              0.2641,
+              0.3814
+            ],
+            [
+              0.2808,
+              0.4414
+            ]
+          ],
+          "width": [
+            0.42,
+            0.78,
+            0.38
+          ],
+          "inkDensity": [
+            0.72,
+            0.68,
+            0.55
+          ],
+          "curvature": 0.32,
+          "speedProxy": 0.68,
+          "flyingWhite": 0.08,
+          "turningPoints": [
+            1
+          ],
+          "pausePoints": [
+            2
+          ]
+        },
+        {
+          "id": "guang-center-vertical",
+          "label": "center vertical",
+          "path": [
+            [
+              0.4373,
+              0.063
+            ],
+            [
+              0.4333,
+              0.2059
+            ],
+            [
+              0.4293,
+              0.4053
+            ]
+          ],
+          "width": [
+            0.9,
+            0.92,
+            0.86
+          ],
+          "inkDensity": [
+            0.88,
+            0.9,
+            0.78
+          ],
+          "curvature": 0.18,
+          "speedProxy": 0.56,
+          "flyingWhite": 0.04,
+          "turningPoints": [],
+          "pausePoints": [
+            2
+          ]
+        },
+        {
+          "id": "guang-right-dot",
+          "label": "right upper slash",
+          "path": [
+            [
+              0.6366,
+              0.1977
+            ],
+            [
+              0.5782,
+              0.2977
+            ],
+            [
+              0.5199,
+              0.4061
+            ]
+          ],
+          "width": [
+            1.18,
+            1.02,
+            0.48
+          ],
+          "inkDensity": [
+            0.76,
+            0.72,
+            0.62
+          ],
+          "curvature": 0.34,
+          "speedProxy": 0.72,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1
+          ],
+          "pausePoints": [
+            2
+          ]
+        },
+        {
+          "id": "guang-cross",
+          "label": "cross stroke",
+          "path": [
+            [
+              0.1709,
+              0.753
+            ],
+            [
+              0.292,
+              0.6535
+            ],
+            [
+              0.425,
+              0.548
+            ],
+            [
+              0.535,
+              0.459
+            ],
+            [
+              0.6471,
+              0.3825
+            ]
+          ],
+          "width": [
+            1.02,
+            1.12,
+            1.18,
+            1.1,
+            0.98
+          ],
+          "inkDensity": [
+            0.78,
+            0.86,
+            0.9,
+            0.84,
+            0.74
+          ],
+          "curvature": 0.38,
+          "speedProxy": 0.46,
+          "flyingWhite": 0.06,
+          "turningPoints": [
+            1,
+            2,
+            3
+          ],
+          "pausePoints": [
+            0,
+            4
+          ]
+        },
+        {
+          "id": "guang-left-leg",
+          "label": "lower left slash",
+          "path": [
+            [
+              0.4517,
+              0.5517
+            ],
+            [
+              0.3933,
+              0.66
+            ],
+            [
+              0.2933,
+              0.7934
+            ],
+            [
+              0.185,
+              0.8935
+            ]
+          ],
+          "width": [
+            1,
+            0.92,
+            0.7,
+            0.42
+          ],
+          "inkDensity": [
+            0.86,
+            0.82,
+            0.74,
+            0.62
+          ],
+          "curvature": 0.42,
+          "speedProxy": 0.64,
+          "flyingWhite": 0.12,
+          "turningPoints": [
+            1,
+            2
+          ],
+          "pausePoints": [
+            3
+          ]
+        },
+        {
+          "id": "guang-right-leg-hook",
+          "label": "right vertical hook",
+          "path": [
+            [
+              0.5,
+              0.5985
+            ],
+            [
+              0.492,
+              0.7315
+            ],
+            [
+              0.482,
+              0.8895
+            ],
+            [
+              0.508,
+              0.9515
+            ],
+            [
+              0.59,
+              0.9655
+            ],
+            [
+              0.69,
+              0.9575
+            ],
+            [
+              0.78,
+              0.9195
+            ],
+            [
+              0.805,
+              0.8845
+            ],
+            [
+              0.76,
+              0.8395
+            ]
+          ],
+          "width": [
+            0.92,
+            0.96,
+            0.94,
+            0.9,
+            0.84,
+            0.8,
+            0.76,
+            0.68,
+            0.55
+          ],
+          "inkDensity": [
+            0.82,
+            0.86,
+            0.84,
+            0.8,
+            0.76,
+            0.72,
+            0.66,
+            0.58,
+            0.5
+          ],
+          "curvature": 0.52,
+          "speedProxy": 0.52,
+          "flyingWhite": 0.08,
+          "turningPoints": [
+            2,
+            3,
+            5,
+            7
+          ],
+          "pausePoints": [
+            8
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fu",
+      "character": "福",
+      "label": "second character Fu from Photoshop pen paths",
+      "image": "data/work_003/full_scroll_glyphs/glyph_0003_height.png",
+      "bounds": {
+        "x": 17997,
+        "y": 302,
+        "width": 160,
+        "height": 154
+      },
+      "coordinate": "normalized from fu_paths.ai / glyph_0003.svg, origin top-left",
+      "strokes": [
+        {
+          "id": "fu-stroke-01",
+          "label": "top dot",
+          "path": [
+            [
+              0.2812,
+              0.1104
+            ],
+            [
+              0.3375,
+              0.1169
+            ],
+            [
+              0.3937,
+              0.1364
+            ]
+          ],
+          "width": [
+            0.381,
+            0.589,
+            0.277
+          ],
+          "inkDensity": [
+            0.792,
+            0.888,
+            0.62
+          ],
+          "curvature": 0.325,
+          "speedProxy": 0.62,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1
+          ],
+          "pausePoints": [
+            2
+          ]
+        },
+        {
+          "id": "fu-stroke-02",
+          "label": "left radical main fold",
+          "path": [
+            [
+              0.0938,
+              0.4286
+            ],
+            [
+              0.2437,
+              0.3961
+            ],
+            [
+              0.3563,
+              0.3182
+            ],
+            [
+              0.3187,
+              0.5195
+            ],
+            [
+              0.3187,
+              0.9156
+            ]
+          ],
+          "width": [
+            0.567,
+            0.778,
+            0.878,
+            0.731,
+            0.413
+          ],
+          "inkDensity": [
+            0.792,
+            0.852,
+            0.888,
+            0.828,
+            0.62
+          ],
+          "curvature": 0.395,
+          "speedProxy": 0.58,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1,
+            2,
+            3
+          ],
+          "pausePoints": [
+            4
+          ]
+        },
+        {
+          "id": "fu-stroke-03",
+          "label": "left radical slash and lift",
+          "path": [
+            [
+              0.35,
+              0.3506
+            ],
+            [
+              0.2687,
+              0.5065
+            ],
+            [
+              0.15,
+              0.6883
+            ],
+            [
+              0.1688,
+              0.7273
+            ],
+            [
+              0.2437,
+              0.6234
+            ],
+            [
+              0.3187,
+              0.5325
+            ],
+            [
+              0.3812,
+              0.4416
+            ]
+          ],
+          "width": [
+            0.54,
+            0.693,
+            0.787,
+            0.836,
+            0.742,
+            0.648,
+            0.392
+          ],
+          "inkDensity": [
+            0.792,
+            0.832,
+            0.872,
+            0.888,
+            0.848,
+            0.808,
+            0.62
+          ],
+          "curvature": 0.43,
+          "speedProxy": 0.56,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1,
+            2,
+            3
+          ],
+          "pausePoints": [
+            6
+          ]
+        },
+        {
+          "id": "fu-stroke-04",
+          "label": "right top short horizontal",
+          "path": [
+            [
+              0.5687,
+              0.1818
+            ],
+            [
+              0.675,
+              0.1558
+            ],
+            [
+              0.7562,
+              0.1169
+            ]
+          ],
+          "width": [
+            0.429,
+            0.664,
+            0.312
+          ],
+          "inkDensity": [
+            0.792,
+            0.888,
+            0.62
+          ],
+          "curvature": 0.325,
+          "speedProxy": 0.62,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1
+          ],
+          "pausePoints": [
+            2
+          ]
+        },
+        {
+          "id": "fu-stroke-05",
+          "label": "mouth left vertical",
+          "path": [
+            [
+              0.5463,
+              0.2922
+            ],
+            [
+              0.515,
+              0.3961
+            ],
+            [
+              0.54,
+              0.4675
+            ],
+            [
+              0.5588,
+              0.487
+            ]
+          ],
+          "width": [
+            0.457,
+            0.666,
+            0.628,
+            0.332
+          ],
+          "inkDensity": [
+            0.792,
+            0.872,
+            0.848,
+            0.62
+          ],
+          "curvature": 0.36,
+          "speedProxy": 0.6,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1,
+            2
+          ],
+          "pausePoints": [
+            3
+          ]
+        },
+        {
+          "id": "fu-stroke-06",
+          "label": "mouth top and right fold",
+          "path": [
+            [
+              0.5463,
+              0.3766
+            ],
+            [
+              0.665,
+              0.3052
+            ],
+            [
+              0.7525,
+              0.2857
+            ],
+            [
+              0.74,
+              0.3831
+            ]
+          ],
+          "width": [
+            0.512,
+            0.747,
+            0.704,
+            0.372
+          ],
+          "inkDensity": [
+            0.792,
+            0.872,
+            0.848,
+            0.62
+          ],
+          "curvature": 0.36,
+          "speedProxy": 0.6,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1,
+            2
+          ],
+          "pausePoints": [
+            3
+          ]
+        },
+        {
+          "id": "fu-stroke-07",
+          "label": "mouth bottom horizontal",
+          "path": [
+            [
+              0.5712,
+              0.474
+            ],
+            [
+              0.6587,
+              0.4416
+            ],
+            [
+              0.74,
+              0.4026
+            ]
+          ],
+          "width": [
+            0.401,
+            0.621,
+            0.292
+          ],
+          "inkDensity": [
+            0.792,
+            0.888,
+            0.62
+          ],
+          "curvature": 0.325,
+          "speedProxy": 0.62,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1
+          ],
+          "pausePoints": [
+            2
+          ]
+        },
+        {
+          "id": "fu-stroke-08",
+          "label": "field left vertical",
+          "path": [
+            [
+              0.4775,
+              0.6169
+            ],
+            [
+              0.5087,
+              0.7403
+            ],
+            [
+              0.5463,
+              0.8117
+            ],
+            [
+              0.565,
+              0.8247
+            ]
+          ],
+          "width": [
+            0.457,
+            0.666,
+            0.628,
+            0.332
+          ],
+          "inkDensity": [
+            0.792,
+            0.872,
+            0.848,
+            0.62
+          ],
+          "curvature": 0.36,
+          "speedProxy": 0.6,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1,
+            2
+          ],
+          "pausePoints": [
+            3
+          ]
+        },
+        {
+          "id": "fu-stroke-09",
+          "label": "field top and right fold",
+          "path": [
+            [
+              0.565,
+              0.5974
+            ],
+            [
+              0.6587,
+              0.5714
+            ],
+            [
+              0.8212,
+              0.5195
+            ],
+            [
+              0.8775,
+              0.5714
+            ],
+            [
+              0.8338,
+              0.6818
+            ],
+            [
+              0.8275,
+              0.7922
+            ]
+          ],
+          "width": [
+            0.54,
+            0.712,
+            0.824,
+            0.779,
+            0.667,
+            0.392
+          ],
+          "inkDensity": [
+            0.792,
+            0.84,
+            0.888,
+            0.864,
+            0.816,
+            0.62
+          ],
+          "curvature": 0.43,
+          "speedProxy": 0.56,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1,
+            2,
+            3
+          ],
+          "pausePoints": [
+            5
+          ]
+        },
+        {
+          "id": "fu-stroke-10",
+          "label": "field bottom horizontal",
+          "path": [
+            [
+              0.5275,
+              0.7273
+            ],
+            [
+              0.64,
+              0.7013
+            ],
+            [
+              0.7338,
+              0.6558
+            ]
+          ],
+          "width": [
+            0.401,
+            0.621,
+            0.292
+          ],
+          "inkDensity": [
+            0.792,
+            0.888,
+            0.62
+          ],
+          "curvature": 0.325,
+          "speedProxy": 0.62,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1
+          ],
+          "pausePoints": [
+            2
+          ]
+        },
+        {
+          "id": "fu-stroke-11",
+          "label": "field inner vertical",
+          "path": [
+            [
+              0.6587,
+              0.6039
+            ],
+            [
+              0.6587,
+              0.7078
+            ],
+            [
+              0.6713,
+              0.7727
+            ]
+          ],
+          "width": [
+            0.346,
+            0.536,
+            0.252
+          ],
+          "inkDensity": [
+            0.792,
+            0.888,
+            0.62
+          ],
+          "curvature": 0.325,
+          "speedProxy": 0.62,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1
+          ],
+          "pausePoints": [
+            2
+          ]
+        },
+        {
+          "id": "fu-stroke-12",
+          "label": "field inner horizontal",
+          "path": [
+            [
+              0.565,
+              0.8312
+            ],
+            [
+              0.6775,
+              0.7987
+            ],
+            [
+              0.8088,
+              0.7987
+            ]
+          ],
+          "width": [
+            0.346,
+            0.536,
+            0.252
+          ],
+          "inkDensity": [
+            0.792,
+            0.888,
+            0.62
+          ],
+          "curvature": 0.325,
+          "speedProxy": 0.62,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1
+          ],
+          "pausePoints": [
+            2
+          ]
+        }
+      ],
+      "qiLinks": [
+        {
+          "id": "qi-fu-stroke-01-to-02",
+          "label": "Fu qi link 01 to 02",
+          "fromStrokeId": "fu-stroke-01",
+          "toStrokeId": "fu-stroke-02",
+          "path": [
+            [
+              0.3937,
+              0.1364
+            ],
+            [
+              0.2437,
+              0.2475
+            ],
+            [
+              0.0938,
+              0.4286
+            ]
+          ],
+          "intensity": 0.68,
+          "rhythm": 0.5
+        },
+        {
+          "id": "qi-fu-stroke-02-to-03",
+          "label": "Fu qi link 02 to 03",
+          "fromStrokeId": "fu-stroke-02",
+          "toStrokeId": "fu-stroke-03",
+          "path": [
+            [
+              0.3187,
+              0.9156
+            ],
+            [
+              0.3343,
+              0.5981
+            ],
+            [
+              0.35,
+              0.3506
+            ]
+          ],
+          "intensity": 0.705,
+          "rhythm": 0.535
+        },
+        {
+          "id": "qi-fu-stroke-03-to-04",
+          "label": "Fu qi link 03 to 04",
+          "fromStrokeId": "fu-stroke-03",
+          "toStrokeId": "fu-stroke-04",
+          "path": [
+            [
+              0.3812,
+              0.4416
+            ],
+            [
+              0.4749,
+              0.2767
+            ],
+            [
+              0.5687,
+              0.1818
+            ]
+          ],
+          "intensity": 0.73,
+          "rhythm": 0.57
+        },
+        {
+          "id": "qi-fu-stroke-04-to-05",
+          "label": "Fu qi link 04 to 05",
+          "fromStrokeId": "fu-stroke-04",
+          "toStrokeId": "fu-stroke-05",
+          "path": [
+            [
+              0.7562,
+              0.1169
+            ],
+            [
+              0.6512,
+              0.1696
+            ],
+            [
+              0.5463,
+              0.2922
+            ]
+          ],
+          "intensity": 0.755,
+          "rhythm": 0.605
+        },
+        {
+          "id": "qi-fu-stroke-05-to-06",
+          "label": "Fu qi link 05 to 06",
+          "fromStrokeId": "fu-stroke-05",
+          "toStrokeId": "fu-stroke-06",
+          "path": [
+            [
+              0.5588,
+              0.487
+            ],
+            [
+              0.5525,
+              0.3968
+            ],
+            [
+              0.5463,
+              0.3766
+            ]
+          ],
+          "intensity": 0.78,
+          "rhythm": 0.5
+        },
+        {
+          "id": "qi-fu-stroke-06-to-07",
+          "label": "Fu qi link 06 to 07",
+          "fromStrokeId": "fu-stroke-06",
+          "toStrokeId": "fu-stroke-07",
+          "path": [
+            [
+              0.74,
+              0.3831
+            ],
+            [
+              0.6556,
+              0.3935
+            ],
+            [
+              0.5712,
+              0.474
+            ]
+          ],
+          "intensity": 0.805,
+          "rhythm": 0.535
+        },
+        {
+          "id": "qi-fu-stroke-07-to-08",
+          "label": "Fu qi link 07 to 08",
+          "fromStrokeId": "fu-stroke-07",
+          "toStrokeId": "fu-stroke-08",
+          "path": [
+            [
+              0.74,
+              0.4026
+            ],
+            [
+              0.6088,
+              0.4748
+            ],
+            [
+              0.4775,
+              0.6169
+            ]
+          ],
+          "intensity": 0.805,
+          "rhythm": 0.57
+        },
+        {
+          "id": "qi-fu-stroke-08-to-09",
+          "label": "Fu qi link 08 to 09",
+          "fromStrokeId": "fu-stroke-08",
+          "toStrokeId": "fu-stroke-09",
+          "path": [
+            [
+              0.565,
+              0.8247
+            ],
+            [
+              0.565,
+              0.676
+            ],
+            [
+              0.565,
+              0.5974
+            ]
+          ],
+          "intensity": 0.805,
+          "rhythm": 0.605
+        },
+        {
+          "id": "qi-fu-stroke-09-to-10",
+          "label": "Fu qi link 09 to 10",
+          "fromStrokeId": "fu-stroke-09",
+          "toStrokeId": "fu-stroke-10",
+          "path": [
+            [
+              0.8275,
+              0.7922
+            ],
+            [
+              0.6775,
+              0.7247
+            ],
+            [
+              0.5275,
+              0.7273
+            ]
+          ],
+          "intensity": 0.805,
+          "rhythm": 0.5
+        },
+        {
+          "id": "qi-fu-stroke-10-to-11",
+          "label": "Fu qi link 10 to 11",
+          "fromStrokeId": "fu-stroke-10",
+          "toStrokeId": "fu-stroke-11",
+          "path": [
+            [
+              0.7338,
+              0.6558
+            ],
+            [
+              0.6963,
+              0.5948
+            ],
+            [
+              0.6587,
+              0.6039
+            ]
+          ],
+          "intensity": 0.805,
+          "rhythm": 0.535
+        },
+        {
+          "id": "qi-fu-stroke-11-to-12",
+          "label": "Fu qi link 11 to 12",
+          "fromStrokeId": "fu-stroke-11",
+          "toStrokeId": "fu-stroke-12",
+          "path": [
+            [
+              0.6713,
+              0.7727
+            ],
+            [
+              0.6181,
+              0.767
+            ],
+            [
+              0.565,
+              0.8312
+            ]
+          ],
+          "intensity": 0.805,
+          "rhythm": 0.57
+        }
+      ]
+    },
+    {
+      "id": "chong",
+      "character": "重",
+      "label": "fourth glyph Chong from Photoshop pen paths",
+      "image": "data/work_003/full_scroll_glyphs/glyph_0004_height.png",
+      "bounds": {
+        "x": 17996,
+        "y": 469,
+        "width": 149,
+        "height": 172
+      },
+      "coordinate": "normalized from chong_paths.ai / glyph_0004.svg, origin top-left",
+      "strokes": [
+        {
+          "id": "chong-stroke-01",
+          "label": "top short slash",
+          "path": [
+            [
+              0.6107,
+              0.1221
+            ],
+            [
+              0.4899,
+              0.186
+            ],
+            [
+              0.3221,
+              0.2326
+            ]
+          ],
+          "width": [
+            0.387,
+            0.6,
+            0.282
+          ],
+          "inkDensity": [
+            0.792,
+            0.888,
+            0.62
+          ],
+          "curvature": 0.305,
+          "speedProxy": 0.626,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1
+          ],
+          "pausePoints": [
+            2
+          ]
+        },
+        {
+          "id": "chong-stroke-02",
+          "label": "upper long horizontal",
+          "path": [
+            [
+              0.1611,
+              0.4302
+            ],
+            [
+              0.3087,
+              0.3895
+            ],
+            [
+              0.5101,
+              0.3314
+            ],
+            [
+              0.7383,
+              0.2733
+            ],
+            [
+              0.8322,
+              0.25
+            ],
+            [
+              0.9128,
+              0.2616
+            ]
+          ],
+          "width": [
+            0.554,
+            0.73,
+            0.845,
+            0.799,
+            0.684,
+            0.403
+          ],
+          "inkDensity": [
+            0.792,
+            0.84,
+            0.888,
+            0.864,
+            0.816,
+            0.62
+          ],
+          "curvature": 0.41,
+          "speedProxy": 0.572,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1,
+            2,
+            3
+          ],
+          "pausePoints": [
+            5
+          ]
+        },
+        {
+          "id": "chong-stroke-03",
+          "label": "upper vertical descent",
+          "path": [
+            [
+              0.3423,
+              0.4419
+            ],
+            [
+              0.3691,
+              0.564
+            ],
+            [
+              0.4631,
+              0.6628
+            ]
+          ],
+          "width": [
+            0.471,
+            0.728,
+            0.342
+          ],
+          "inkDensity": [
+            0.792,
+            0.888,
+            0.62
+          ],
+          "curvature": 0.305,
+          "speedProxy": 0.626,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1
+          ],
+          "pausePoints": [
+            2
+          ]
+        },
+        {
+          "id": "chong-stroke-04",
+          "label": "middle box top and right fold",
+          "path": [
+            [
+              0.4002,
+              0.5125
+            ],
+            [
+              0.5428,
+              0.4729
+            ],
+            [
+              0.6854,
+              0.4186
+            ],
+            [
+              0.7139,
+              0.4779
+            ],
+            [
+              0.6854,
+              0.5471
+            ],
+            [
+              0.6455,
+              0.5767
+            ]
+          ],
+          "width": [
+            0.526,
+            0.694,
+            0.803,
+            0.759,
+            0.65,
+            0.382
+          ],
+          "inkDensity": [
+            0.792,
+            0.84,
+            0.888,
+            0.864,
+            0.816,
+            0.62
+          ],
+          "curvature": 0.41,
+          "speedProxy": 0.572,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1,
+            2,
+            3
+          ],
+          "pausePoints": [
+            5
+          ]
+        },
+        {
+          "id": "chong-stroke-05",
+          "label": "middle inner horizontal",
+          "path": [
+            [
+              0.4629,
+              0.5867
+            ],
+            [
+              0.5428,
+              0.5669
+            ],
+            [
+              0.6169,
+              0.5372
+            ]
+          ],
+          "width": [
+            0.374,
+            0.578,
+            0.272
+          ],
+          "inkDensity": [
+            0.792,
+            0.888,
+            0.62
+          ],
+          "curvature": 0.305,
+          "speedProxy": 0.626,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1
+          ],
+          "pausePoints": [
+            2
+          ]
+        },
+        {
+          "id": "chong-stroke-06",
+          "label": "middle bottom horizontal",
+          "path": [
+            [
+              0.4857,
+              0.6311
+            ],
+            [
+              0.5656,
+              0.6162
+            ],
+            [
+              0.6283,
+              0.5916
+            ]
+          ],
+          "width": [
+            0.374,
+            0.578,
+            0.272
+          ],
+          "inkDensity": [
+            0.792,
+            0.888,
+            0.62
+          ],
+          "curvature": 0.305,
+          "speedProxy": 0.626,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1
+          ],
+          "pausePoints": [
+            2
+          ]
+        },
+        {
+          "id": "chong-stroke-07",
+          "label": "continuous center vertical, extended",
+          "path": [
+            [
+              0.55,
+              0.337
+            ],
+            [
+              0.546,
+              0.472
+            ],
+            [
+              0.54,
+              0.606
+            ],
+            [
+              0.532,
+              0.725
+            ],
+            [
+              0.525,
+              0.835
+            ]
+          ],
+          "width": [
+            0.44,
+            0.56,
+            0.58,
+            0.52,
+            0.34
+          ],
+          "inkDensity": [
+            0.74,
+            0.86,
+            0.88,
+            0.78,
+            0.56
+          ],
+          "curvature": 0.34,
+          "speedProxy": 0.58,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1,
+            2,
+            3
+          ],
+          "pausePoints": [
+            4
+          ]
+        },
+        {
+          "id": "chong-stroke-08",
+          "label": "lower middle horizontal",
+          "path": [
+            [
+              0.4287,
+              0.7398
+            ],
+            [
+              0.5313,
+              0.72
+            ],
+            [
+              0.6569,
+              0.6954
+            ]
+          ],
+          "width": [
+            0.401,
+            0.621,
+            0.292
+          ],
+          "inkDensity": [
+            0.792,
+            0.888,
+            0.62
+          ],
+          "curvature": 0.305,
+          "speedProxy": 0.626,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1
+          ],
+          "pausePoints": [
+            2
+          ]
+        },
+        {
+          "id": "chong-stroke-09",
+          "label": "bottom long horizontal",
+          "path": [
+            [
+              0.3146,
+              0.8535
+            ],
+            [
+              0.4173,
+              0.8287
+            ],
+            [
+              0.5599,
+              0.8041
+            ],
+            [
+              0.7482,
+              0.7843
+            ],
+            [
+              0.8166,
+              0.8189
+            ]
+          ],
+          "width": [
+            0.498,
+            0.683,
+            0.771,
+            0.642,
+            0.362
+          ],
+          "inkDensity": [
+            0.792,
+            0.852,
+            0.888,
+            0.828,
+            0.62
+          ],
+          "curvature": 0.375,
+          "speedProxy": 0.59,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1,
+            2,
+            3
+          ],
+          "pausePoints": [
+            4
+          ]
+        }
+      ],
+      "qiLinks": [
+        {
+          "id": "qi-chong-stroke-01-to-02",
+          "label": "Chong qi link 01 to 02",
+          "fromStrokeId": "chong-stroke-01",
+          "toStrokeId": "chong-stroke-02",
+          "path": [
+            [
+              0.3221,
+              0.2326
+            ],
+            [
+              0.2416,
+              0.2964
+            ],
+            [
+              0.1611,
+              0.4302
+            ]
+          ],
+          "intensity": 0.7,
+          "rhythm": 0.5
+        },
+        {
+          "id": "qi-chong-stroke-02-to-03",
+          "label": "Chong qi link 02 to 03",
+          "fromStrokeId": "chong-stroke-02",
+          "toStrokeId": "chong-stroke-03",
+          "path": [
+            [
+              0.9128,
+              0.2616
+            ],
+            [
+              0.6275,
+              0.3167
+            ],
+            [
+              0.3423,
+              0.4419
+            ]
+          ],
+          "intensity": 0.725,
+          "rhythm": 0.535
+        },
+        {
+          "id": "qi-chong-stroke-03-to-04",
+          "label": "Chong qi link 03 to 04",
+          "fromStrokeId": "chong-stroke-03",
+          "toStrokeId": "chong-stroke-04",
+          "path": [
+            [
+              0.4631,
+              0.6628
+            ],
+            [
+              0.4316,
+              0.5526
+            ],
+            [
+              0.4002,
+              0.5125
+            ]
+          ],
+          "intensity": 0.75,
+          "rhythm": 0.57
+        },
+        {
+          "id": "qi-chong-stroke-04-to-05",
+          "label": "Chong qi link 04 to 05",
+          "fromStrokeId": "chong-stroke-04",
+          "toStrokeId": "chong-stroke-05",
+          "path": [
+            [
+              0.6455,
+              0.5767
+            ],
+            [
+              0.5542,
+              0.5467
+            ],
+            [
+              0.4629,
+              0.5867
+            ]
+          ],
+          "intensity": 0.775,
+          "rhythm": 0.605
+        },
+        {
+          "id": "qi-chong-stroke-05-to-06",
+          "label": "Chong qi link 05 to 06",
+          "fromStrokeId": "chong-stroke-05",
+          "toStrokeId": "chong-stroke-06",
+          "path": [
+            [
+              0.6169,
+              0.5372
+            ],
+            [
+              0.5513,
+              0.5491
+            ],
+            [
+              0.4857,
+              0.6311
+            ]
+          ],
+          "intensity": 0.8,
+          "rhythm": 0.5
+        },
+        {
+          "id": "qi-chong-stroke-06-to-07",
+          "label": "Chong qi link 06 to 07",
+          "fromStrokeId": "chong-stroke-06",
+          "toStrokeId": "chong-stroke-07",
+          "path": [
+            [
+              0.6283,
+              0.5916
+            ],
+            [
+              0.5892,
+              0.4293
+            ],
+            [
+              0.55,
+              0.337
+            ]
+          ],
+          "intensity": 0.825,
+          "rhythm": 0.535
+        },
+        {
+          "id": "qi-chong-stroke-07-to-08",
+          "label": "Chong qi link 07 to 08",
+          "fromStrokeId": "chong-stroke-07",
+          "toStrokeId": "chong-stroke-08",
+          "path": [
+            [
+              0.525,
+              0.835
+            ],
+            [
+              0.4768,
+              0.7524
+            ],
+            [
+              0.4287,
+              0.7398
+            ]
+          ],
+          "intensity": 0.825,
+          "rhythm": 0.57
+        },
+        {
+          "id": "qi-chong-stroke-08-to-09",
+          "label": "Chong qi link 08 to 09",
+          "fromStrokeId": "chong-stroke-08",
+          "toStrokeId": "chong-stroke-09",
+          "path": [
+            [
+              0.6569,
+              0.6954
+            ],
+            [
+              0.4858,
+              0.7395
+            ],
+            [
+              0.3146,
+              0.8535
+            ]
+          ],
+          "intensity": 0.825,
+          "rhythm": 0.605
+        }
+      ]
+    },
+    {
+      "id": "jian",
+      "character": "建",
+      "label": "fifth glyph Jian from latest Photoshop pen paths",
+      "image": "data/work_003/full_scroll_glyphs/glyph_0005_height.png",
+      "bounds": {
+        "x": 17985,
+        "y": 641,
+        "width": 189,
+        "height": 199
+      },
+      "coordinate": "normalized from latest jian_paths.ai / glyph_0005.svg, origin top-left",
+      "strokes": [
+        {
+          "id": "jian-stroke-01",
+          "label": "inner top folded stroke",
+          "path": [
+            [
+              0.4021,
+              0.2764
+            ],
+            [
+              0.5026,
+              0.2663
+            ],
+            [
+              0.6085,
+              0.2513
+            ],
+            [
+              0.5926,
+              0.3166
+            ],
+            [
+              0.5503,
+              0.392
+            ]
+          ],
+          "width": [
+            0.484,
+            0.664,
+            0.75,
+            0.624,
+            0.352
+          ],
+          "inkDensity": [
+            0.792,
+            0.852,
+            0.888,
+            0.828,
+            0.62
+          ],
+          "curvature": 0.375,
+          "speedProxy": 0.59,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1,
+            2,
+            3
+          ],
+          "pausePoints": [
+            4
+          ]
+        },
+        {
+          "id": "jian-stroke-02",
+          "label": "inner long upper horizontal",
+          "path": [
+            [
+              0.254,
+              0.4171
+            ],
+            [
+              0.4021,
+              0.3719
+            ],
+            [
+              0.5238,
+              0.3367
+            ],
+            [
+              0.7143,
+              0.3065
+            ]
+          ],
+          "width": [
+            0.401,
+            0.585,
+            0.552,
+            0.292
+          ],
+          "inkDensity": [
+            0.792,
+            0.872,
+            0.848,
+            0.62
+          ],
+          "curvature": 0.34,
+          "speedProxy": 0.608,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1,
+            2
+          ],
+          "pausePoints": [
+            3
+          ]
+        },
+        {
+          "id": "jian-stroke-03",
+          "label": "inner short connector",
+          "path": [
+            [
+              0.3651,
+              0.4824
+            ],
+            [
+              0.5873,
+              0.407
+            ]
+          ],
+          "width": [
+            0.429,
+            0.312
+          ],
+          "inkDensity": [
+            0.792,
+            0.62
+          ],
+          "curvature": 0.27,
+          "speedProxy": 0.644,
+          "flyingWhite": 0.1,
+          "turningPoints": [],
+          "pausePoints": [
+            1
+          ]
+        },
+        {
+          "id": "jian-stroke-04",
+          "label": "inner middle horizontal",
+          "path": [
+            [
+              0.3598,
+              0.5578
+            ],
+            [
+              0.4603,
+              0.5226
+            ],
+            [
+              0.582,
+              0.4975
+            ],
+            [
+              0.6138,
+              0.4925
+            ]
+          ],
+          "width": [
+            0.401,
+            0.585,
+            0.552,
+            0.292
+          ],
+          "inkDensity": [
+            0.792,
+            0.872,
+            0.848,
+            0.62
+          ],
+          "curvature": 0.34,
+          "speedProxy": 0.608,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1,
+            2
+          ],
+          "pausePoints": [
+            3
+          ]
+        },
+        {
+          "id": "jian-stroke-05",
+          "label": "inner lower horizontal",
+          "path": [
+            [
+              0.2963,
+              0.6784
+            ],
+            [
+              0.4588,
+              0.6382
+            ],
+            [
+              0.6058,
+              0.602
+            ]
+          ],
+          "width": [
+            0.401,
+            0.621,
+            0.292
+          ],
+          "inkDensity": [
+            0.792,
+            0.888,
+            0.62
+          ],
+          "curvature": 0.305,
+          "speedProxy": 0.626,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1
+          ],
+          "pausePoints": [
+            2
+          ]
+        },
+        {
+          "id": "jian-stroke-06",
+          "label": "inner long vertical",
+          "path": [
+            [
+              0.4603,
+              0.0603
+            ],
+            [
+              0.5132,
+              0.1206
+            ],
+            [
+              0.4974,
+              0.2663
+            ],
+            [
+              0.4921,
+              0.4271
+            ],
+            [
+              0.4868,
+              0.5578
+            ],
+            [
+              0.4815,
+              0.6884
+            ],
+            [
+              0.4815,
+              0.794
+            ]
+          ],
+          "width": [
+            0.518,
+            0.677,
+            0.742,
+            0.77,
+            0.679,
+            0.588,
+            0.36
+          ],
+          "inkDensity": [
+            0.792,
+            0.832,
+            0.872,
+            0.888,
+            0.848,
+            0.808,
+            0.62
+          ],
+          "curvature": 0.41,
+          "speedProxy": 0.572,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1,
+            2,
+            3
+          ],
+          "pausePoints": [
+            6
+          ]
+        },
+        {
+          "id": "jian-stroke-07",
+          "label": "right-lower dot extended from single point",
+          "path": [
+            [
+              0.5556,
+              0.6884
+            ],
+            [
+              0.5876,
+              0.7164
+            ],
+            [
+              0.6081,
+              0.7409
+            ]
+          ],
+          "width": [
+            0.34,
+            0.54,
+            0.28
+          ],
+          "inkDensity": [
+            0.62,
+            0.82,
+            0.52
+          ],
+          "curvature": 0.235,
+          "speedProxy": 0.662,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1
+          ],
+          "pausePoints": [
+            2
+          ]
+        },
+        {
+          "id": "jian-stroke-08",
+          "label": "outer Jian radical bend",
+          "path": [
+            [
+              0.1111,
+              0.3467
+            ],
+            [
+              0.1958,
+              0.4171
+            ],
+            [
+              0.1164,
+              0.5226
+            ],
+            [
+              0.1481,
+              0.5729
+            ],
+            [
+              0.2275,
+              0.5678
+            ],
+            [
+              0.2116,
+              0.6583
+            ],
+            [
+              0.1746,
+              0.7286
+            ],
+            [
+              0.0952,
+              0.804
+            ]
+          ],
+          "width": [
+            0.484,
+            0.61,
+            0.682,
+            0.754,
+            0.714,
+            0.642,
+            0.57,
+            0.352
+          ],
+          "inkDensity": [
+            0.792,
+            0.826,
+            0.861,
+            0.895,
+            0.871,
+            0.837,
+            0.802,
+            0.62
+          ],
+          "curvature": 0.41,
+          "speedProxy": 0.572,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1,
+            2,
+            3
+          ],
+          "pausePoints": [
+            7
+          ]
+        },
+        {
+          "id": "jian-stroke-09",
+          "label": "outer bottom sweeping stroke",
+          "path": [
+            [
+              0.1799,
+              0.7236
+            ],
+            [
+              0.2646,
+              0.7437
+            ],
+            [
+              0.3545,
+              0.7638
+            ],
+            [
+              0.4709,
+              0.8291
+            ],
+            [
+              0.582,
+              0.8794
+            ],
+            [
+              0.7196,
+              0.9196
+            ],
+            [
+              0.8254,
+              0.9146
+            ],
+            [
+              0.9206,
+              0.9146
+            ]
+          ],
+          "width": [
+            0.512,
+            0.645,
+            0.721,
+            0.797,
+            0.755,
+            0.679,
+            0.602,
+            0.372
+          ],
+          "inkDensity": [
+            0.792,
+            0.826,
+            0.861,
+            0.895,
+            0.871,
+            0.837,
+            0.802,
+            0.62
+          ],
+          "curvature": 0.41,
+          "speedProxy": 0.572,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1,
+            2,
+            3
+          ],
+          "pausePoints": [
+            7
+          ]
+        }
+      ],
+      "qiLinks": [
+        {
+          "id": "qi-jian-stroke-01-to-02",
+          "label": "jian qi link 01 to 02",
+          "fromStrokeId": "jian-stroke-01",
+          "toStrokeId": "jian-stroke-02",
+          "path": [
+            [
+              0.5503,
+              0.392
+            ],
+            [
+              0.4022,
+              0.3696
+            ],
+            [
+              0.254,
+              0.4171
+            ]
+          ],
+          "intensity": 0.7,
+          "rhythm": 0.5
+        },
+        {
+          "id": "qi-jian-stroke-02-to-03",
+          "label": "jian qi link 02 to 03",
+          "fromStrokeId": "jian-stroke-02",
+          "toStrokeId": "jian-stroke-03",
+          "path": [
+            [
+              0.7143,
+              0.3065
+            ],
+            [
+              0.5397,
+              0.3594
+            ],
+            [
+              0.3651,
+              0.4824
+            ]
+          ],
+          "intensity": 0.725,
+          "rhythm": 0.535
+        },
+        {
+          "id": "qi-jian-stroke-03-to-04",
+          "label": "jian qi link 03 to 04",
+          "fromStrokeId": "jian-stroke-03",
+          "toStrokeId": "jian-stroke-04",
+          "path": [
+            [
+              0.5873,
+              0.407
+            ],
+            [
+              0.4736,
+              0.4474
+            ],
+            [
+              0.3598,
+              0.5578
+            ]
+          ],
+          "intensity": 0.75,
+          "rhythm": 0.57
+        },
+        {
+          "id": "qi-jian-stroke-04-to-05",
+          "label": "jian qi link 04 to 05",
+          "fromStrokeId": "jian-stroke-04",
+          "toStrokeId": "jian-stroke-05",
+          "path": [
+            [
+              0.6138,
+              0.4925
+            ],
+            [
+              0.4551,
+              0.5504
+            ],
+            [
+              0.2963,
+              0.6784
+            ]
+          ],
+          "intensity": 0.775,
+          "rhythm": 0.605
+        },
+        {
+          "id": "qi-jian-stroke-05-to-06",
+          "label": "jian qi link 05 to 06",
+          "fromStrokeId": "jian-stroke-05",
+          "toStrokeId": "jian-stroke-06",
+          "path": [
+            [
+              0.6058,
+              0.602
+            ],
+            [
+              0.5331,
+              0.2962
+            ],
+            [
+              0.4603,
+              0.0603
+            ]
+          ],
+          "intensity": 0.8,
+          "rhythm": 0.5
+        },
+        {
+          "id": "qi-jian-stroke-06-to-07",
+          "label": "jian qi link 06 to 07",
+          "fromStrokeId": "jian-stroke-06",
+          "toStrokeId": "jian-stroke-07",
+          "path": [
+            [
+              0.4815,
+              0.794
+            ],
+            [
+              0.5185,
+              0.7062
+            ],
+            [
+              0.5556,
+              0.6884
+            ]
+          ],
+          "intensity": 0.825,
+          "rhythm": 0.535
+        },
+        {
+          "id": "qi-jian-stroke-07-to-08",
+          "label": "jian qi link 07 to 08",
+          "fromStrokeId": "jian-stroke-07",
+          "toStrokeId": "jian-stroke-08",
+          "path": [
+            [
+              0.6081,
+              0.7409
+            ],
+            [
+              0.3596,
+              0.5088
+            ],
+            [
+              0.1111,
+              0.3467
+            ]
+          ],
+          "intensity": 0.825,
+          "rhythm": 0.57
+        },
+        {
+          "id": "qi-jian-stroke-08-to-09",
+          "label": "jian qi link 08 to 09",
+          "fromStrokeId": "jian-stroke-08",
+          "toStrokeId": "jian-stroke-09",
+          "path": [
+            [
+              0.0952,
+              0.804
+            ],
+            [
+              0.1376,
+              0.7288
+            ],
+            [
+              0.1799,
+              0.7236
+            ]
+          ],
+          "intensity": 0.825,
+          "rhythm": 0.605
+        }
+      ]
+    },
+    {
+      "id": "ta",
+      "character": "塔",
+      "label": "sixth glyph Ta from Photoshop pen paths",
+      "image": "data/work_003/full_scroll_glyphs/glyph_0006_height.png",
+      "bounds": {
+        "x": 17976,
+        "y": 858,
+        "width": 186,
+        "height": 156
+      },
+      "coordinate": "normalized from ta_paths.ai / glyph_0006.svg, origin top-left",
+      "strokes": [
+        {
+          "id": "ta-stroke-01",
+          "label": "earth top horizontal, completed",
+          "path": [
+            [
+              0.1055,
+              0.5193
+            ],
+            [
+              0.18,
+              0.4297
+            ],
+            [
+              0.2736,
+              0.3307
+            ]
+          ],
+          "width": [
+            0.42,
+            0.62,
+            0.36
+          ],
+          "inkDensity": [
+            0.68,
+            0.82,
+            0.56
+          ],
+          "curvature": 0.235,
+          "speedProxy": 0.662,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1
+          ],
+          "pausePoints": [
+            2
+          ]
+        },
+        {
+          "id": "ta-stroke-02",
+          "label": "earth vertical",
+          "path": [
+            [
+              0.2043,
+              0.1154
+            ],
+            [
+              0.2419,
+              0.1474
+            ],
+            [
+              0.2204,
+              0.3526
+            ],
+            [
+              0.2151,
+              0.5449
+            ],
+            [
+              0.2151,
+              0.7115
+            ]
+          ],
+          "width": [
+            0.484,
+            0.664,
+            0.75,
+            0.624,
+            0.352
+          ],
+          "inkDensity": [
+            0.792,
+            0.852,
+            0.888,
+            0.828,
+            0.62
+          ],
+          "curvature": 0.375,
+          "speedProxy": 0.59,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1,
+            2,
+            3
+          ],
+          "pausePoints": [
+            4
+          ]
+        },
+        {
+          "id": "ta-stroke-03",
+          "label": "earth lower horizontal",
+          "path": [
+            [
+              0.1774,
+              0.8077
+            ],
+            [
+              0.2419,
+              0.6538
+            ],
+            [
+              0.3011,
+              0.5064
+            ],
+            [
+              0.371,
+              0.3718
+            ]
+          ],
+          "width": [
+            0.429,
+            0.625,
+            0.59,
+            0.312
+          ],
+          "inkDensity": [
+            0.792,
+            0.872,
+            0.848,
+            0.62
+          ],
+          "curvature": 0.34,
+          "speedProxy": 0.608,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1,
+            2
+          ],
+          "pausePoints": [
+            3
+          ]
+        },
+        {
+          "id": "ta-stroke-04",
+          "label": "grass left",
+          "path": [
+            [
+              0.4409,
+              0.1538
+            ],
+            [
+              0.457,
+              0.2051
+            ],
+            [
+              0.4677,
+              0.25
+            ],
+            [
+              0.5054,
+              0.1987
+            ]
+          ],
+          "width": [
+            0.401,
+            0.585,
+            0.552,
+            0.292
+          ],
+          "inkDensity": [
+            0.792,
+            0.872,
+            0.848,
+            0.62
+          ],
+          "curvature": 0.34,
+          "speedProxy": 0.608,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1,
+            2
+          ],
+          "pausePoints": [
+            3
+          ]
+        },
+        {
+          "id": "ta-stroke-05",
+          "label": "grass right",
+          "path": [
+            [
+              0.6667,
+              0.0962
+            ],
+            [
+              0.6989,
+              0.1346
+            ],
+            [
+              0.6505,
+              0.2372
+            ],
+            [
+              0.6075,
+              0.2885
+            ],
+            [
+              0.5484,
+              0.3654
+            ]
+          ],
+          "width": [
+            0.484,
+            0.664,
+            0.75,
+            0.624,
+            0.352
+          ],
+          "inkDensity": [
+            0.792,
+            0.852,
+            0.888,
+            0.828,
+            0.62
+          ],
+          "curvature": 0.375,
+          "speedProxy": 0.59,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1,
+            2,
+            3
+          ],
+          "pausePoints": [
+            4
+          ]
+        },
+        {
+          "id": "ta-stroke-06",
+          "label": "roof top sweep",
+          "path": [
+            [
+              0.4677,
+              0.4487
+            ],
+            [
+              0.543,
+              0.4103
+            ],
+            [
+              0.6129,
+              0.3526
+            ],
+            [
+              0.6828,
+              0.3013
+            ]
+          ],
+          "width": [
+            0.429,
+            0.625,
+            0.59,
+            0.312
+          ],
+          "inkDensity": [
+            0.792,
+            0.872,
+            0.848,
+            0.62
+          ],
+          "curvature": 0.34,
+          "speedProxy": 0.608,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1,
+            2
+          ],
+          "pausePoints": [
+            3
+          ]
+        },
+        {
+          "id": "ta-stroke-07",
+          "label": "right he component smooth left-falling stroke",
+          "path": [
+            [
+              0.565,
+              0.4295
+            ],
+            [
+              0.525,
+              0.515
+            ],
+            [
+              0.472,
+              0.598
+            ],
+            [
+              0.405,
+              0.688
+            ],
+            [
+              0.328,
+              0.7692
+            ]
+          ],
+          "width": [
+            0.48,
+            0.62,
+            0.66,
+            0.56,
+            0.34
+          ],
+          "inkDensity": [
+            0.68,
+            0.82,
+            0.84,
+            0.72,
+            0.54
+          ],
+          "curvature": 0.375,
+          "speedProxy": 0.59,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1,
+            2,
+            3
+          ],
+          "pausePoints": [
+            4
+          ]
+        },
+        {
+          "id": "ta-stroke-08",
+          "label": "mouth fold",
+          "path": [
+            [
+              0.586,
+              0.4359
+            ],
+            [
+              0.6667,
+              0.5
+            ],
+            [
+              0.7419,
+              0.5513
+            ],
+            [
+              0.8065,
+              0.5962
+            ],
+            [
+              0.8925,
+              0.6218
+            ]
+          ],
+          "width": [
+            0.484,
+            0.664,
+            0.75,
+            0.624,
+            0.352
+          ],
+          "inkDensity": [
+            0.792,
+            0.852,
+            0.888,
+            0.828,
+            0.62
+          ],
+          "curvature": 0.375,
+          "speedProxy": 0.59,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1,
+            2,
+            3
+          ],
+          "pausePoints": [
+            4
+          ]
+        },
+        {
+          "id": "ta-stroke-09",
+          "label": "mouth bottom",
+          "path": [
+            [
+              0.5161,
+              0.6538
+            ],
+            [
+              0.5753,
+              0.6282
+            ],
+            [
+              0.6452,
+              0.6154
+            ]
+          ],
+          "width": [
+            0.429,
+            0.664,
+            0.312
+          ],
+          "inkDensity": [
+            0.792,
+            0.888,
+            0.62
+          ],
+          "curvature": 0.305,
+          "speedProxy": 0.626,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1
+          ],
+          "pausePoints": [
+            2
+          ]
+        },
+        {
+          "id": "ta-stroke-10",
+          "label": "lower box left",
+          "path": [
+            [
+              0.4624,
+              0.7885
+            ],
+            [
+              0.4785,
+              0.8718
+            ],
+            [
+              0.5054,
+              0.9231
+            ]
+          ],
+          "width": [
+            0.401,
+            0.621,
+            0.292
+          ],
+          "inkDensity": [
+            0.792,
+            0.888,
+            0.62
+          ],
+          "curvature": 0.305,
+          "speedProxy": 0.626,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1
+          ],
+          "pausePoints": [
+            2
+          ]
+        },
+        {
+          "id": "ta-stroke-11",
+          "label": "lower box fold",
+          "path": [
+            [
+              0.5161,
+              0.7949
+            ],
+            [
+              0.6989,
+              0.7308
+            ],
+            [
+              0.7366,
+              0.7756
+            ],
+            [
+              0.7151,
+              0.8205
+            ],
+            [
+              0.6828,
+              0.8846
+            ],
+            [
+              0.672,
+              0.8974
+            ]
+          ],
+          "width": [
+            0.484,
+            0.639,
+            0.74,
+            0.699,
+            0.599,
+            0.352
+          ],
+          "inkDensity": [
+            0.792,
+            0.84,
+            0.888,
+            0.864,
+            0.816,
+            0.62
+          ],
+          "curvature": 0.41,
+          "speedProxy": 0.572,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1,
+            2,
+            3
+          ],
+          "pausePoints": [
+            5
+          ]
+        },
+        {
+          "id": "ta-stroke-12",
+          "label": "lower box bottom",
+          "path": [
+            [
+              0.5108,
+              0.9231
+            ],
+            [
+              0.5699,
+              0.9038
+            ],
+            [
+              0.6398,
+              0.8974
+            ],
+            [
+              0.6667,
+              0.9103
+            ]
+          ],
+          "width": [
+            0.429,
+            0.625,
+            0.59,
+            0.312
+          ],
+          "inkDensity": [
+            0.792,
+            0.872,
+            0.848,
+            0.62
+          ],
+          "curvature": 0.34,
+          "speedProxy": 0.608,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1,
+            2
+          ],
+          "pausePoints": [
+            3
+          ]
+        }
+      ],
+      "qiLinks": [
+        {
+          "id": "qi-ta-stroke-01-to-02",
+          "label": "ta qi link 01 to 02",
+          "fromStrokeId": "ta-stroke-01",
+          "toStrokeId": "ta-stroke-02",
+          "path": [
+            [
+              0.2736,
+              0.3307
+            ],
+            [
+              0.2389,
+              0.188
+            ],
+            [
+              0.2043,
+              0.1154
+            ]
+          ],
+          "intensity": 0.7,
+          "rhythm": 0.5
+        },
+        {
+          "id": "qi-ta-stroke-02-to-03",
+          "label": "ta qi link 02 to 03",
+          "fromStrokeId": "ta-stroke-02",
+          "toStrokeId": "ta-stroke-03",
+          "path": [
+            [
+              0.2151,
+              0.7115
+            ],
+            [
+              0.1963,
+              0.7246
+            ],
+            [
+              0.1774,
+              0.8077
+            ]
+          ],
+          "intensity": 0.725,
+          "rhythm": 0.535
+        },
+        {
+          "id": "qi-ta-stroke-03-to-04",
+          "label": "ta qi link 03 to 04",
+          "fromStrokeId": "ta-stroke-03",
+          "toStrokeId": "ta-stroke-04",
+          "path": [
+            [
+              0.371,
+              0.3718
+            ],
+            [
+              0.406,
+              0.2278
+            ],
+            [
+              0.4409,
+              0.1538
+            ]
+          ],
+          "intensity": 0.75,
+          "rhythm": 0.57
+        },
+        {
+          "id": "qi-ta-stroke-04-to-05",
+          "label": "ta qi link 04 to 05",
+          "fromStrokeId": "ta-stroke-04",
+          "toStrokeId": "ta-stroke-05",
+          "path": [
+            [
+              0.5054,
+              0.1987
+            ],
+            [
+              0.586,
+              0.1124
+            ],
+            [
+              0.6667,
+              0.0962
+            ]
+          ],
+          "intensity": 0.775,
+          "rhythm": 0.605
+        },
+        {
+          "id": "qi-ta-stroke-05-to-06",
+          "label": "ta qi link 05 to 06",
+          "fromStrokeId": "ta-stroke-05",
+          "toStrokeId": "ta-stroke-06",
+          "path": [
+            [
+              0.5484,
+              0.3654
+            ],
+            [
+              0.5081,
+              0.372
+            ],
+            [
+              0.4677,
+              0.4487
+            ]
+          ],
+          "intensity": 0.8,
+          "rhythm": 0.5
+        },
+        {
+          "id": "qi-ta-stroke-06-to-07",
+          "label": "ta qi link 06 to 07",
+          "fromStrokeId": "ta-stroke-06",
+          "toStrokeId": "ta-stroke-07",
+          "path": [
+            [
+              0.6828,
+              0.3013
+            ],
+            [
+              0.6239,
+              0.3304
+            ],
+            [
+              0.565,
+              0.4295
+            ]
+          ],
+          "intensity": 0.825,
+          "rhythm": 0.535
+        },
+        {
+          "id": "qi-ta-stroke-07-to-08",
+          "label": "ta qi link 07 to 08",
+          "fromStrokeId": "ta-stroke-07",
+          "toStrokeId": "ta-stroke-08",
+          "path": [
+            [
+              0.328,
+              0.7692
+            ],
+            [
+              0.457,
+              0.5675
+            ],
+            [
+              0.586,
+              0.4359
+            ]
+          ],
+          "intensity": 0.825,
+          "rhythm": 0.57
+        },
+        {
+          "id": "qi-ta-stroke-08-to-09",
+          "label": "ta qi link 08 to 09",
+          "fromStrokeId": "ta-stroke-08",
+          "toStrokeId": "ta-stroke-09",
+          "path": [
+            [
+              0.8925,
+              0.6218
+            ],
+            [
+              0.7043,
+              0.6028
+            ],
+            [
+              0.5161,
+              0.6538
+            ]
+          ],
+          "intensity": 0.825,
+          "rhythm": 0.605
+        },
+        {
+          "id": "qi-ta-stroke-09-to-10",
+          "label": "ta qi link 09 to 10",
+          "fromStrokeId": "ta-stroke-09",
+          "toStrokeId": "ta-stroke-10",
+          "path": [
+            [
+              0.6452,
+              0.6154
+            ],
+            [
+              0.5538,
+              0.6669
+            ],
+            [
+              0.4624,
+              0.7885
+            ]
+          ],
+          "intensity": 0.825,
+          "rhythm": 0.5
+        },
+        {
+          "id": "qi-ta-stroke-10-to-11",
+          "label": "ta qi link 10 to 11",
+          "fromStrokeId": "ta-stroke-10",
+          "toStrokeId": "ta-stroke-11",
+          "path": [
+            [
+              0.5054,
+              0.9231
+            ],
+            [
+              0.5108,
+              0.824
+            ],
+            [
+              0.5161,
+              0.7949
+            ]
+          ],
+          "intensity": 0.825,
+          "rhythm": 0.535
+        },
+        {
+          "id": "qi-ta-stroke-11-to-12",
+          "label": "ta qi link 11 to 12",
+          "fromStrokeId": "ta-stroke-11",
+          "toStrokeId": "ta-stroke-12",
+          "path": [
+            [
+              0.672,
+              0.8974
+            ],
+            [
+              0.5914,
+              0.8752
+            ],
+            [
+              0.5108,
+              0.9231
+            ]
+          ],
+          "intensity": 0.825,
+          "rhythm": 0.57
+        }
+      ]
+    },
+    {
+      "id": "ji",
+      "character": "记",
+      "label": "seventh glyph Ji from Photoshop pen paths",
+      "image": "data/work_003/full_scroll_glyphs/glyph_0007_height.png",
+      "bounds": {
+        "x": 17966,
+        "y": 1046,
+        "width": 192,
+        "height": 157
+      },
+      "coordinate": "normalized from ji_paths.ai / glyph_0007.svg, origin top-left",
+      "strokes": [
+        {
+          "id": "ji-stroke-01",
+          "label": "speech dot",
+          "path": [
+            [
+              0.2656,
+              0.0828
+            ],
+            [
+              0.2969,
+              0.1401
+            ],
+            [
+              0.3385,
+              0.1911
+            ]
+          ],
+          "width": [
+            0.401,
+            0.621,
+            0.292
+          ],
+          "inkDensity": [
+            0.792,
+            0.888,
+            0.62
+          ],
+          "curvature": 0.305,
+          "speedProxy": 0.626,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1
+          ],
+          "pausePoints": [
+            2
+          ]
+        },
+        {
+          "id": "ji-stroke-02",
+          "label": "speech horizontal",
+          "path": [
+            [
+              0.099,
+              0.4268
+            ],
+            [
+              0.2031,
+              0.3822
+            ],
+            [
+              0.3073,
+              0.3376
+            ],
+            [
+              0.349,
+              0.3312
+            ]
+          ],
+          "width": [
+            0.401,
+            0.585,
+            0.552,
+            0.292
+          ],
+          "inkDensity": [
+            0.792,
+            0.872,
+            0.848,
+            0.62
+          ],
+          "curvature": 0.34,
+          "speedProxy": 0.608,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1,
+            2
+          ],
+          "pausePoints": [
+            3
+          ]
+        },
+        {
+          "id": "ji-stroke-03",
+          "label": "speech vertical",
+          "path": [
+            [
+              0.2031,
+              0.535
+            ],
+            [
+              0.3021,
+              0.4713
+            ]
+          ],
+          "width": [
+            0.429,
+            0.312
+          ],
+          "inkDensity": [
+            0.792,
+            0.62
+          ],
+          "curvature": 0.27,
+          "speedProxy": 0.644,
+          "flyingWhite": 0.1,
+          "turningPoints": [],
+          "pausePoints": [
+            1
+          ]
+        },
+        {
+          "id": "ji-stroke-04",
+          "label": "speech lower turn",
+          "path": [
+            [
+              0.1615,
+              0.7006
+            ],
+            [
+              0.2552,
+              0.6561
+            ],
+            [
+              0.3229,
+              0.6115
+            ]
+          ],
+          "width": [
+            0.401,
+            0.621,
+            0.292
+          ],
+          "inkDensity": [
+            0.792,
+            0.888,
+            0.62
+          ],
+          "curvature": 0.305,
+          "speedProxy": 0.626,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1
+          ],
+          "pausePoints": [
+            2
+          ]
+        },
+        {
+          "id": "ji-stroke-05",
+          "label": "right top horizontal",
+          "path": [
+            [
+              0.1525,
+              0.8089
+            ],
+            [
+              0.189,
+              0.8726
+            ],
+            [
+              0.2306,
+              0.9045
+            ]
+          ],
+          "width": [
+            0.401,
+            0.621,
+            0.292
+          ],
+          "inkDensity": [
+            0.792,
+            0.888,
+            0.62
+          ],
+          "curvature": 0.305,
+          "speedProxy": 0.626,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1
+          ],
+          "pausePoints": [
+            2
+          ]
+        },
+        {
+          "id": "ji-stroke-06",
+          "label": "right vertical fold",
+          "path": [
+            [
+              0.1942,
+              0.8025
+            ],
+            [
+              0.2827,
+              0.758
+            ],
+            [
+              0.3296,
+              0.7452
+            ],
+            [
+              0.3192,
+              0.8025
+            ],
+            [
+              0.3192,
+              0.8662
+            ]
+          ],
+          "width": [
+            0.512,
+            0.702,
+            0.793,
+            0.659,
+            0.372
+          ],
+          "inkDensity": [
+            0.792,
+            0.852,
+            0.888,
+            0.828,
+            0.62
+          ],
+          "curvature": 0.375,
+          "speedProxy": 0.59,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1,
+            2,
+            3
+          ],
+          "pausePoints": [
+            4
+          ]
+        },
+        {
+          "id": "ji-speech-mouth-bottom",
+          "label": "speech radical lower mouth bottom horizontal from reference",
+          "path": [
+            [
+              0.178,
+              0.9218
+            ],
+            [
+              0.2488,
+              0.9027
+            ],
+            [
+              0.318,
+              0.881
+            ]
+          ],
+          "width": [
+            0.38,
+            0.56,
+            0.34
+          ],
+          "inkDensity": [
+            0.64,
+            0.82,
+            0.56
+          ],
+          "curvature": 0.26,
+          "speedProxy": 0.62,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1
+          ],
+          "pausePoints": [
+            2
+          ]
+        },
+        {
+          "id": "ji-stroke-08",
+          "label": "right lower vertical",
+          "path": [
+            [
+              0.4844,
+              0.3949
+            ],
+            [
+              0.5521,
+              0.3758
+            ],
+            [
+              0.6302,
+              0.3439
+            ],
+            [
+              0.6667,
+              0.3439
+            ],
+            [
+              0.6458,
+              0.3885
+            ],
+            [
+              0.6354,
+              0.4522
+            ],
+            [
+              0.6354,
+              0.4968
+            ]
+          ],
+          "width": [
+            0.484,
+            0.622,
+            0.706,
+            0.75,
+            0.666,
+            0.582,
+            0.352
+          ],
+          "inkDensity": [
+            0.792,
+            0.832,
+            0.872,
+            0.888,
+            0.848,
+            0.808,
+            0.62
+          ],
+          "curvature": 0.41,
+          "speedProxy": 0.572,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1,
+            2,
+            3
+          ],
+          "pausePoints": [
+            6
+          ]
+        },
+        {
+          "id": "ji-stroke-09",
+          "label": "right bottom sweep",
+          "path": [
+            [
+              0.5417,
+              0.5478
+            ],
+            [
+              0.599,
+              0.5223
+            ],
+            [
+              0.6354,
+              0.5096
+            ]
+          ],
+          "width": [
+            0.429,
+            0.664,
+            0.312
+          ],
+          "inkDensity": [
+            0.792,
+            0.888,
+            0.62
+          ],
+          "curvature": 0.305,
+          "speedProxy": 0.626,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1
+          ],
+          "pausePoints": [
+            2
+          ]
+        },
+        {
+          "id": "ji-stroke-10",
+          "label": "final hook",
+          "path": [
+            [
+              0.5,
+              0.5732
+            ],
+            [
+              0.4896,
+              0.6688
+            ],
+            [
+              0.4844,
+              0.7516
+            ],
+            [
+              0.5,
+              0.8217
+            ],
+            [
+              0.5833,
+              0.8662
+            ],
+            [
+              0.8594,
+              0.8408
+            ],
+            [
+              0.9167,
+              0.8217
+            ],
+            [
+              0.9062,
+              0.758
+            ],
+            [
+              0.901,
+              0.7006
+            ]
+          ],
+          "width": [
+            0.484,
+            0.601,
+            0.664,
+            0.727,
+            0.75,
+            0.687,
+            0.624,
+            0.561,
+            0.352
+          ],
+          "inkDensity": [
+            0.792,
+            0.822,
+            0.852,
+            0.882,
+            0.888,
+            0.858,
+            0.828,
+            0.798,
+            0.62
+          ],
+          "curvature": 0.41,
+          "speedProxy": 0.572,
+          "flyingWhite": 0.1,
+          "turningPoints": [
+            1,
+            2,
+            3
+          ],
+          "pausePoints": [
+            8
+          ]
+        }
+      ],
+      "qiLinks": [
+        {
+          "id": "qi-ji-stroke-01-to-02",
+          "label": "ji qi link 01 to 02",
+          "fromStrokeId": "ji-stroke-01",
+          "toStrokeId": "ji-stroke-02",
+          "path": [
+            [
+              0.3385,
+              0.1911
+            ],
+            [
+              0.2188,
+              0.274
+            ],
+            [
+              0.099,
+              0.4268
+            ]
+          ],
+          "intensity": 0.7,
+          "rhythm": 0.5
+        },
+        {
+          "id": "qi-ji-stroke-02-to-03",
+          "label": "ji qi link 02 to 03",
+          "fromStrokeId": "ji-stroke-02",
+          "toStrokeId": "ji-stroke-03",
+          "path": [
+            [
+              0.349,
+              0.3312
+            ],
+            [
+              0.2761,
+              0.3981
+            ],
+            [
+              0.2031,
+              0.535
+            ]
+          ],
+          "intensity": 0.725,
+          "rhythm": 0.535
+        },
+        {
+          "id": "qi-ji-stroke-03-to-04",
+          "label": "ji qi link 03 to 04",
+          "fromStrokeId": "ji-stroke-03",
+          "toStrokeId": "ji-stroke-04",
+          "path": [
+            [
+              0.3021,
+              0.4713
+            ],
+            [
+              0.2318,
+              0.5509
+            ],
+            [
+              0.1615,
+              0.7006
+            ]
+          ],
+          "intensity": 0.75,
+          "rhythm": 0.57
+        },
+        {
+          "id": "qi-ji-stroke-04-to-05",
+          "label": "ji qi link 04 to 05",
+          "fromStrokeId": "ji-stroke-04",
+          "toStrokeId": "ji-stroke-05",
+          "path": [
+            [
+              0.3229,
+              0.6115
+            ],
+            [
+              0.2377,
+              0.6752
+            ],
+            [
+              0.1525,
+              0.8089
+            ]
+          ],
+          "intensity": 0.775,
+          "rhythm": 0.605
+        },
+        {
+          "id": "qi-ji-stroke-05-to-06",
+          "label": "ji qi link 05 to 06",
+          "fromStrokeId": "ji-stroke-05",
+          "toStrokeId": "ji-stroke-06",
+          "path": [
+            [
+              0.2306,
+              0.9045
+            ],
+            [
+              0.2124,
+              0.8185
+            ],
+            [
+              0.1942,
+              0.8025
+            ]
+          ],
+          "intensity": 0.8,
+          "rhythm": 0.5
+        },
+        {
+          "id": "qi-ji-stroke-06-to-07",
+          "label": "ji qi link 06 to 07",
+          "fromStrokeId": "ji-stroke-06",
+          "toStrokeId": "ji-speech-mouth-bottom",
+          "path": [
+            [
+              0.3192,
+              0.8662
+            ],
+            [
+              0.2881,
+              0.8642
+            ],
+            [
+              0.2514,
+              0.8652
+            ],
+            [
+              0.2119,
+              0.8933
+            ],
+            [
+              0.178,
+              0.9218
+            ]
+          ],
+          "intensity": 0.825,
+          "rhythm": 0.535
+        },
+        {
+          "id": "qi-ji-stroke-07-to-08",
+          "label": "ji qi link 07 to 08",
+          "fromStrokeId": "ji-speech-mouth-bottom",
+          "toStrokeId": "ji-stroke-08",
+          "path": [
+            [
+              0.318,
+              0.881
+            ],
+            [
+              0.3546,
+              0.7815
+            ],
+            [
+              0.3979,
+              0.6363
+            ],
+            [
+              0.4445,
+              0.5073
+            ],
+            [
+              0.4844,
+              0.3949
+            ]
+          ],
+          "intensity": 0.825,
+          "rhythm": 0.57
+        },
+        {
+          "id": "qi-ji-stroke-08-to-09",
+          "label": "ji qi link 08 to 09",
+          "fromStrokeId": "ji-stroke-08",
+          "toStrokeId": "ji-stroke-09",
+          "path": [
+            [
+              0.6354,
+              0.4968
+            ],
+            [
+              0.5885,
+              0.4873
+            ],
+            [
+              0.5417,
+              0.5478
+            ]
+          ],
+          "intensity": 0.825,
+          "rhythm": 0.605
+        },
+        {
+          "id": "qi-ji-stroke-09-to-10",
+          "label": "ji qi link 09 to 10",
+          "fromStrokeId": "ji-stroke-09",
+          "toStrokeId": "ji-stroke-10",
+          "path": [
+            [
+              0.6354,
+              0.5096
+            ],
+            [
+              0.5677,
+              0.5064
+            ],
+            [
+              0.5,
+              0.5732
+            ]
+          ],
+          "intensity": 0.825,
+          "rhythm": 0.5
+        }
+      ]
+    }
+  ],
+  "qiLinks": [
+    {
+      "id": "qi-center-vertical-to-left-dot",
+      "label": "center vertical to left dot",
+      "fromStrokeId": "guang-center-vertical",
+      "toStrokeId": "guang-left-dot",
+      "path": [
+        [
+          0.4293,
+          0.4053
+        ],
+        [
+          0.3637,
+          0.3684
+        ],
+        [
+          0.2375,
+          0.3348
+        ]
+      ],
+      "intensity": 0.82,
+      "rhythm": 0.56
+    },
+    {
+      "id": "qi-left-dot-to-right-dot",
+      "label": "left dot to right upper slash",
+      "fromStrokeId": "guang-left-dot",
+      "toStrokeId": "guang-right-dot",
+      "path": [
+        [
+          0.2808,
+          0.4414
+        ],
+        [
+          0.3967,
+          0.3217
+        ],
+        [
+          0.52,
+          0.2284
+        ],
+        [
+          0.6366,
+          0.1977
+        ]
+      ],
+      "intensity": 0.88,
+      "rhythm": 0.62
+    },
+    {
+      "id": "qi-right-dot-to-cross-start",
+      "label": "right upper slash to cross start",
+      "fromStrokeId": "guang-right-dot",
+      "toStrokeId": "guang-cross",
+      "path": [
+        [
+          0.5199,
+          0.4061
+        ],
+        [
+          0.43,
+          0.5014
+        ],
+        [
+          0.295,
+          0.6434
+        ],
+        [
+          0.1709,
+          0.753
+        ]
+      ],
+      "intensity": 0.84,
+      "rhythm": 0.58
+    },
+    {
+      "id": "qi-cross-to-left-leg",
+      "label": "cross to lower left slash",
+      "fromStrokeId": "guang-cross",
+      "toStrokeId": "guang-left-leg",
+      "path": [
+        [
+          0.6471,
+          0.3825
+        ],
+        [
+          0.565,
+          0.4495
+        ],
+        [
+          0.5,
+          0.5
+        ],
+        [
+          0.4517,
+          0.5517
+        ]
+      ],
+      "intensity": 0.94,
+      "rhythm": 0.52
+    },
+    {
+      "id": "qi-left-leg-to-right-hook",
+      "label": "lower left slash returns upward to right hook",
+      "fromStrokeId": "guang-left-leg",
+      "toStrokeId": "guang-right-leg-hook",
+      "path": [
+        [
+          0.185,
+          0.8935
+        ],
+        [
+          0.315,
+          0.7638
+        ],
+        [
+          0.42,
+          0.6908
+        ],
+        [
+          0.5,
+          0.5985
+        ]
+      ],
+      "intensity": 1.0,
+      "rhythm": 0.5
+    }
+  ],
+  "voidRegions": []
+}

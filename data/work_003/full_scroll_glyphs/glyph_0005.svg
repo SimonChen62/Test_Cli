@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 189 199" fill="none">
+  <title>? centerline strokes from latest Photoshop pen paths, locally tuned</title>
+  <g id="jian_centerline_strokes" stroke="#111111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path id="stroke_01" data-source-id="jian-stroke-01" d="M 75.9969 55.0036 L 94.9914 52.9937 L 115.0065 50.0087 L 112.0014 63.0034 L 104.0067 78.0080" />
+    <path id="stroke_02" data-source-id="jian-stroke-02" d="M 48.0060 83.0029 L 75.9969 74.0081 L 98.9982 67.0033 L 135.0027 60.9935" />
+    <path id="stroke_03" data-source-id="jian-stroke-03" d="M 69.0039 95.9976 L 110.9997 80.9930" />
+    <path id="stroke_04" data-source-id="jian-stroke-04" d="M 68.0022 111.0022 L 86.9967 103.9974 L 109.9980 99.0025 L 116.0082 98.0075" />
+    <path id="stroke_05" data-source-id="jian-stroke-05" d="M 56.0007 135.0016 L 86.7132 127.0018 L 114.4962 119.7980" />
+    <path id="stroke_06" data-source-id="jian-stroke-06" d="M 86.9967 11.9997 L 96.9948 23.9994 L 94.0086 52.9937 L 93.0069 84.9929 L 92.0052 111.0022 L 91.0035 136.9916 L 91.0035 158.0060" />
+    <path id="stroke_07" data-source-id="jian-stroke-07" d="M 105.0084 136.9916 L 111.0564 142.5636 L 114.9309 147.4391" />
+    <path id="stroke_08" data-source-id="jian-stroke-08" d="M 20.9979 68.9933 L 37.0062 83.0029 L 21.9996 103.9974 L 27.9909 114.0071 L 42.9975 112.9922 L 39.9924 131.0017 L 32.9994 144.9914 L 17.9928 159.9960" />
+    <path id="stroke_09" data-source-id="jian-stroke-09" d="M 34.0011 143.9964 L 50.0094 147.9963 L 67.0005 151.9962 L 89.0001 164.9909 L 109.9980 175.0006 L 136.0044 183.0004 L 156.0006 182.0054 L 173.9934 182.0054" />
+  </g>
+</svg>

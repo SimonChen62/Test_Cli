@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 149 172" fill="none">
+  <title>? centerline strokes from Photoshop pen paths, locally tuned</title>
+  <g id="chong_centerline_strokes" stroke="#111111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path id="stroke_01" data-source-id="chong-stroke-01" d="M 90.9943 21.0012 L 72.9951 31.9920 L 47.9929 40.0072" />
+    <path id="stroke_02" data-source-id="chong-stroke-02" d="M 24.0039 73.9944 L 45.9963 66.9940 L 76.0049 57.0008 L 110.0067 47.0076 L 123.9978 43.0000 L 136.0072 44.9952" />
+    <path id="stroke_03" data-source-id="chong-stroke-03" d="M 51.0027 76.0068 L 54.9959 97.0080 L 69.0019 114.0016" />
+    <path id="stroke_04" data-source-id="chong-stroke-04" d="M 59.6298 88.1500 L 80.8772 81.3388 L 102.1246 71.9992 L 106.3711 82.1988 L 102.1246 94.1012 L 96.1795 99.1924" />
+    <path id="stroke_05" data-source-id="chong-stroke-05" d="M 68.9721 100.9124 L 80.8772 97.5068 L 91.9181 92.3984" />
+    <path id="stroke_06" data-source-id="chong-stroke-06" d="M 72.3693 108.5492 L 84.2744 105.9864 L 93.6167 101.7552" />
+    <path id="stroke_07" data-source-id="chong-stroke-07" d="M 81.9500 57.9640 L 81.3540 81.1840 L 80.4600 104.2320 L 79.2680 124.7000 L 78.2250 143.6200" />
+    <path id="stroke_08" data-source-id="chong-stroke-08" d="M 63.8763 127.2456 L 79.1637 123.8400 L 97.8781 119.6088" />
+    <path id="stroke_09" data-source-id="chong-stroke-09" d="M 46.8754 146.8020 L 62.1777 142.5364 L 83.4251 138.3052 L 111.4818 134.8996 L 121.6734 140.8508" />
+  </g>
+</svg>

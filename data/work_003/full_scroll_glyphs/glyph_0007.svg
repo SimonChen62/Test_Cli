@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 157" fill="none">
+  <title>? centerline strokes from Photoshop pen paths, locally tuned</title>
+  <g id="ji_centerline_strokes" stroke="#111111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path id="stroke_01" data-source-id="ji-stroke-01" d="M 50.9952 12.9996 L 57.0048 21.9957 L 64.9920 30.0027" />
+    <path id="stroke_02" data-source-id="ji-stroke-02" d="M 19.0080 67.0076 L 38.9952 60.0054 L 59.0016 53.0032 L 67.0080 51.9984" />
+    <path id="stroke_03" data-source-id="ji-stroke-03" d="M 38.9952 83.9950 L 58.0032 73.9941" />
+    <path id="stroke_04" data-source-id="ji-stroke-04" d="M 31.0080 109.9942 L 48.9984 103.0077 L 61.9968 96.0055" />
+    <path id="stroke_05" data-source-id="ji-stroke-05" d="M 29.2800 126.9973 L 36.2880 136.9982 L 44.2752 142.0065" />
+    <path id="stroke_06" data-source-id="ji-stroke-06" d="M 37.2864 125.9925 L 54.2784 119.0060 L 63.2832 116.9964 L 61.2864 125.9925 L 61.2864 135.9934" />
+    <path id="stroke_07" data-source-id="ji-speech-mouth-bottom" d="M 34.1760 144.7226 L 47.7696 141.7239 L 61.0560 138.3170" />
+    <path id="stroke_08" data-source-id="ji-stroke-08" d="M 93.0048 61.9993 L 106.0032 59.0006 L 120.9984 53.9923 L 128.0064 53.9923 L 123.9936 60.9945 L 121.9968 70.9954 L 121.9968 77.9976" />
+    <path id="stroke_09" data-source-id="ji-stroke-09" d="M 104.0064 86.0046 L 115.0080 82.0011 L 121.9968 80.0072" />
+    <path id="stroke_10" data-source-id="ji-stroke-10" d="M 96.0000 89.9924 L 94.0032 105.0016 L 93.0048 118.0012 L 96.0000 129.0069 L 111.9936 135.9934 L 165.0048 132.0056 L 176.0064 129.0069 L 173.9904 119.0060 L 172.9920 109.9942" />
+  </g>
+</svg>

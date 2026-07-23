@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 154" fill="none">
+  <title>? centerline strokes from Photoshop pen paths, locally tuned</title>
+  <g id="fu_centerline_strokes" stroke="#111111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path id="stroke_01" data-source-id="fu-stroke-01" d="M 44.9920 17.0016 L 54.0000 18.0026 L 62.9920 21.0056" />
+    <path id="stroke_02" data-source-id="fu-stroke-02" d="M 15.0080 66.0044 L 38.9920 60.9994 L 57.0080 49.0028 L 50.9920 80.0030 L 50.9920 141.0024" />
+    <path id="stroke_03" data-source-id="fu-stroke-03" d="M 56.0000 53.9924 L 42.9920 78.0010 L 24.0000 105.9982 L 27.0080 112.0042 L 38.9920 96.0036 L 50.9920 82.0050 L 60.9920 68.0064" />
+    <path id="stroke_04" data-source-id="fu-stroke-04" d="M 90.9920 27.9972 L 108.0000 23.9932 L 120.9920 18.0026" />
+    <path id="stroke_05" data-source-id="fu-stroke-05" d="M 87.4080 44.9988 L 82.4000 60.9994 L 86.4000 71.9950 L 89.4080 74.9980" />
+    <path id="stroke_06" data-source-id="fu-stroke-06" d="M 87.4080 57.9964 L 106.4000 47.0008 L 120.4000 43.9978 L 118.4000 58.9974" />
+    <path id="stroke_07" data-source-id="fu-stroke-07" d="M 91.3920 72.9960 L 105.3920 68.0064 L 118.4000 62.0004" />
+    <path id="stroke_08" data-source-id="fu-stroke-08" d="M 76.4000 95.0026 L 81.3920 114.0062 L 87.4080 125.0018 L 90.4000 127.0038" />
+    <path id="stroke_09" data-source-id="fu-stroke-09" d="M 90.4000 91.9996 L 105.3920 87.9956 L 131.3920 80.0030 L 140.4000 87.9956 L 133.4080 104.9972 L 132.4000 121.9988" />
+    <path id="stroke_10" data-source-id="fu-stroke-10" d="M 84.4000 112.0042 L 102.4000 108.0002 L 117.4080 100.9932" />
+    <path id="stroke_11" data-source-id="fu-stroke-11" d="M 105.3920 93.0006 L 105.3920 109.0012 L 107.4080 118.9958" />
+    <path id="stroke_12" data-source-id="fu-stroke-12" d="M 90.4000 128.0048 L 108.4000 122.9998 L 129.4080 122.9998" />
+  </g>
+</svg>
