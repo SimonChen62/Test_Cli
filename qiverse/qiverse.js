@@ -160,7 +160,6 @@ const state = {
     context: null,
     src: "",
     token: 0,
-    image: null,
     particles: [],
     startedAt: performance.now(),
   },
@@ -168,8 +167,8 @@ const state = {
     open: false,
     dragging: false,
     pointerId: null,
-    rightX: 374,
-    rightY: 132,
+    rightX: 260,
+    rightY: 204,
     status: "",
   },
   wheelAccumulator: 0,
@@ -417,8 +416,7 @@ function sampleFocusStrokeValue(value, t, fallback = 1) {
   return Number.isFinite(Number(value)) ? Number(value) : fallback;
 }
 
-function getFocusStrokePlaybackOrder() {
-  const model = getActiveFocusStrokeModel();
+function getStrokePlaybackOrder(model) {
   if (!model?.strokes?.length) return [];
   const strokeById = new Map(model.strokes.map((stroke) => [stroke.id, stroke]));
   const orderedIds = [];
@@ -432,6 +430,10 @@ function getFocusStrokePlaybackOrder() {
     if (!ordered.includes(stroke)) ordered.push(stroke);
   });
   return ordered;
+}
+
+function getFocusStrokePlaybackOrder() {
+  return getStrokePlaybackOrder(getActiveFocusStrokeModel());
 }
 
 function getFocusStrokeCycleDuration() {
@@ -843,8 +845,7 @@ function mapTetherPoint(point, box) {
   };
 }
 
-function drawTetherGlyph(context, model, center, scale = 1, selected = false) {
-  if (!model?.strokes?.length) return;
+function tetherGlyphBox(model, center, scale = 1) {
   const ratio = (model.bounds?.height || 1) / Math.max(1, model.bounds?.width || 1);
   const box = {
     width: 92 * scale,
@@ -852,6 +853,20 @@ function drawTetherGlyph(context, model, center, scale = 1, selected = false) {
   };
   box.x = center.x - box.width / 2;
   box.y = center.y - box.height / 2;
+  return box;
+}
+
+function tetherStrokeAnchor(model, box, edge = "end") {
+  const strokeOrder = getStrokePlaybackOrder(model);
+  const stroke = edge === "start" ? strokeOrder[0] : strokeOrder[strokeOrder.length - 1];
+  if (!stroke?.points?.length) return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+  const point = edge === "start" ? stroke.points[0] : stroke.points[stroke.points.length - 1];
+  return mapTetherPoint(point, box);
+}
+
+function drawTetherGlyph(context, model, center, scale = 1, selected = false) {
+  if (!model?.strokes?.length) return null;
+  const box = tetherGlyphBox(model, center, scale);
 
   context.save();
   context.lineCap = "round";
@@ -872,6 +887,7 @@ function drawTetherGlyph(context, model, center, scale = 1, selected = false) {
     context.stroke();
   });
   context.restore();
+  return box;
 }
 
 function quadraticPoint(start, control, end, t) {
@@ -883,10 +899,10 @@ function quadraticPoint(start, control, end, t) {
 }
 
 function drawTetherQiLine(context, start, end, distance) {
-  const strain = THREE.MathUtils.clamp((distance - 190) / 150, 0, 1);
-  const broken = distance > 330;
+  const strain = THREE.MathUtils.clamp((distance - 116) / 120, 0, 1);
+  const broken = distance > 224;
   const alpha = broken
-    ? THREE.MathUtils.clamp(1 - (distance - 330) / 70, 0, 1) * 0.22
+    ? THREE.MathUtils.clamp(1 - (distance - 224) / 62, 0, 1) * 0.22
     : THREE.MathUtils.lerp(0.78, 0.32, strain);
   const gold = { r: 213, g: 178, b: 98 };
   const red = { r: 202, g: 76, b: 58 };
@@ -897,7 +913,7 @@ function drawTetherQiLine(context, start, end, distance) {
   };
   const control = {
     x: (start.x + end.x) / 2,
-    y: Math.min(start.y, end.y) - THREE.MathUtils.lerp(52, 20, strain),
+    y: (start.y + end.y) / 2,
   };
 
   context.save();
@@ -935,15 +951,17 @@ function drawQiTetherCanvas() {
   if (!context || !state.tether.open || focusTetherPanel?.hidden) return;
   const width = qiTetherCanvas.width;
   const height = qiTetherCanvas.height;
-  const left = { x: 138, y: height * 0.54 };
-  const right = { x: state.tether.rightX, y: state.tether.rightY };
-  const distance = Math.hypot(right.x - left.x, right.y - left.y);
+  const top = { x: width * 0.5, y: 82 };
+  const bottom = { x: state.tether.rightX, y: state.tether.rightY };
   const guang = state.focusStrokeModels?.get("guang");
   const fu = state.focusStrokeModels?.get("fu");
-  const start = { x: left.x + 54, y: left.y - 4 };
-  const end = { x: right.x - 58, y: right.y + 2 };
-  const strain = THREE.MathUtils.clamp((distance - 190) / 150, 0, 1);
-  const status = distance > 330 ? "气脉断裂" : distance > 250 ? "气脉迟滞" : "气脉连贯";
+  const guangBox = guang ? tetherGlyphBox(guang, top, 0.88) : null;
+  const fuBox = fu ? tetherGlyphBox(fu, bottom, 0.88) : null;
+  const start = guangBox ? tetherStrokeAnchor(guang, guangBox, "end") : top;
+  const end = fuBox ? tetherStrokeAnchor(fu, fuBox, "start") : bottom;
+  const distance = Math.hypot(end.x - start.x, end.y - start.y);
+  const strain = THREE.MathUtils.clamp((distance - 116) / 120, 0, 1);
+  const status = distance > 224 ? "气脉断裂" : distance > 170 ? "气脉迟滞" : "气脉连贯";
 
   context.clearRect(0, 0, width, height);
   context.save();
@@ -966,14 +984,14 @@ function drawQiTetherCanvas() {
   context.restore();
 
   drawTetherQiLine(context, start, end, distance);
-  drawTetherGlyph(context, guang, left, 1, false);
-  drawTetherGlyph(context, fu, right, 1, state.tether.dragging);
+  drawTetherGlyph(context, guang, top, 0.88, false);
+  drawTetherGlyph(context, fu, bottom, 0.88, state.tether.dragging);
 
   context.save();
   context.fillStyle = "rgba(244, 239, 228, 0.64)";
   context.font = "700 13px Microsoft YaHei, sans-serif";
-  context.fillText("光", left.x - 8, height - 18);
-  context.fillText("福", right.x - 8, height - 18);
+  context.fillText("光：最后一笔收势", 18, height - 34);
+  context.fillText("福：第一笔起势", 18, height - 16);
   context.fillStyle = strain > 0.55 ? "rgba(202, 76, 58, 0.82)" : "rgba(213, 178, 98, 0.82)";
   context.fillText(status, 18, 24);
   context.restore();
@@ -995,8 +1013,8 @@ function tetherCanvasPoint(event) {
 }
 
 function updateTetherDrag(point) {
-  state.tether.rightX = THREE.MathUtils.clamp(point.x, 260, 470);
-  state.tether.rightY = THREE.MathUtils.clamp(point.y, 86, 210);
+  state.tether.rightX = THREE.MathUtils.clamp(point.x, 210, 310);
+  state.tether.rightY = THREE.MathUtils.clamp(point.y, 158, 238);
 }
 
 function buildFallbackGlyphRegions(samples) {
@@ -1409,42 +1427,6 @@ function ensureFocusGlyphCanvas() {
   return canvasState.context;
 }
 
-function focusGlyphImageFrame(image) {
-  const size = 720;
-  const padding = 82;
-  const scale = Math.min((size - padding * 2) / image.width, (size - padding * 2) / image.height);
-  const width = image.width * scale;
-  const height = image.height * scale;
-  return {
-    x: (size - width) / 2,
-    y: (size - height) / 2 + FOCUS_STROKE_OVERLAY_OFFSET_Y * 0.18,
-    width,
-    height,
-  };
-}
-
-function drawFocusOriginalInkLayer(context, image) {
-  if (!image) return;
-  const frame = focusGlyphImageFrame(image);
-  const revealAge = state.focusStrokeOverlayActive ? performance.now() - state.focusStrokeOverlayStartedAt : 0;
-  const reveal = state.focusStrokeOverlayActive
-    ? smoothstep(0.02, 0.92, revealAge / getFocusStrokeCycleDuration())
-    : 0.32;
-
-  context.save();
-  context.globalCompositeOperation = "source-over";
-  context.filter = "brightness(1.45) contrast(1.08)";
-  context.globalAlpha = 0.13;
-  context.drawImage(image, frame.x, frame.y, frame.width, frame.height);
-
-  context.beginPath();
-  context.rect(frame.x - 8, frame.y - 8, frame.width + 16, (frame.height + 16) * reveal);
-  context.clip();
-  context.globalAlpha = state.focusStrokeOverlayActive ? 0.46 : 0.22;
-  context.drawImage(image, frame.x, frame.y, frame.width, frame.height);
-  context.restore();
-}
-
 function sampleFocusGlyphPoints(image) {
   const size = 720;
   const canvas = document.createElement("canvas");
@@ -1495,7 +1477,6 @@ async function prepareFocusGlyphParticles(src) {
   }
   if (canvasState.token !== token) return;
 
-  canvasState.image = image;
   const points = sampleFocusGlyphPoints(image);
   const previous = canvasState.particles;
   const center = 360;
@@ -1535,7 +1516,6 @@ function updateFocusGlyphCanvas(seconds) {
   const active = state.currentScene === "return" && state.focusActive && state.focusRegion && !focusOverlay?.hidden;
   context.clearRect(0, 0, focusGlyphCanvas.width, focusGlyphCanvas.height);
   if (!active || !canvasState.particles.length) return;
-  drawFocusOriginalInkLayer(context, canvasState.image);
 
   const age = performance.now() - canvasState.startedAt;
   const settle = smoothstep(0.08, 1, age / 1320);
@@ -1737,7 +1717,6 @@ function closeFocusOverlay() {
   state.tether.open = false;
   state.tether.dragging = false;
   state.focusGlyphCanvasState.src = "";
-  state.focusGlyphCanvasState.image = null;
   state.focusGlyphCanvasState.particles = [];
   updateFocusHud();
   updateFocusOverlay();
@@ -1938,7 +1917,6 @@ function bindEvents() {
     state.focusIndex = -1;
     state.focusRegion = null;
     state.focusGlyphCanvasState.src = "";
-    state.focusGlyphCanvasState.image = null;
     state.focusGlyphCanvasState.particles = [];
     state.tether.open = false;
     state.tether.dragging = false;
