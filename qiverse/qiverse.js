@@ -160,6 +160,8 @@ const state = {
     context: null,
     src: "",
     token: 0,
+    inkCanvas: null,
+    revealCanvas: null,
     particles: [],
     startedAt: performance.now(),
   },
@@ -397,6 +399,45 @@ function focusPathPointToCanvas(point) {
   };
 }
 
+function focusStrokeImageFrame(model = getActiveFocusStrokeModel()) {
+  const bounds = model?.bounds || { width: 82, height: 70 };
+  const size = 720;
+  const padding = 82;
+  const width = size - padding * 2;
+  const height = width * (bounds.height / Math.max(1, bounds.width));
+  return {
+    x: padding,
+    y: (size - height) / 2 + FOCUS_STROKE_OVERLAY_OFFSET_Y,
+    width,
+    height,
+  };
+}
+
+function buildFocusInkCanvas(image, model = getActiveFocusStrokeModel()) {
+  const size = 720;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  const frame = focusStrokeImageFrame(model);
+  context.clearRect(0, 0, size, size);
+  context.drawImage(image, frame.x, frame.y, frame.width, frame.height);
+
+  const pixels = context.getImageData(0, 0, size, size);
+  const data = pixels.data;
+  for (let index = 0; index < data.length; index += 4) {
+    const brightness = (data[index] + data[index + 1] + data[index + 2]) / 765;
+    const alpha = THREE.MathUtils.clamp((brightness - 0.02) * 4.4, 0, 1);
+    const warmth = THREE.MathUtils.clamp(brightness * 1.28, 0, 1);
+    data[index] = Math.round(18 + warmth * 150);
+    data[index + 1] = Math.round(16 + warmth * 128);
+    data[index + 2] = Math.round(12 + warmth * 78);
+    data[index + 3] = Math.round(alpha * 255);
+  }
+  context.putImageData(pixels, 0, 0);
+  return canvas;
+}
+
 function averageStrokeWidth(stroke) {
   if (Array.isArray(stroke.width) && stroke.width.length) {
     return stroke.width.reduce((sum, value) => sum + Number(value || 1), 0) / stroke.width.length;
@@ -545,6 +586,85 @@ function drawFocusRibbonStroke(context, stroke, progress, lift = 1, strokeIndex 
   drawFocusInkFlow(context, stroke, progress, lift, strokeIndex);
   drawFocusGoldenInkFlow(context, stroke, progress, lift, strokeIndex);
   drawFocusBrushHead(context, stroke, progress, lift);
+}
+
+function drawFocusStrokeRevealMask(context, stroke, progress, extraScale = 1, alpha = 1) {
+  const points = buildVisibleFocusCanvasPoints(stroke.points, progress);
+  if (points.length < 2) return;
+  const averageWidth = averageStrokeWidth(stroke);
+  context.save();
+  context.lineCap = "round";
+  context.lineJoin = "round";
+  context.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+
+  for (let index = 1; index < points.length; index += 1) {
+    const t = index / Math.max(1, points.length - 1);
+    const widthValue = sampleFocusStrokeValue(stroke.width, t, averageWidth);
+    const wobble = 0.92 + Math.sin(t * Math.PI * 5 + stroke.curvature * 4) * 0.08;
+    context.lineWidth = Math.max(18, 38 * widthValue * state.focusStrokeWidthScale * extraScale * wobble);
+    context.beginPath();
+    context.moveTo(points[index - 1].x, points[index - 1].y);
+    context.lineTo(points[index].x, points[index].y);
+    context.stroke();
+  }
+  context.restore();
+}
+
+function drawFocusSourceInkReveal(context, stroke, progress, strokeIndex = 0) {
+  const canvasState = state.focusGlyphCanvasState;
+  if (!canvasState.inkCanvas || progress <= 0.01) return;
+  const size = 720;
+  if (!canvasState.revealCanvas) {
+    canvasState.revealCanvas = document.createElement("canvas");
+    canvasState.revealCanvas.width = size;
+    canvasState.revealCanvas.height = size;
+  }
+  const reveal = canvasState.revealCanvas;
+  const revealContext = reveal.getContext("2d");
+  revealContext.clearRect(0, 0, size, size);
+  revealContext.drawImage(canvasState.inkCanvas, 0, 0);
+  revealContext.globalCompositeOperation = "destination-in";
+
+  drawFocusStrokeRevealMask(revealContext, stroke, progress, 1.42, 0.34);
+  drawFocusStrokeRevealMask(revealContext, stroke, progress, 1.02, 0.96);
+
+  revealContext.globalCompositeOperation = "source-over";
+  context.save();
+  context.globalCompositeOperation = "source-over";
+  context.shadowColor = "rgba(0, 0, 0, 0.34)";
+  context.shadowBlur = 8;
+  context.drawImage(reveal, 0, 0);
+
+  const shimmer = Math.sin(performance.now() * 0.005 + strokeIndex * 1.7) * 0.5 + 0.5;
+  context.globalCompositeOperation = "lighter";
+  context.globalAlpha = 0.08 + shimmer * 0.05;
+  context.drawImage(reveal, 0, 0);
+  context.restore();
+}
+
+function drawFocusGestureTrace(context, stroke, progress, strokeIndex = 0) {
+  const points = buildVisibleFocusCanvasPoints(stroke.points, progress);
+  if (points.length < 2) return;
+  const averageWidth = averageStrokeWidth(stroke);
+  context.save();
+  context.globalCompositeOperation = "source-over";
+  context.lineCap = "round";
+  context.lineJoin = "round";
+  context.strokeStyle = "rgba(224, 209, 164, 0.16)";
+  context.lineWidth = Math.max(1.1, 1.8 * averageWidth * state.focusStrokeWidthScale);
+  context.beginPath();
+  points.forEach((point, index) => {
+    if (index === 0) context.moveTo(point.x, point.y);
+    else context.lineTo(point.x, point.y);
+  });
+  context.stroke();
+  context.restore();
+
+  drawFocusFlyingWhite(context, stroke, progress, 0, strokeIndex);
+  drawFocusBrushStriations(context, stroke, progress, 0, strokeIndex);
+  drawFocusInkFlow(context, stroke, progress, 0, strokeIndex);
+  drawFocusGoldenInkFlow(context, stroke, progress, 0, strokeIndex);
+  drawFocusBrushHead(context, stroke, progress, 0);
 }
 
 function sampleFocusPathFrame(points, t, lift = 0) {
@@ -815,8 +935,8 @@ function drawFocusStrokeOverlay(context) {
 
   orderedStrokes.forEach((stroke, strokeIndex) => {
     const progress = smoothstep(0, 1, (age - cursor) / FOCUS_STROKE_DURATION);
-    const lift = smoothstep(0.18, 1, progress);
-    drawFocusRibbonStroke(context, stroke, progress, lift, strokeIndex);
+    drawFocusSourceInkReveal(context, stroke, progress, strokeIndex);
+    drawFocusGestureTrace(context, stroke, progress, strokeIndex);
     cursor += FOCUS_STROKE_DURATION + FOCUS_STROKE_PAUSE;
 
     const link = links.find((item) => item.fromStrokeId === stroke.id && strokeById.has(item.toStrokeId));
@@ -1477,6 +1597,7 @@ async function prepareFocusGlyphParticles(src) {
   }
   if (canvasState.token !== token) return;
 
+  canvasState.inkCanvas = buildFocusInkCanvas(image, getActiveFocusStrokeModel());
   const points = sampleFocusGlyphPoints(image);
   const previous = canvasState.particles;
   const center = 360;
@@ -1525,6 +1646,7 @@ function updateFocusGlyphCanvas(seconds) {
   const flowPeriod = 3.6;
   const flowHead = ((seconds / flowPeriod) % 1) * 860 - 70;
   const flowWidth = 58;
+  const particleDim = state.focusStrokeOverlayActive ? 0.32 : 1;
 
   context.save();
   context.globalCompositeOperation = "source-over";
@@ -1551,7 +1673,7 @@ function updateFocusGlyphCanvas(seconds) {
   context.globalAlpha = 0.72;
   canvasState.particles.forEach((particle) => {
     const density = THREE.MathUtils.clamp(particle.density, 0, 1);
-    const baseAlpha = 0.11 + density * 0.16;
+    const baseAlpha = (0.11 + density * 0.16) * particleDim;
     const radius = Math.max(0.62, particle.size * (0.52 + settle * 0.3));
     context.beginPath();
     context.fillStyle = `rgba(72, 55, 31, ${baseAlpha})`;
@@ -1565,7 +1687,7 @@ function updateFocusGlyphCanvas(seconds) {
     const flowAxis = particle.ty + particle.tx * 0.18;
     const flow = Math.max(0, 1 - Math.abs(flowAxis - flowHead) / flowWidth);
     const flowEase = flow * flow * (3 - 2 * flow);
-    const alpha = Math.min(0.38, 0.12 + density * 0.23 + flowEase * 0.08);
+    const alpha = Math.min(0.38, 0.12 + density * 0.23 + flowEase * 0.08) * particleDim;
     const radius = Math.max(0.65, particle.size * (0.5 + settle * 0.28 + flowEase * 0.12));
 
     context.beginPath();
@@ -1577,7 +1699,7 @@ function updateFocusGlyphCanvas(seconds) {
 
     if (flowEase > 0.34 && index % 2 === 0) {
       context.beginPath();
-      context.strokeStyle = `rgba(255, 214, 107, ${0.1 + flowEase * 0.16})`;
+      context.strokeStyle = `rgba(255, 214, 107, ${(0.1 + flowEase * 0.16) * particleDim})`;
       context.lineWidth = 0.45 + density * 0.45;
       context.moveTo(particle.drawX - particle.vx * 1.8, particle.drawY - particle.vy * 1.8);
       context.lineTo(particle.drawX + particle.vx * 0.5, particle.drawY + particle.vy * 0.5);
@@ -1593,7 +1715,7 @@ function updateFocusGlyphCanvas(seconds) {
     const flowEase = flow * flow * (3 - 2 * flow);
     if (flowEase < 0.5 || index % 3 !== 0) return;
     context.beginPath();
-    context.fillStyle = `rgba(255, 238, 170, ${Math.min(0.28, flowEase * (0.1 + density * 0.16))})`;
+    context.fillStyle = `rgba(255, 238, 170, ${Math.min(0.28, flowEase * (0.1 + density * 0.16)) * particleDim})`;
     context.arc(particle.drawX, particle.drawY, 0.95 + density * 0.65, 0, Math.PI * 2);
     context.fill();
   });
@@ -1717,6 +1839,8 @@ function closeFocusOverlay() {
   state.tether.open = false;
   state.tether.dragging = false;
   state.focusGlyphCanvasState.src = "";
+  state.focusGlyphCanvasState.inkCanvas = null;
+  state.focusGlyphCanvasState.revealCanvas = null;
   state.focusGlyphCanvasState.particles = [];
   updateFocusHud();
   updateFocusOverlay();
@@ -1917,6 +2041,8 @@ function bindEvents() {
     state.focusIndex = -1;
     state.focusRegion = null;
     state.focusGlyphCanvasState.src = "";
+    state.focusGlyphCanvasState.inkCanvas = null;
+    state.focusGlyphCanvasState.revealCanvas = null;
     state.focusGlyphCanvasState.particles = [];
     state.tether.open = false;
     state.tether.dragging = false;
