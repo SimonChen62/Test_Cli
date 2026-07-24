@@ -79,29 +79,6 @@ const reflectionTasks = {
   evidence: "任务：用“形式证据 -> 观看感受 -> 审美概念”的顺序解释一个观察点。",
 };
 
-const inkverseLiteSteps = {
-  original: {
-    title: "Original：回到原作",
-    text: "先看整幅长卷，不急着进入特效。注意哪里有运动感、哪里疏朗或紧密。",
-    mode: "original",
-  },
-  ink: {
-    title: "Enter the Ink：进入墨迹",
-    text: "进入当前平滑浮雕 3D。系统把可见墨迹深浅转成高度：重墨更突出，飞白和细线更低。",
-    mode: "space",
-  },
-  qi: {
-    title: "Follow the Qi：追随气脉",
-    text: "切换到气脉观察。这里用人工标注和骨架线索提示“形断势连”，不是自动判断书法气韵。",
-    mode: "qi",
-  },
-  return: {
-    title: "Return：回到原作反思",
-    text: "回到静态原作。请选择一个反思标签，或在右侧“我的反思”里写下你重新注意到的地方。",
-    mode: "original",
-  },
-};
-
 const state = {
   screen: "home",
   worksIndex: null,
@@ -151,10 +128,6 @@ const state = {
   fullScrollRecords: [],
   selectedGlyphId: null,
   glyphAssets: {},
-  inkverseLite: {
-    active: false,
-    step: "original",
-  },
   ragUseAi: false,
   authToken: localStorage.getItem(AUTH_TOKEN_KEY) || "",
   user: null,
@@ -245,14 +218,7 @@ const els = {
   glyphList: document.querySelector("#glyphList"),
   glyphTitle: document.querySelector("#glyphTitle"),
   glyphSummary: document.querySelector("#glyphSummary"),
-  inkverseLiteButton: document.querySelector("#inkverseLiteButton"),
   qiverseObserveButton: document.querySelector("#qiverseObserveButton"),
-  inkverseLitePanel: document.querySelector("#inkverseLitePanel"),
-  inkverseLiteClose: document.querySelector("#inkverseLiteClose"),
-  inkverseLiteTitle: document.querySelector("#inkverseLiteTitle"),
-  inkverseLiteText: document.querySelector("#inkverseLiteText"),
-  inkverseLiteSteps: document.querySelector("#inkverseLitePanel .inkverseLiteSteps"),
-  inkverseReflectionTags: document.querySelector("#inkverseLitePanel .inkverseReflectionTags"),
   guidePanelTitle: document.querySelector("#guidePanelTitle"),
   guidePanelNote: document.querySelector("#guidePanelNote"),
   guideList: document.querySelector("#guideList"),
@@ -517,8 +483,6 @@ async function openWork(workId, options = {}) {
   state.space.fullRotationY = 0;
   state.space.renderKey = "";
   state.space.sceneReady = false;
-  state.inkverseLite.active = false;
-  state.inkverseLite.step = "original";
   state.firstLook = readFirstLook();
   state.introComplete = false;
   state.editingFirstLook = false;
@@ -782,7 +746,6 @@ function renderAll() {
   renderProbePanel();
   renderReflectionPanel();
   renderFilterButtons();
-  renderInkverseLitePanel();
 }
 
 function renderLayout() {
@@ -1101,10 +1064,6 @@ function setMode(mode) {
   if (!state.introComplete) return;
   const nextMode = modeMeta[mode] ? mode : "original";
   state.mode = nextMode;
-  if (state.inkverseLite.active) {
-    const matchingStep = Object.entries(inkverseLiteSteps).find(([, config]) => config.mode === nextMode);
-    if (matchingStep && state.inkverseLite.step !== "return") state.inkverseLite.step = matchingStep[0];
-  }
   if (nextMode === "space") {
     state.layer = "original";
     state.filter = "all";
@@ -1117,85 +1076,6 @@ function setMode(mode) {
     state.selectedId = matching?.id || null;
   }
   renderAll();
-}
-
-function applyModeFromInkverseStep(step) {
-  const config = inkverseLiteSteps[step] || inkverseLiteSteps.original;
-  const nextMode = config.mode;
-  state.mode = nextMode;
-  state.selectedId = null;
-  if (nextMode === "space") {
-    state.layer = "original";
-    state.filter = "all";
-  } else {
-    const modeConfig = modeMeta[nextMode] || modeMeta.original;
-    state.layer = modeConfig.layer;
-    state.filter = modeConfig.filter;
-    const matching = modeConfig.filter === "all" ? null : annotations().find((item) => item.type === modeConfig.filter);
-    state.selectedId = matching?.id || null;
-  }
-}
-
-function openInkverseLite() {
-  if (!state.introComplete) {
-    els.firstOverall?.focus();
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    return;
-  }
-  state.inkverseLite.active = true;
-  state.inkverseLite.step = "original";
-  applyModeFromInkverseStep("original");
-  renderAll();
-  requestAnimationFrame(() => els.inkverseLitePanel?.scrollIntoView({ behavior: "smooth", block: "nearest" }));
-}
-
-function closeInkverseLite() {
-  state.inkverseLite.active = false;
-  renderInkverseLitePanel();
-}
-
-function setInkverseLiteStep(step) {
-  if (!inkverseLiteSteps[step]) return;
-  if (!state.inkverseLite.active) state.inkverseLite.active = true;
-  state.inkverseLite.step = step;
-  applyModeFromInkverseStep(step);
-  if (step === "return") {
-    const key = reflectionKey();
-    if (!state.reflections[key]?.submitted && !els.reflectionInput.value.trim()) {
-      els.reflectionInput.value = "我从浮雕和气脉线索回到原作后，重新注意到：";
-      state.reflections[key] = { text: els.reflectionInput.value, submitted: false };
-      saveReflections();
-    }
-  }
-  renderAll();
-}
-
-function renderInkverseLitePanel() {
-  if (!els.inkverseLitePanel) return;
-  els.inkverseLitePanel.hidden = !state.inkverseLite.active;
-  els.inkverseLiteButton?.classList.toggle("active", state.inkverseLite.active);
-  if (!state.inkverseLite.active) return;
-
-  const step = state.inkverseLite.step;
-  const config = inkverseLiteSteps[step] || inkverseLiteSteps.original;
-  els.inkverseLiteTitle.textContent = config.title;
-  els.inkverseLiteText.textContent = config.text;
-  els.inkverseLiteSteps?.querySelectorAll(".inkverseStep").forEach((button) => {
-    button.classList.toggle("active", button.dataset.inkverseStep === step);
-  });
-  els.inkverseReflectionTags.hidden = step !== "return";
-}
-
-function insertInkverseReflectionTag(text) {
-  if (!text) return;
-  const prefix = "InkVerse Lite 反思：";
-  const current = els.reflectionInput.value.trim();
-  const next = current ? `${current}\n${prefix}${text}` : `${prefix}${text}`;
-  els.reflectionInput.value = next;
-  state.reflections[reflectionKey()] = { text: next, submitted: false };
-  saveReflections();
-  renderReflectionPanel();
-  requestAnimationFrame(() => els.reflectionInput.focus());
 }
 
 function clearSelection() {
@@ -3938,17 +3818,7 @@ document.querySelectorAll(".filterButton").forEach((button) => {
 document.querySelectorAll(".modeButton[data-mode]").forEach((button) => {
   button.addEventListener("click", () => setMode(button.dataset.mode));
 });
-els.inkverseLiteButton?.addEventListener("click", openInkverseLite);
 els.qiverseObserveButton?.addEventListener("click", openQiverseForCurrentWork);
-els.inkverseLiteClose?.addEventListener("click", closeInkverseLite);
-els.inkverseLiteSteps?.addEventListener("click", (event) => {
-  if (!(event.target instanceof HTMLButtonElement)) return;
-  setInkverseLiteStep(event.target.dataset.inkverseStep);
-});
-els.inkverseReflectionTags?.addEventListener("click", (event) => {
-  if (!(event.target instanceof HTMLButtonElement)) return;
-  insertInkverseReflectionTag(event.target.dataset.reflectionTag);
-});
 
 els.spaceZoomIn?.addEventListener("click", (event) => {
   event.stopPropagation();

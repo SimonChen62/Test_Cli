@@ -80,8 +80,6 @@ button,
 .filterButton,
 .taskButton,
 .reflectionChip,
-.inkverseLiteHeader,
-.inkverseLiteSteps,
 .userBadgeButton,
 .userRecordsHeader,
 .adminTabs,
@@ -1056,7 +1054,6 @@ h3 {
 .app[data-intro-complete="false"] .ragPanel,
 .app[data-intro-complete="false"] .reflectionPanel,
 .app[data-intro-complete="false"] .glyphPanel,
-.app[data-intro-complete="false"] .inkverseLitePanel,
 .app[data-intro-complete="false"] #clearButton {
   display: none;
 }
@@ -1921,10 +1918,6 @@ button:disabled {
   background: rgba(255, 249, 236, 0.06);
 }
 
-.inkverseLiteButton {
-  border-color: rgba(198, 160, 91, 0.42) !important;
-}
-
 .qiverseObserveButton {
   border-color: rgba(92, 151, 130, 0.56) !important;
   background:
@@ -1936,69 +1929,6 @@ button:disabled {
 .qiverseObserveButton:disabled {
   cursor: wait;
   opacity: 0.72;
-}
-
-.inkverseLitePanel {
-  margin-top: 14px;
-  padding: 14px;
-  border: 1px solid rgba(232, 218, 191, 0.18);
-  border-radius: 8px;
-  background:
-    linear-gradient(180deg, rgba(255, 249, 236, 0.09), rgba(255, 249, 236, 0.035)),
-    rgba(12, 11, 9, 0.86);
-  color: #fff8ec;
-  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.24);
-}
-
-.inkverseLiteHeader {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.inkverseLiteHeader h2 {
-  margin: 2px 0 0;
-  font-size: 20px;
-}
-
-.inkverseLiteText {
-  margin: 10px 0 12px;
-  color: rgba(255, 248, 236, 0.74);
-  line-height: 1.65;
-}
-
-.inkverseLiteSteps,
-.inkverseReflectionTags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.inkverseStep,
-.inkverseReflectionTags button {
-  min-height: 36px;
-  border: 1px solid rgba(232, 218, 191, 0.22);
-  border-radius: 7px;
-  padding: 7px 11px;
-  background: rgba(255, 249, 236, 0.08);
-  color: #fff8ec;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.inkverseStep.active,
-.inkverseReflectionTags button:hover {
-  border-color: rgba(198, 160, 91, 0.82);
-  background: rgba(198, 160, 91, 0.22);
-}
-
-.inkverseReflectionTags {
-  margin-top: 12px;
-}
-
-.inkverseReflectionTags[hidden] {
-  display: none;
 }
 
 .spaceZoomControls {
