@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>QiVerse - &#x58a8;&#x7c92;&#x957f;&#x5377;</title>
     <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="./styles.css?v=13" />
+    <link rel="stylesheet" href="./styles.css?v=14" />
   </head>
   <body>
     <main class="cinemaShell">
@@ -43,7 +43,13 @@
           <div class="focusSideNote">
             <strong id="focusGlyphTitle">&#x5c40;&#x90e8;&#x5b57;&#x4f53;&#x663e;&#x5f71;</strong>
             <span id="focusGlyphNote">&#x6eda;&#x8f6e;&#x5207;&#x6362;&#x5c40;&#x90e8;</span>
+            <div class="focusGlyphPicker" aria-label="&#x4ee3;&#x8868;&#x5b57;&#x9009;&#x62e9;">
+              <button type="button" data-focus-glyph="guang">&#x5149;</button>
+              <button type="button" data-focus-glyph="fu">&#x798f;</button>
+              <button type="button" data-focus-glyph="ta">&#x5854;</button>
+            </div>
             <button id="focusEnterButton" class="focusEnterButton" type="button">Enter/&#x64ad;&#x653e;&#x7279;&#x4f8b;&#x7b14;&#x753b;&#x52a8;&#x6001;</button>
+            <button id="focusTetherButton" class="focusTetherButton" type="button">&#x5b57;&#x95f4;&#x6c14;&#x8109;&#x7275;&#x5f15;</button>
             <button id="focusTuneButton" class="focusTuneButton" type="button">&#x5fae;&#x8c03;</button>
             <div id="focusTunePanel" class="focusTunePanel" hidden>
               <label>
@@ -54,6 +60,10 @@
                 <span>&#x6d53;&#x6de1;</span>
                 <input id="focusStrokeOpacitySlider" type="range" min="0.35" max="1.45" step="0.01" value="1" />
               </label>
+            </div>
+            <div id="focusTetherPanel" class="focusTetherPanel" hidden>
+              <canvas id="qiTetherCanvas" aria-label="&#x5b57;&#x95f4;&#x6c14;&#x8109;&#x62d6;&#x52a8;&#x6f14;&#x793a;"></canvas>
+              <span id="qiTetherStatus">&#x6c14;&#x8109;&#x8fde;&#x8d2f;</span>
             </div>
           </div>
         </div>
@@ -74,6 +84,6 @@
         <button id="resetButton" type="button">&#x91cd;&#x7f6e;</button>
       </div>
     </main>
-    <script type="module" charset="utf-8" src="./qiverse.js?v=70"></script>
+    <script type="module" charset="utf-8" src="./qiverse.js?v=71"></script>
   </body>
 </html>
